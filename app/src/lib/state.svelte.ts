@@ -28,16 +28,19 @@ export interface Player {
 	score: number;
 }
 
+export interface Team {
+	id: number;
+	name: string;
+	color: string;
+	players: Array<Player>;
+}
+
 export interface Game {
 	id: number;
 	name: string;
 	mode: string;
 	boards: Array<Pick<Board, 'id' | 'name' | 'order'>>;
-	teams: Array<{
-		id: number;
-		name: string;
-		players: Array<Player>;
-	}>;
+	teams: Array<Team>;
 }
 
 export function allQuestions(board?: Board): Question[] {

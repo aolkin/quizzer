@@ -91,7 +91,7 @@ export class GameWebSocket {
         ...state,
         selectedQuestion: data.question,
       }));
-    } else if (data.type === 'answer_question') {
+    } else if (data.type === 'toggle_question') {
       gameState.update((state) => {
         if (data.answered) {
           state.answeredQuestions.add(data.questionId);
@@ -108,7 +108,15 @@ export class GameWebSocket {
     } else if (data.type === 'buzzer_pressed') {
       gameState.update(state => ({
         ...state,
-        activeBuzzerId: data.playerId
+        activeBuzzerId: data.buzzerId
+      }));
+    } else if (data.type === 'update_score') {
+      gameState.update(state => ({
+        ...state,
+        scores: {
+          ...state.scores,
+          [data.playerId]: data.score,
+        }
       }));
     }
   }
@@ -136,16 +144,18 @@ export class GameWebSocket {
 
   updateQuestionStatus(questionId: number, answered: boolean) {
     this.send({
-      type: 'answer_question',
+      type: 'toggle_question',
       questionId,
       answered
     });
   }
 
-  updatePlayerScore(playerId: number, points: number) {
+  recordPlayerAnswer(playerId: number, questionId: number, isCorrect: boolean, points?: number) {
     this.socket.send(JSON.stringify({
-      type: 'update_score',
+      type: 'record_answer',
       playerId,
+      questionId,
+      isCorrect,
       points
     }));
   }

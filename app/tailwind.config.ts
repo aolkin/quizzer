@@ -20,4 +20,10 @@ export default {
       themes: { preset: ['skeleton', 'modern', 'crimson', 'rocket', 'hamlindigo', 'seafoam'] },
     }),
   ],
+
+  safelist: [
+    {
+      pattern: /grid-cols-.+/,
+    }
+  ],
 } satisfies Config;

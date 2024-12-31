@@ -45,7 +45,7 @@ class BuzzerThread(threading.Thread):
     def run(self):
         loop = 0
         while True:
-            if self.selected:
+            if self.selected != None:
                 # loop = (loop + 1) % (LOOP_MAX * 2)
                 self._select_channel(c)
                 gpio.output(EN, False) # loop < LOOP_MAX / 3)
@@ -83,8 +83,7 @@ class BuzzerClient:
             'type': 'toggle_buzzers',
             'enabled': self.buzzers.enabled
         }))
-        if not reconnect:
-            asyncio.create_task(self.listen_for_messages())
+        asyncio.create_task(self.listen_for_messages())
 
     async def listen_for_messages(self):
         while True:
@@ -96,11 +95,16 @@ class BuzzerClient:
                     self.buzzers.enabled = data['enabled']
                     if data['enabled']:
                         self.buzzers.selected = None
+                        await self.websocket.send(json.dumps({
+                            'type': 'buzzer_pressed',
+                            'buzzerId': None
+                        }))
                         
             except websockets.ConnectionClosed:
                 print("Disconnected")
                 await asyncio.sleep(1)
                 await self.connect(True)
+                return
 
     async def handle_buzzer_press(self, buzzer_id: int):
         """

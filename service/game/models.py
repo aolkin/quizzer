@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from colorfield.fields import ColorField
 
 
 class Game(models.Model):
@@ -68,6 +69,7 @@ class Question(models.Model):
 class Team(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='teams')
     name = models.CharField(max_length=200)
+    color = ColorField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -38,7 +38,7 @@ class TeamSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Team
-        fields = ['id', 'name', 'players']
+        fields = ['id', 'name', 'color', 'players']
 
 class GameSerializer(serializers.ModelSerializer):
     boards = BoardMetaSerializer(many=True)

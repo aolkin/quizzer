@@ -9,12 +9,14 @@
   import { onMount } from 'svelte';
 
   const gameId = page.params.game;
-  const mode = page.url.searchParams.get('mode') as UiMode || UiMode.Presentation;
+  const mode = page.params.mode as UiMode || UiMode.Presentation;
 
-  let { data: game, children } = $props();
+  let { data: game } = $props();
   let websocket: GameWebSocket | undefined = $state(undefined);
 
   onMount(async () => {
+    $gameState.scores = Object.fromEntries(game.teams.flatMap((team) =>
+      team.players.map((player) => [player.id, player.score])));
     websocket = new GameWebSocket(gameId, mode);
     $gameState.websocket = websocket;
   });

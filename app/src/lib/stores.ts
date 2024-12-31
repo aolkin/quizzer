@@ -6,6 +6,7 @@ interface GameState {
   websocket?: GameWebSocket;
   currentBoard?: number;
   board?: Board;
+  scores: Record<number, number>;
   visibleCategories: Set<number>;
   answeredQuestions: Set<number>;
   selectedQuestion?: number;
@@ -16,5 +17,6 @@ interface GameState {
 export const gameState: Writable<GameState> = writable({
   visibleCategories: new Set(),
   answeredQuestions: new Set(),
+  scores: {},
   buzzersEnabled: false,
 });

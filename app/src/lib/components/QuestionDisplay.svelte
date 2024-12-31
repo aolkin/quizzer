@@ -13,15 +13,10 @@
 
             // Initial position matching the original box
             container.style.zIndex = '-1';
-            container.style.position = 'fixed';
             container.style.top = `${originRect.top}px`;
             container.style.left = `${originRect.left}px`;
             container.style.width = `${originRect.width}px`;
             container.style.height = `${originRect.height}px`;
-            if (questionText) {
-                //questionText.style.fontSize = '.5rem';
-                //questionText.style.lineHeight = '.75rem';
-            }
         } else {
             // Trigger animation to full screen
             container.style.top = '0';
@@ -29,17 +24,13 @@
             container.style.width = '100vw';
             container.style.height = '100vh';
             container.style.zIndex = '50';
-            if (questionText) {
-                //questionText.style.fontSize = '2.5rem';
-                //questionText.style.lineHeight = '2.75rem';
-            }
         }
     });
 </script>
 
 <div
   bind:this={container}
-  class="bg-primary-900 flex items-center justify-center overflow-hidden transition-all duration-500"
+  class="bg-primary-900 flex items-center justify-center overflow-hidden transition-all duration-500 fixed"
   style="container-type: inline-size"
 >
     <div

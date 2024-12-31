@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'channels',
     'rest_framework',
     'corsheaders',
+    'colorfield',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

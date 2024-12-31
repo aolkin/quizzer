@@ -20,6 +20,7 @@
 
   function handleQuestionClick(question: Question) {
     if (mode === 'host') {
+      console.log(question, selectedQuestion);
       if (selectedQuestion?.id === question.id) {
         selectedQuestion = null;
       } else {
@@ -72,7 +73,8 @@
     </div>
 
     {#if mode === 'host' && sidebarQuestion}
-      <div class="bg-surface-800 p-4 rounded-lg">
+      <div class="bg-surface-800 p-4 rounded-lg border-primary-500 {$gameState.selectedQuestion === sidebarQuestion.id && 'border-2'} transition-all"
+      transition:fly={{ x: 100 }}>
         <h3 class="text-xl mb-4">{sidebarQuestion.text}</h3>
         <p class="text-primary-400 mb-4">{sidebarQuestion.answer}</p>
         <div class="flex gap-2">
