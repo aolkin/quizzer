@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import gc
 import RPi.GPIO as gpio
 
-print(gpio.VERSION)
+gc.disable()
 
 gpio.setmode(gpio.BCM)
 

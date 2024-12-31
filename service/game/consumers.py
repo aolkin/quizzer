@@ -2,6 +2,8 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 import json
 
+from game.models import Question
+
 
 class GameConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -20,7 +22,14 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             self.channel_name
         )
 
+    @database_sync_to_async
+    def update_question_status(self, question_id, answered):
+        Question.objects.filter(id=question_id).update(answered=answered)
+
     async def receive_json(self, content):
+        if content.get('type') == 'answer_question':
+            await self.update_question_status(content['questionId'], content['answered'])
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {

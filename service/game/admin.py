@@ -11,8 +11,8 @@ class BoardInline(admin.TabularInline):
 
 class CategoryInline(admin.TabularInline):
     model = Category
-    extra = 5
-    max_num = 5
+    extra = 6
+    max_num = 6
 
 
 class QuestionInline(admin.TabularInline):
