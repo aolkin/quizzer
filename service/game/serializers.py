@@ -5,7 +5,7 @@ from .models import Game, Board, Category, Player, Question, Team
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ['id', 'type', 'text', 'answer', 'points', 'order', 'media_url', 'answered']
+        fields = ['id', 'type', 'text', 'answer', 'points', 'special', 'order', 'media_url', 'answered']
 
 
 class CategorySerializer(serializers.ModelSerializer):

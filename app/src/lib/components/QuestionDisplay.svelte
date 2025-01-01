@@ -1,8 +1,9 @@
 <script lang="ts">
     import { fade } from 'svelte/transition';
+    import { type AudioClient, Sound } from '../audio.svelte';
     import type { Question } from '../state.svelte';
 
-    const { question, visible }: { question: Question, visible: boolean } = $props();
+    const { question, visible, audio }: { question: Question, visible: boolean, audio: AudioClient } = $props();
 
     let container: HTMLDivElement;
     let questionText: HTMLElement | undefined;
@@ -17,6 +18,7 @@
             container.style.left = `${originRect.left}px`;
             container.style.width = `${originRect.width}px`;
             container.style.height = `${originRect.height}px`;
+            container.style.transform = 'initial';
         } else {
             // Trigger animation to full screen
             container.style.top = '0';
@@ -24,13 +26,17 @@
             container.style.width = '100vw';
             container.style.height = '100vh';
             container.style.zIndex = '50';
+            if (question.special) {
+                container.style.transform = 'rotate3d(1, 0, 0, 720deg)'
+                audio.play(Sound.Special)
+            }
         }
     });
 </script>
 
 <div
   bind:this={container}
-  class="bg-primary-900 flex items-center justify-center overflow-hidden transition-all duration-500 fixed"
+  class="flex items-center justify-center overflow-hidden transition-all {question.special ? 'bg-warning-800 duration-[2000ms]' : 'bg-primary-900 duration-500'} fixed"
   style="container-type: inline-size"
 >
     <div

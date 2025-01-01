@@ -1,5 +1,6 @@
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
+import { AudioClient, Sound } from './audio.svelte';
 import { allQuestions, ENDPOINT, UiMode } from './state.svelte';
 import { gameState } from './stores';
 
@@ -11,7 +12,7 @@ export class GameWebSocket {
   private maxReconnectTimeout = 1000;
   private reconnectTimeout = 100;
 
-  constructor(private readonly gameId: string, private readonly mode: UiMode) {
+  constructor(private readonly gameId: string, private readonly mode: UiMode, private readonly audio?: AudioClient) {
     this.connect();
   }
 
@@ -106,6 +107,9 @@ export class GameWebSocket {
         buzzersEnabled: data.enabled
       }));
     } else if (data.type === 'buzzer_pressed') {
+      if (data.buzzerId !== null) {
+        this.audio?.play(Sound.Buzzer);
+      }
       gameState.update(state => ({
         ...state,
         activeBuzzerId: data.buzzerId

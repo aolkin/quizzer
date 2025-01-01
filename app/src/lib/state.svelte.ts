@@ -2,9 +2,10 @@ export interface Question {
 	id: number,
 	text: string,
 	type: string,
+	special: boolean,
 	answer: string,
 	media_url?: string,
-	order: number,
+	order?: number,
 	points: number,
 	answered: boolean,
 }

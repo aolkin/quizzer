@@ -102,6 +102,7 @@ class BuzzerClient:
                         
             except websockets.ConnectionClosed:
                 print("Disconnected")
+                exit(1)
                 await asyncio.sleep(1)
                 await self.connect(True)
                 return

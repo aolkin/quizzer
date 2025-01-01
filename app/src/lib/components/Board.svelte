@@ -1,12 +1,14 @@
 <script lang="ts">
+  import Icon from '@iconify/svelte';
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
   import { allQuestions, type Board, type Question, UiMode } from '$lib/state.svelte';
+  import type { AudioClient } from '../audio.svelte';
   import { gameState } from '../stores';
   import { GameWebSocket } from '../websocket';
   import QuestionDisplay from './QuestionDisplay.svelte';
 
-  let { mode, board }: { board: Board; mode: UiMode } = $props();
+  let { mode, board, audio }: { board: Board; mode: UiMode, audio: AudioClient } = $props();
 
   let websocket: GameWebSocket | undefined = $derived($gameState.websocket);
   let hoveredQuestion = $state(undefined);
@@ -41,10 +43,10 @@
       {#each board.categories as category}
         <div class="flex flex-col gap-2" class:opacity-50={mode === 'host' && !isColumnVisible(category.id)}>
           <button
-            class="h-24 bg-primary-700 rounded-md font-bold p-2 text-center uppercase text-4xl hover:bg-primary-600 transition-colors"
+            class="h-24 bg-primary-700 rounded-md font-bold p-2 text-center uppercase text-2xl hover:bg-primary-600 transition-colors"
             onclick={() => mode === 'host' && websocket.revealCategory(category.id)}
           >
-            {#if mode === 'host' || isColumnVisible(category.id)}
+            {#if mode === UiMode.Host || isColumnVisible(category.id)}
               <div transition:fly={{ x: 100 }}>{category.name}</div>
             {/if}
           </button>
@@ -60,9 +62,10 @@
               >
                 <QuestionDisplay
                   {question}
+                  {audio}
                   visible={$gameState.selectedQuestion === question.id && mode === 'presentation'}
                 />
-                {#if isColumnVisible(category.id) && !$gameState.answeredQuestions.has(question.id)}
+                {#if (mode === UiMode.Host || isColumnVisible(category.id)) && !$gameState.answeredQuestions.has(question.id)}
                   <div transition:fly={{ x: 100 }}>{question.points}</div>
                 {/if}
               </button>
@@ -75,7 +78,12 @@
     {#if mode === 'host' && sidebarQuestion}
       <div class="bg-surface-800 p-4 rounded-lg border-primary-500 {$gameState.selectedQuestion === sidebarQuestion.id && 'border-2'} transition-all"
       transition:fly={{ x: 100 }}>
-        <h3 class="text-xl mb-4">{sidebarQuestion.text}</h3>
+        <h3 class="text-xl mb-4">
+          {#if sidebarQuestion.special}
+            <Icon icon="mdi:star" class="text-warning-400 inline" />
+          {/if}
+          {sidebarQuestion.points} - {sidebarQuestion.text}
+        </h3>
         <p class="text-primary-400 mb-4">{sidebarQuestion.answer}</p>
         <div class="flex gap-2">
           <button

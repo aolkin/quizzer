@@ -34,7 +34,7 @@
 	{#if mode === 'host'}
 		<div class="flex justify-between items-center mb-4">
 			<div class="flex gap-2">
-				<h3 class="text-xl font-bold">{currentQuestion?.points} pts</h3>
+				<h3 class="text-xl font-bold">{currentQuestion?.points} eggs</h3>
 				<input class="input variant-form-material" title="Points to award" type="number" bind:value={pointsToAward} />
 			</div>
 			<button
@@ -51,7 +51,7 @@
 			<div class="bg-surface-700 rounded-lg p-4" style="background-color: {team.color}">
 				<div class="flex justify-between items-center">
 					<h4 class="text-lg font-bold">{team.name}</h4>
-					<span class="text-2xl">{getScore(team)} pts</span>
+					<span class="text-2xl">{getScore(team)} eggs</span>
 				</div>
 
 				{#if mode === 'host'}
@@ -63,7 +63,7 @@
 							>
 								<span>{player.name}</span>
 								<div class="flex gap-2">
-									<span>{getScore(player)} pts</span>
+									<span>{getScore(player)} eggs</span>
 									{#if currentQuestion}
 										<button
 											class="btn-icon variant-filled-success text-2xl"

@@ -21,7 +21,7 @@ class Board(models.Model):
     order = models.SmallIntegerField()
 
     class Meta:
-        ordering = ['order']
+        ordering = ['game', 'order']
         unique_together = ['game', 'order']
 
     def __str__(self):
@@ -38,7 +38,7 @@ class Category(models.Model):
         unique_together = ['board', 'order']
 
     def __str__(self):
-        return self.name
+        return f"{self.board} - {self.name}"
 
 
 class Question(models.Model):
@@ -50,16 +50,17 @@ class Question(models.Model):
     ]
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='questions')
+    special = models.BooleanField(default=False)
     type = models.CharField(max_length=5, choices=QUESTION_TYPES, default='text')
     text = models.TextField()
     answer = models.TextField()
     points = models.IntegerField(validators=[MinValueValidator(0)])
     answered = models.BooleanField(default=False)
-    order = models.PositiveIntegerField()
+    order = models.PositiveIntegerField(blank=True, null=True)
     media_url = models.URLField(blank=True, null=True)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['category', 'order', 'points']
         unique_together = ['category', 'order']
 
     def __str__(self):
