@@ -67,10 +67,6 @@ class BuzzerThread(threading.Thread):
 
 class BuzzerClient:
     def __init__(self, game_id: int, buzzers: BuzzerThread):
-        """
-        Initialize buzzer client
-        player_ids: Dict mapping physical buzzer IDs to player IDs
-        """
         self.game_id = game_id
         self.buzzers = buzzers
         self.websocket = None
