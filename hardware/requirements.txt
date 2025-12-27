@@ -1,0 +1,9 @@
+# Hardware Buzzer Client Dependencies
+# For Raspberry Pi buzzer system
+
+# WebSocket Client Library
+websockets>=12.0,<13.0
+
+# Raspberry Pi GPIO Control
+# Note: RPi.GPIO only works on Raspberry Pi hardware
+RPi.GPIO>=0.7,<1.0
