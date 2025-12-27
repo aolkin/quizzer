@@ -71,7 +71,7 @@ class BuzzerClient:
         self.buzzers = buzzers
         self.websocket = None
     
-    async def connect(self, reconnect=False):
+    async def connect(self):
         uri = f"ws://quasar.local:8000/ws/game/{self.game_id}/"
         self.websocket = await websockets.connect(uri)
         print("Connected")
@@ -79,7 +79,6 @@ class BuzzerClient:
             'type': 'toggle_buzzers',
             'enabled': self.buzzers.enabled
         }))
-        asyncio.create_task(self.listen_for_messages())
 
     async def listen_for_messages(self):
         while True:
@@ -99,11 +98,16 @@ class BuzzerClient:
             except websockets.ConnectionClosed:
                 print("Disconnected, attempting to reconnect...")
                 await asyncio.sleep(1)
-                await self.connect(True)
-                return
+                await self.connect()
+                # Continue the loop with the new connection
             except Exception as e:
                 print(f"Error in listen_for_messages: {e}")
                 await asyncio.sleep(1)
+                # Attempt to reconnect in case of persistent errors
+                try:
+                    await self.connect()
+                except Exception as reconnect_error:
+                    print(f"Reconnection failed: {reconnect_error}")
 
     async def handle_buzzer_press(self, buzzer_id: int):
         """
@@ -126,6 +130,7 @@ class BuzzerClient:
         self.buzzers.callback = self.schedule_buzzer_press
         self.buzzers.start()
         await self.connect()
+        asyncio.create_task(self.listen_for_messages())
 
 
 if __name__ == "__main__":
