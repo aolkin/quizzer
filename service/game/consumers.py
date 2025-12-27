@@ -1,10 +1,15 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from channels.db import database_sync_to_async
-
-from game import services
 
 
 class GameConsumer(AsyncJsonWebsocketConsumer):
+    """
+    WebSocket consumer for real-time game coordination.
+
+    Handles ephemeral coordination messages (select_question, reveal_category, etc.)
+    using the relay/broadcast pattern. Database mutations (scores, question status)
+    are handled by REST API endpoints which broadcast updates via the channel layer.
+    """
+
     async def connect(self):
         self.board_id = self.scope['url_route']['kwargs']['board_id']
         self.room_group_name = f'board_{self.board_id}'
@@ -22,38 +27,25 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         )
 
     async def receive_json(self, content):
-        if content.get('type') == 'toggle_question':
-            await database_sync_to_async(services.update_question_status)(
-                content['questionId'], content['answered']
-            )
+        """
+        Relay coordination messages to all clients.
 
-        if content.get('type') == 'record_answer':
-            new_score = await database_sync_to_async(services.record_player_answer)(
-                content['playerId'],
-                content['questionId'],
-                content['isCorrect'],
-                content['points']
-            )
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'game_message',
-                    'message': {
-                        'type': 'update_score',
-                        'playerId': content['playerId'],
-                        'score': new_score
-                    }
-                }
-            )
-        else:
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'game_message',
-                    'message': content
-                }
-            )
+        Database mutations (record_answer, toggle_question) are handled by REST API.
+        This only handles ephemeral coordination messages.
+        """
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'game_message',
+                'message': content
+            }
+        )
 
     async def game_message(self, event):
+        """
+        Send message to WebSocket client.
+
+        Called when a message is broadcast to the group (from REST API or other clients).
+        """
         message = event['message']
         await self.send_json(message)

@@ -17,10 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from game.views import get_board, get_game
+from game.views import get_board, get_game, record_answer, toggle_question
 
 urlpatterns = [
     path('api/game/<int:game_id>/', get_game),
     path('api/board/<int:board_id>/', get_board),
+    path('api/board/<int:board_id>/answers/', record_answer),
+    path('api/question/<int:question_id>/', toggle_question),
     path('admin/', admin.site.urls),
 ]

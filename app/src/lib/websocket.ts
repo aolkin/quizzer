@@ -1,8 +1,9 @@
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { AudioClient, Sound } from './audio.svelte';
-import { allQuestions, ENDPOINT, UiMode } from './state.svelte';
+import { allQuestions, ENDPOINT, UiMode, shouldUpdatePlayer, shouldUpdateQuestion } from './state.svelte';
 import { gameState } from './stores';
+import { recordPlayerAnswer as apiRecordPlayerAnswer, toggleQuestion as apiToggleQuestion } from './api';
 
 const CLIENT_ID = Math.random().toString(36);
 
@@ -93,14 +94,16 @@ export class GameWebSocket {
         selectedQuestion: data.question,
       }));
     } else if (data.type === 'toggle_question') {
-      gameState.update((state) => {
-        if (data.answered) {
-          state.answeredQuestions.add(data.questionId);
-        } else if (data.answered === false) {
-          state.answeredQuestions.delete(data.questionId);
-        }
-        return state;
-      });
+      if (shouldUpdateQuestion(data.question_id, data.version)) {
+        gameState.update((state) => {
+          if (data.answered) {
+            state.answeredQuestions.add(data.question_id);
+          } else if (data.answered === false) {
+            state.answeredQuestions.delete(data.question_id);
+          }
+          return state;
+        });
+      }
     } else if (data.type === 'toggle_buzzers') {
       gameState.update(state => ({
         ...state,
@@ -115,13 +118,15 @@ export class GameWebSocket {
         activeBuzzerId: data.buzzerId
       }));
     } else if (data.type === 'update_score') {
-      gameState.update(state => ({
-        ...state,
-        scores: {
-          ...state.scores,
-          [data.playerId]: data.score,
-        }
-      }));
+      if (shouldUpdatePlayer(data.player_id, data.version)) {
+        gameState.update(state => ({
+          ...state,
+          scores: {
+            ...state.scores,
+            [data.player_id]: data.score,
+          }
+        }));
+      }
     }
   }
 
@@ -146,22 +151,25 @@ export class GameWebSocket {
     });
   }
 
-  updateQuestionStatus(questionId: number, answered: boolean) {
-    this.send({
-      type: 'toggle_question',
-      questionId,
-      answered
-    });
+  async updateQuestionStatus(questionId: number, answered: boolean) {
+    try {
+      await apiToggleQuestion(questionId, answered);
+      // Update will come via WebSocket broadcast
+    } catch (error) {
+      console.error('Failed to toggle question:', error);
+      throw error;
+    }
   }
 
-  recordPlayerAnswer(playerId: number, questionId: number, isCorrect: boolean, points?: number) {
-    this.socket.send(JSON.stringify({
-      type: 'record_answer',
-      playerId,
-      questionId,
-      isCorrect,
-      points
-    }));
+  async recordPlayerAnswer(playerId: number, questionId: number, isCorrect: boolean, points?: number) {
+    try {
+      const boardId = Number(this.gameId);  // this.gameId is actually the board ID
+      await apiRecordPlayerAnswer(boardId, playerId, questionId, isCorrect, points);
+      // Update will come via WebSocket broadcast
+    } catch (error) {
+      console.error('Failed to record answer:', error);
+      throw error;
+    }
   }
 
   toggleBuzzers(enabled: boolean) {

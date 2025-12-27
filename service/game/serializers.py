@@ -47,3 +47,15 @@ class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = ['id', 'name', 'mode', 'boards', 'teams']
+
+
+# API request serializers for mutations
+class RecordAnswerRequestSerializer(serializers.Serializer):
+    player_id = serializers.IntegerField()
+    question_id = serializers.IntegerField()
+    is_correct = serializers.BooleanField()
+    points = serializers.IntegerField(required=False, allow_null=True)
+
+
+class ToggleQuestionRequestSerializer(serializers.Serializer):
+    answered = serializers.BooleanField()

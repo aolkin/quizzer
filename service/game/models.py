@@ -58,6 +58,7 @@ class Question(models.Model):
     answered = models.BooleanField(default=False)
     order = models.PositiveIntegerField(blank=True, null=True)
     media_url = models.URLField(blank=True, null=True)
+    state_version = models.IntegerField(default=0)
 
     class Meta:
         ordering = ['category', 'order', 'points']
@@ -88,6 +89,7 @@ class Player(models.Model):
     name = models.CharField(max_length=200)
     buzzer = models.PositiveSmallIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    score_version = models.IntegerField(default=0)
 
     @property
     def score(self):

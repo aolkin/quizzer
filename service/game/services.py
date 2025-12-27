@@ -5,21 +5,51 @@ This module contains the core business logic for game operations,
 separated from WebSocket protocol handling and REST API views.
 """
 
+from dataclasses import dataclass
 from django.db import transaction
+from django.db.models import F
 from typing import Optional
 
 from .models import Player, PlayerAnswer, Question
 
 
-def update_question_status(question_id: int, answered: bool) -> None:
+@dataclass
+class PlayerAnswerResult:
+    player_id: int
+    score: int
+    version: int
+
+
+@dataclass
+class QuestionStatusResult:
+    question_id: int
+    answered: bool
+    version: int
+
+
+@transaction.atomic
+def update_question_status(question_id: int, answered: bool) -> QuestionStatusResult:
     """
     Toggle question answered status.
 
     Args:
         question_id: ID of the question to update
         answered: Whether the question has been answered
+
+    Returns:
+        QuestionStatusResult with question_id, answered status, and version
     """
-    Question.objects.filter(id=question_id).update(answered=answered)
+    question = Question.objects.select_for_update().get(id=question_id)
+    question.answered = answered
+    question.state_version = F('state_version') + 1
+    question.save(update_fields=['answered', 'state_version'])
+    question.refresh_from_db()
+
+    return QuestionStatusResult(
+        question_id=question.id,
+        answered=question.answered,
+        version=question.state_version
+    )
 
 
 @transaction.atomic
@@ -28,9 +58,9 @@ def record_player_answer(
     question_id: int,
     is_correct: bool,
     points: Optional[int] = None
-) -> int:
+) -> PlayerAnswerResult:
     """
-    Record a player's answer and return their updated score.
+    Record a player's answer and return their updated score with version.
 
     This handles the business logic for tracking player answers with an undo mechanism:
     - If the correctness changes (e.g., correct→incorrect), delete the existing answer
@@ -46,7 +76,7 @@ def record_player_answer(
         points: Optional custom point value (uses question's points if None)
 
     Returns:
-        The player's updated total score
+        PlayerAnswerResult with player_id, updated score, and version
     """
     try:
         answer = PlayerAnswer.objects.get(
@@ -69,5 +99,14 @@ def record_player_answer(
             points=points
         )
 
-    # Return updated score
-    return Player.objects.get(id=player_id).score
+    # Get player with lock and increment version
+    player = Player.objects.select_for_update().get(id=player_id)
+    player.score_version = F('score_version') + 1
+    player.save(update_fields=['score_version'])
+    player.refresh_from_db()
+
+    return PlayerAnswerResult(
+        player_id=player.id,
+        score=player.score,
+        version=player.score_version
+    )
