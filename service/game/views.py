@@ -8,8 +8,8 @@ from typing import Dict, Any
 from .models import Game, Board, Player, Question
 from .serializers import (
     BoardSerializer, GameSerializer,
-    RecordAnswerRequestSerializer, RecordAnswerResponseSerializer,
-    ToggleQuestionRequestSerializer, ToggleQuestionResponseSerializer
+    RecordAnswerRequestSerializer,
+    ToggleQuestionRequestSerializer
 )
 from . import services
 
@@ -95,17 +95,14 @@ def record_answer(request, board_id):
         points=data.get('points')
     )
 
-    broadcast_to_board(board_id, 'update_score', {
+    response_data = {
         'playerId': result.player_id,
         'score': result.score,
         'version': result.version
-    })
+    }
 
-    return Response(RecordAnswerResponseSerializer({
-        'playerId': result.player_id,
-        'score': result.score,
-        'version': result.version
-    }).data)
+    broadcast_to_board(board_id, 'update_score', response_data)
+    return Response(response_data)
 
 
 @api_view(['PATCH'])
@@ -134,14 +131,11 @@ def toggle_question(request, question_id):
         answered=data['answered']
     )
 
-    broadcast_to_board(board_id, 'toggle_question', {
+    response_data = {
         'questionId': result.question_id,
         'answered': result.answered,
         'version': result.version
-    })
+    }
 
-    return Response(ToggleQuestionResponseSerializer({
-        'questionId': result.question_id,
-        'answered': result.answered,
-        'version': result.version
-    }).data)
+    broadcast_to_board(board_id, 'toggle_question', response_data)
+    return Response(response_data)
