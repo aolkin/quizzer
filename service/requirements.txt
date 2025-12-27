@@ -1,0 +1,20 @@
+# Django Backend Dependencies for Quizzer Application
+# Generated based on imports and settings.py analysis
+
+# Core Django Framework
+Django>=5.1,<5.2
+
+# REST API Support
+djangorestframework>=3.14,<4.0
+
+# CORS Headers
+django-cors-headers>=4.0,<5.0
+
+# WebSocket Support (Django Channels)
+channels>=4.0,<5.0
+
+# ASGI Server for Channels
+daphne>=4.0,<5.0
+
+# Color Field Support for Team Colors
+django-colorfield>=0.11,<1.0
