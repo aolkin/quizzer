@@ -57,6 +57,54 @@ bootstrapped or improved with the use of AI assistants (including this README).
 - **Buzzer System**: Custom multiplexed buzzer controller
 - **Communication**: WebSocket client for real-time integration
 
+## Communication Architecture
+
+The system uses a **hybrid REST + WebSocket architecture** optimized for real-time game synchronization:
+
+### WebSocket Broadcast Relay Pattern
+For **ephemeral UI coordination** (game state that doesn't persist):
+- Client sends coordination message (e.g., `{type: 'select_question', question: 5}`)
+- Server **forwards message as-is** to all connected clients (relay/broadcast)
+- No server-side processing or validation - just routing
+- Examples: `select_question`, `reveal_category`, `select_board`
+
+**Why this pattern:**
+- Fast iteration - add new UI features without server changes
+- Minimal latency - no processing overhead
+- Simple mental model - client-to-client coordination via server relay
+- Perfect for trusted environments (local game night)
+
+### REST API for Persistence
+For **database mutations** (scores, question state):
+- Client sends HTTP request to REST endpoint
+- Server validates, updates database, returns response with version number
+- Server broadcasts update to all WebSocket clients
+- All clients (including requester) update UI from broadcast
+- Version numbers prevent race conditions from out-of-order messages
+
+**Why this pattern:**
+- Proper error handling (HTTP status codes)
+- Immediate feedback to requester
+- Prevents stuck states (always get response)
+- Built-in retry mechanisms
+- Easy to test
+
+### Message Flow Example
+```
+Host selects question (coordination):
+  Client → WS: {type: 'select_question', question: 5}
+  Server → All clients via WS: (same message)
+  All UIs update
+
+Host awards points (persistence):
+  Client → REST: POST /api/games/1/answers/ {playerId: 1, isCorrect: true}
+  Server → Client: 200 OK {score: 600, version: 42}
+  Server → All clients via WS: {type: 'update_score', playerId: 1, score: 600, version: 42}
+  All UIs update (using version to ignore stale updates)
+```
+
+This hybrid approach combines the simplicity of broadcast relay with the robustness of REST APIs.
+
 ## Quick Start
 
 ### Prerequisites
