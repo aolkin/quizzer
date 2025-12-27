@@ -13,27 +13,36 @@
 - Can't reuse logic outside WebSocket context
 
 ## Proposed Solution
-Extract business logic to a new `service/game/services.py`:
+Extract business logic to a new `service/game/services.py` as **module functions** (not a class with staticmethods):
 
 ```python
 # services.py
-class GameService:
-    @staticmethod
-    def record_answer(player_id, question_id, is_correct, points):
-        """Record a player's answer and return updated score"""
-        # Business logic here
+from django.db import transaction
 
-    @staticmethod
-    def toggle_question_status(question_id, answered):
-        """Toggle question answered status"""
-        # Logic here
+def update_question_status(question_id: int, answered: bool) -> None:
+    """Toggle question answered status"""
+    Question.objects.filter(id=question_id).update(answered=answered)
+
+@transaction.atomic
+def record_player_answer(player_id: int, question_id: int, is_correct: bool, points: int = None) -> int:
+    """Record a player's answer and return updated score"""
+    # Multi-step business logic with proper transaction handling
+    # ...
+    return player.score
 ```
 
+**Why module functions instead of a class?**
+- No need for class wrapper - just use functions
+- Simpler imports: `from . import services; services.record_answer(...)`
+- Can add `@transaction.atomic` for proper atomicity
+- More Pythonic for stateless operations
+
 ## Benefits
-- Testable business logic
-- Reusable in API views or admin actions
+- Testable business logic without WebSocket infrastructure
+- Reusable from REST API views, admin actions, management commands
 - Cleaner WebSocket consumer focused on message routing
-- Easier to add validation and error handling
+- Proper transaction handling and error boundaries
+- Easier to add validation
 
 ## Action Items
 - [ ] Create `service/game/services.py`
