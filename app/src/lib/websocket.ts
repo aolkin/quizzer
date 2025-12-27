@@ -3,7 +3,7 @@ import { get } from 'svelte/store';
 import { AudioClient, Sound } from './audio.svelte';
 import { allQuestions, ENDPOINT, UiMode, shouldUpdatePlayer, shouldUpdateQuestion } from './state.svelte';
 import { gameState } from './stores';
-import { recordPlayerAnswer as apiRecordPlayerAnswer, toggleQuestion as apiToggleQuestion } from './api';
+import { recordPlayerAnswer as apiRecordPlayerAnswer, toggleQuestion as apiToggleQuestion, getBoard as apiGetBoard } from './api';
 
 const CLIENT_ID = Math.random().toString(36);
 
@@ -88,12 +88,7 @@ export class GameWebSocket {
     } else if (data.type === 'select_board') {
       const updateBoard = async () => {
         try {
-          const response = await fetch(`http://${ENDPOINT}/api/board/${data.board}/`);
-          if (!response.ok) {
-            console.error('Failed to fetch board:', response.statusText);
-            return;
-          }
-          const board = await response.json();
+          const board = await apiGetBoard(data.board);
           gameState.update((state) => {
             return state.currentBoard !== data.board ? state : ({
               ...state,

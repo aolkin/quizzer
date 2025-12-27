@@ -3,14 +3,19 @@ import { ENDPOINT } from './state.svelte';
 async function apiRequest<T>(
 	url: string,
 	method: string,
-	body: object,
+	body: object | undefined,
 	errorMessage: string
 ): Promise<T> {
-	const response = await fetch(`http://${ENDPOINT}${url}`, {
+	const options: RequestInit = {
 		method,
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body)
-	});
+		headers: { 'Content-Type': 'application/json' }
+	};
+
+	if (body !== undefined) {
+		options.body = JSON.stringify(body);
+	}
+
+	const response = await fetch(`http://${ENDPOINT}${url}`, options);
 
 	if (!response.ok) {
 		const error = await response.text();
@@ -44,5 +49,14 @@ export async function toggleQuestion(
 		'PATCH',
 		{ answered },
 		'Failed to toggle question'
+	);
+}
+
+export async function getBoard(boardId: number): Promise<any> {
+	return apiRequest(
+		`/api/board/${boardId}/`,
+		'GET',
+		undefined,
+		'Failed to fetch board'
 	);
 }
