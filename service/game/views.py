@@ -130,19 +130,6 @@ def toggle_question(request, question_id):
         question = Question.objects.select_related(
             'category__board'
         ).get(id=question_id)
-
-        # Check that all required relationships exist
-        if not question.category:
-            return Response(
-                {'error': 'Question has no category'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        if not question.category.board:
-            return Response(
-                {'error': 'Question category has no board'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
         board_id = question.category.board_id
     except Question.DoesNotExist:
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
