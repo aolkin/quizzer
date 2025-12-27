@@ -3,6 +3,7 @@ from channels.layers import get_channel_layer
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from typing import Dict, Any
 
 from .models import Game, Board, Player, Question
 from .serializers import (
@@ -11,6 +12,21 @@ from .serializers import (
     ToggleQuestionRequestSerializer, ToggleQuestionResponseSerializer
 )
 from . import services
+
+
+def broadcast_to_board(board_id: int, message_type: str, data: Dict[str, Any]) -> None:
+    """Broadcast a message to all WebSocket clients connected to a board."""
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'board_{board_id}',
+        {
+            'type': 'game_message',
+            'message': {
+                'type': message_type,
+                **data
+            }
+        }
+    )
 
 
 @api_view(['GET'])
@@ -79,27 +95,17 @@ def record_answer(request, board_id):
         points=data.get('points')
     )
 
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f'board_{board_id}',
-        {
-            'type': 'game_message',
-            'message': {
-                'type': 'update_score',
-                'playerId': result.player_id,
-                'score': result.score,
-                'version': result.version
-            }
-        }
-    )
-
-    response_data = {
+    broadcast_to_board(board_id, 'update_score', {
         'playerId': result.player_id,
         'score': result.score,
         'version': result.version
-    }
-    response_serializer = RecordAnswerResponseSerializer(response_data)
-    return Response(response_serializer.data, status=status.HTTP_200_OK)
+    })
+
+    return Response(RecordAnswerResponseSerializer({
+        'playerId': result.player_id,
+        'score': result.score,
+        'version': result.version
+    }).data)
 
 
 @api_view(['PATCH'])
@@ -118,9 +124,7 @@ def toggle_question(request, question_id):
     data = request_serializer.validated_data
 
     try:
-        question = Question.objects.select_related(
-            'category__board'
-        ).get(id=question_id)
+        question = Question.objects.select_related('category__board').get(id=question_id)
         board_id = question.category.board_id
     except Question.DoesNotExist:
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -130,24 +134,14 @@ def toggle_question(request, question_id):
         answered=data['answered']
     )
 
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f'board_{board_id}',
-        {
-            'type': 'game_message',
-            'message': {
-                'type': 'toggle_question',
-                'questionId': result.question_id,
-                'answered': result.answered,
-                'version': result.version
-            }
-        }
-    )
-
-    response_data = {
+    broadcast_to_board(board_id, 'toggle_question', {
         'questionId': result.question_id,
         'answered': result.answered,
         'version': result.version
-    }
-    response_serializer = ToggleQuestionResponseSerializer(response_data)
-    return Response(response_serializer.data, status=status.HTTP_200_OK)
+    })
+
+    return Response(ToggleQuestionResponseSerializer({
+        'questionId': result.question_id,
+        'answered': result.answered,
+        'version': result.version
+    }).data)
