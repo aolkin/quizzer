@@ -12,7 +12,6 @@ export class GameWebSocket {
   private reconnectAttempts = 0;
   private maxReconnectTimeout = 1000;
   private reconnectTimeout = 100;
-  private reconnectTimer?: number;
 
   constructor(private readonly gameId: string, private readonly mode: UiMode, private readonly audio?: AudioClient) {
     this.connect();
@@ -23,51 +22,30 @@ export class GameWebSocket {
     this.socket.onmessage = (event) => this.handleMessage(event);
 
     this.socket.onclose = () => {
-      this.scheduleReconnect();
-    };
-
-    this.socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      // onclose will be called automatically after onerror
+      setTimeout(() => {
+        this.reconnectAttempts++;
+        this.reconnectTimeout = Math.min(this.reconnectTimeout * 2, this.maxReconnectTimeout);
+        this.connect();
+      }, this.reconnectTimeout);
     };
 
     this.socket.onopen = () => {
       this.reconnectAttempts = 0;
       this.reconnectTimeout = 100;
-      console.log('WebSocket connected');
       this.send({ type: 'join_game' });
     };
   }
 
-  private scheduleReconnect() {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-    }
-
-    this.reconnectAttempts++;
-    this.reconnectTimeout = Math.min(this.reconnectTimeout * 2, this.maxReconnectTimeout);
-
-    console.log(`Reconnecting in ${this.reconnectTimeout}ms (attempt ${this.reconnectAttempts})`);
-
-    this.reconnectTimer = setTimeout(() => {
-      this.connect();
-    }, this.reconnectTimeout);
-  }
-
   send(message: any) {
-        if (this.socket?.readyState === WebSocket.OPEN) {
-            try {
-                this.socket.send(JSON.stringify({
-                  ...message,
-                  clientId: CLIENT_ID,
-                }));
-            } catch (error) {
-                console.error('Failed to send WebSocket message:', error);
-            }
-        } else {
-            console.warn('Cannot send message: WebSocket is not open');
-        }
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({
+        ...message,
+        clientId: CLIENT_ID,
+      }));
+    } else {
+      throw new Error('WebSocket is closed');
     }
+  }
 
   handleMessage(event) {
     const data = JSON.parse(event.data);
