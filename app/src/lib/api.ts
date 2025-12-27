@@ -1,13 +1,13 @@
 import { ENDPOINT } from './state.svelte';
 
 export async function recordPlayerAnswer(
-	gameId: number,
+	boardId: number,
 	playerId: number,
 	questionId: number,
 	isCorrect: boolean,
 	points?: number
 ): Promise<{ playerId: number; score: number; version: number }> {
-	const response = await fetch(`http://${ENDPOINT}/api/games/${gameId}/answers/`, {
+	const response = await fetch(`http://${ENDPOINT}/api/board/${boardId}/answers/`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ playerId, questionId, isCorrect, points })
@@ -26,7 +26,7 @@ export async function toggleQuestion(
 	questionId: number,
 	answered: boolean
 ): Promise<{ questionId: number; answered: boolean; version: number }> {
-	const response = await fetch(`http://${ENDPOINT}/api/questions/${questionId}/`, {
+	const response = await fetch(`http://${ENDPOINT}/api/question/${questionId}/`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ answered })

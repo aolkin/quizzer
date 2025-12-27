@@ -33,11 +33,11 @@ def get_game(request, game_id):
 
 
 @api_view(['POST'])
-def record_answer(request, game_id):
+def record_answer(request, board_id):
     """
     Record a player's answer and broadcast the score update.
 
-    POST /api/games/{game_id}/answers/
+    POST /api/boards/{board_id}/answers/
     Body: {playerId, questionId, isCorrect, points?}
     Returns: {playerId, score, version}
     """
@@ -48,12 +48,31 @@ def record_answer(request, game_id):
 
     data = request_serializer.validated_data
 
-    # Validate that player and question exist
+    # Validate that board exists
     try:
-        Player.objects.get(id=data['playerId'])
-        Question.objects.get(id=data['questionId'])
+        board = Board.objects.select_related('game').get(id=board_id)
+    except Board.DoesNotExist:
+        return Response({'error': 'Board not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Validate that player exists and belongs to this game
+    try:
+        player = Player.objects.select_related('team__game').get(id=data['playerId'])
+        if player.team.game_id != board.game_id:
+            return Response(
+                {'error': 'Player does not belong to this game'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     except Player.DoesNotExist:
         return Response({'error': 'Player not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Validate that question exists and belongs to this board
+    try:
+        question = Question.objects.select_related('category__board').get(id=data['questionId'])
+        if question.category.board_id != board_id:
+            return Response(
+                {'error': 'Question does not belong to this board'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     except Question.DoesNotExist:
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -65,10 +84,10 @@ def record_answer(request, game_id):
         points=data.get('points')
     )
 
-    # Broadcast update to all WebSocket clients
+    # Broadcast update to all WebSocket clients connected to this board
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        f'board_{game_id}',
+        f'board_{board_id}',
         {
             'type': 'game_message',
             'message': {
@@ -106,12 +125,25 @@ def toggle_question(request, question_id):
 
     data = request_serializer.validated_data
 
-    # Validate that question exists and get game_id for broadcasting
+    # Validate that question exists and get board_id for broadcasting
     try:
         question = Question.objects.select_related(
-            'category__board__game'
+            'category__board'
         ).get(id=question_id)
-        game_id = question.category.board.game.id
+
+        # Check that all required relationships exist
+        if not question.category:
+            return Response(
+                {'error': 'Question has no category'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        if not question.category.board:
+            return Response(
+                {'error': 'Question category has no board'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        board_id = question.category.board_id
     except Question.DoesNotExist:
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -121,10 +153,10 @@ def toggle_question(request, question_id):
         answered=data['answered']
     )
 
-    # Broadcast update to all WebSocket clients
+    # Broadcast update to all WebSocket clients connected to this board
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        f'board_{game_id}',
+        f'board_{board_id}',
         {
             'type': 'game_message',
             'message': {

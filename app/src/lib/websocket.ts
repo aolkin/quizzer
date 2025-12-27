@@ -163,8 +163,8 @@ export class GameWebSocket {
 
   async recordPlayerAnswer(playerId: number, questionId: number, isCorrect: boolean, points?: number) {
     try {
-      const gameId = Number(this.gameId);
-      await apiRecordPlayerAnswer(gameId, playerId, questionId, isCorrect, points);
+      const boardId = Number(this.gameId);  // this.gameId is actually the board ID
+      await apiRecordPlayerAnswer(boardId, playerId, questionId, isCorrect, points);
       // Update will come via WebSocket broadcast
     } catch (error) {
       console.error('Failed to record answer:', error);
