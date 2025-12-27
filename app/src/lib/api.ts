@@ -26,11 +26,11 @@ export async function recordPlayerAnswer(
 	questionId: number,
 	isCorrect: boolean,
 	points?: number
-): Promise<{ playerId: number; score: number; version: number }> {
+): Promise<{ player_id: number; score: number; version: number }> {
 	return apiRequest(
 		`/api/board/${boardId}/answers/`,
 		'POST',
-		{ playerId, questionId, isCorrect, points },
+		{ player_id: playerId, question_id: questionId, is_correct: isCorrect, points },
 		'Failed to record answer'
 	);
 }
@@ -38,7 +38,7 @@ export async function recordPlayerAnswer(
 export async function toggleQuestion(
 	questionId: number,
 	answered: boolean
-): Promise<{ questionId: number; answered: boolean; version: number }> {
+): Promise<{ question_id: number; answered: boolean; version: number }> {
 	return apiRequest(
 		`/api/question/${questionId}/`,
 		'PATCH',

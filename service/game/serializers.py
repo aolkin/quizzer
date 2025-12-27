@@ -51,9 +51,9 @@ class GameSerializer(serializers.ModelSerializer):
 
 # API request serializers for mutations
 class RecordAnswerRequestSerializer(serializers.Serializer):
-    playerId = serializers.IntegerField()
-    questionId = serializers.IntegerField()
-    isCorrect = serializers.BooleanField()
+    player_id = serializers.IntegerField()
+    question_id = serializers.IntegerField()
+    is_correct = serializers.BooleanField()
     points = serializers.IntegerField(required=False, allow_null=True)
 
 

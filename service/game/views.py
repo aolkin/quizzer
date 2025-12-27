@@ -1,5 +1,6 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from dataclasses import asdict
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -54,8 +55,8 @@ def record_answer(request, board_id):
     Record a player's answer and broadcast the score update.
 
     POST /api/boards/{board_id}/answers/
-    Body: {playerId, questionId, isCorrect, points?}
-    Returns: {playerId, score, version}
+    Body: {player_id, question_id, is_correct, points?}
+    Returns: {player_id, score, version}
     """
     request_serializer = RecordAnswerRequestSerializer(data=request.data)
     if not request_serializer.is_valid():
@@ -69,7 +70,7 @@ def record_answer(request, board_id):
         return Response({'error': 'Board not found'}, status=status.HTTP_404_NOT_FOUND)
 
     try:
-        player = Player.objects.select_related('team__game').get(id=data['playerId'])
+        player = Player.objects.select_related('team__game').get(id=data['player_id'])
         if player.team.game_id != board.game_id:
             return Response(
                 {'error': 'Player does not belong to this game'},
@@ -79,7 +80,7 @@ def record_answer(request, board_id):
         return Response({'error': 'Player not found'}, status=status.HTTP_404_NOT_FOUND)
 
     try:
-        question = Question.objects.select_related('category__board').get(id=data['questionId'])
+        question = Question.objects.select_related('category__board').get(id=data['question_id'])
         if question.category.board_id != board_id:
             return Response(
                 {'error': 'Question does not belong to this board'},
@@ -89,18 +90,13 @@ def record_answer(request, board_id):
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
     result = services.record_player_answer(
-        player_id=data['playerId'],
-        question_id=data['questionId'],
-        is_correct=data['isCorrect'],
+        player_id=data['player_id'],
+        question_id=data['question_id'],
+        is_correct=data['is_correct'],
         points=data.get('points')
     )
 
-    response_data = {
-        'playerId': result.player_id,
-        'score': result.score,
-        'version': result.version
-    }
-
+    response_data = asdict(result)
     broadcast_to_board(board_id, 'update_score', response_data)
     return Response(response_data)
 
@@ -112,7 +108,7 @@ def toggle_question(request, question_id):
 
     PATCH /api/questions/{question_id}/
     Body: {answered}
-    Returns: {questionId, answered, version}
+    Returns: {question_id, answered, version}
     """
     request_serializer = ToggleQuestionRequestSerializer(data=request.data)
     if not request_serializer.is_valid():
@@ -131,11 +127,6 @@ def toggle_question(request, question_id):
         answered=data['answered']
     )
 
-    response_data = {
-        'questionId': result.question_id,
-        'answered': result.answered,
-        'version': result.version
-    }
-
+    response_data = asdict(result)
     broadcast_to_board(board_id, 'toggle_question', response_data)
     return Response(response_data)

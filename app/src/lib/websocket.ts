@@ -94,12 +94,12 @@ export class GameWebSocket {
         selectedQuestion: data.question,
       }));
     } else if (data.type === 'toggle_question') {
-      if (shouldUpdateQuestion(data.questionId, data.version)) {
+      if (shouldUpdateQuestion(data.question_id, data.version)) {
         gameState.update((state) => {
           if (data.answered) {
-            state.answeredQuestions.add(data.questionId);
+            state.answeredQuestions.add(data.question_id);
           } else if (data.answered === false) {
-            state.answeredQuestions.delete(data.questionId);
+            state.answeredQuestions.delete(data.question_id);
           }
           return state;
         });
@@ -118,12 +118,12 @@ export class GameWebSocket {
         activeBuzzerId: data.buzzerId
       }));
     } else if (data.type === 'update_score') {
-      if (shouldUpdatePlayer(data.playerId, data.version)) {
+      if (shouldUpdatePlayer(data.player_id, data.version)) {
         gameState.update(state => ({
           ...state,
           scores: {
             ...state.scores,
-            [data.playerId]: data.score,
+            [data.player_id]: data.score,
           }
         }));
       }
