@@ -10,7 +10,7 @@ const CLIENT_ID = Math.random().toString(36);
 export class GameWebSocket {
   private socket: WebSocket;
   private reconnectAttempts = 0;
-  private maxReconnectTimeout = 30000;  // 30 seconds max backoff
+  private maxReconnectTimeout = 1000;
   private reconnectTimeout = 100;
   private reconnectTimer?: number;
 
@@ -93,11 +93,16 @@ export class GameWebSocket {
             return state.currentBoard !== data.board ? state : ({
               ...state,
               answeredQuestions: new Set(allQuestions(board).filter(q => q.answered).map(q => q.id)),
-              board
+              board,
+              lastError: undefined
             });
           });
         } catch (error) {
           console.error('Error fetching board:', error);
+          gameState.update((state) => ({
+            ...state,
+            lastError: `Failed to load board: ${error instanceof Error ? error.message : String(error)}`
+          }));
         }
       }
       gameState.update((state) => {
@@ -180,8 +185,13 @@ export class GameWebSocket {
     try {
       await apiToggleQuestion(questionId, answered);
       // Update will come via WebSocket broadcast
+      gameState.update((state) => ({ ...state, lastError: undefined }));
     } catch (error) {
       console.error('Failed to toggle question:', error);
+      gameState.update((state) => ({
+        ...state,
+        lastError: `Failed to update question: ${error instanceof Error ? error.message : String(error)}`
+      }));
       throw error;
     }
   }
@@ -191,8 +201,13 @@ export class GameWebSocket {
       const boardId = Number(this.gameId);  // this.gameId is actually the board ID
       await apiRecordPlayerAnswer(boardId, playerId, questionId, isCorrect, points);
       // Update will come via WebSocket broadcast
+      gameState.update((state) => ({ ...state, lastError: undefined }));
     } catch (error) {
       console.error('Failed to record answer:', error);
+      gameState.update((state) => ({
+        ...state,
+        lastError: `Failed to record answer: ${error instanceof Error ? error.message : String(error)}`
+      }));
       throw error;
     }
   }

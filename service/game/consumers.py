@@ -40,19 +40,6 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         if 'type' not in content or not isinstance(content['type'], str):
             return
 
-        # Valid coordination message types (ephemeral, no DB changes)
-        valid_types = {
-            'join_game',
-            'select_question',
-            'reveal_category',
-            'select_board',
-            'toggle_buzzers',
-            'buzzer_pressed'
-        }
-
-        if content['type'] not in valid_types:
-            return
-
         await self.channel_layer.group_send(
             self.room_group_name,
             {
