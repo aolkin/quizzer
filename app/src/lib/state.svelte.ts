@@ -59,22 +59,25 @@ export enum UiMode {
 const playerVersions = new Map<number, number>();
 const questionVersions = new Map<number, number>();
 
-export function shouldUpdatePlayer(playerId: number, version: number): boolean {
-	const currentVersion = playerVersions.get(playerId) ?? 0;
+function shouldUpdate(
+	versionMap: Map<number, number>,
+	entityId: number,
+	version: number,
+	entityType: string
+): boolean {
+	const currentVersion = versionMap.get(entityId) ?? 0;
 	if (version >= currentVersion) {
-		playerVersions.set(playerId, version);
+		versionMap.set(entityId, version);
 		return true;
 	}
-	console.log(`Ignoring stale player update: version ${version} < ${currentVersion}`);
+	console.log(`Ignoring stale ${entityType} update: version ${version} < ${currentVersion}`);
 	return false;
 }
 
+export function shouldUpdatePlayer(playerId: number, version: number): boolean {
+	return shouldUpdate(playerVersions, playerId, version, 'player');
+}
+
 export function shouldUpdateQuestion(questionId: number, version: number): boolean {
-	const currentVersion = questionVersions.get(questionId) ?? 0;
-	if (version >= currentVersion) {
-		questionVersions.set(questionId, version);
-		return true;
-	}
-	console.log(`Ignoring stale question update: version ${version} < ${currentVersion}`);
-	return false;
+	return shouldUpdate(questionVersions, questionId, version, 'question');
 }
