@@ -48,10 +48,13 @@ def record_player_answer(
     Returns:
         The player's updated total score
     """
-    answer = PlayerAnswer.objects.filter(
-        player_id=player_id,
-        question_id=question_id
-    ).first()
+    try:
+        answer = PlayerAnswer.objects.get(
+            player_id=player_id,
+            question_id=question_id
+        )
+    except PlayerAnswer.DoesNotExist:
+        answer = None
 
     if answer:
         # If correctness changed, delete the answer (undo mechanism)
