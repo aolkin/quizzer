@@ -54,3 +54,27 @@ export enum UiMode {
 	Host = 'host',
 	Presentation = 'presentation',
 }
+
+// Version tracking for preventing out-of-order updates
+const playerVersions = new Map<number, number>();
+const questionVersions = new Map<number, number>();
+
+export function shouldUpdatePlayer(playerId: number, version: number): boolean {
+	const currentVersion = playerVersions.get(playerId) ?? 0;
+	if (version >= currentVersion) {
+		playerVersions.set(playerId, version);
+		return true;
+	}
+	console.log(`Ignoring stale player update: version ${version} < ${currentVersion}`);
+	return false;
+}
+
+export function shouldUpdateQuestion(questionId: number, version: number): boolean {
+	const currentVersion = questionVersions.get(questionId) ?? 0;
+	if (version >= currentVersion) {
+		questionVersions.set(questionId, version);
+		return true;
+	}
+	console.log(`Ignoring stale question update: version ${version} < ${currentVersion}`);
+	return false;
+}
