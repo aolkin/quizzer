@@ -12,7 +12,6 @@ interface GameState {
   selectedQuestion?: number;
   buzzersEnabled: boolean;
   activeBuzzerId?: number;
-  lastError?: string;
 }
 
 export const gameState: Writable<GameState> = writable({
