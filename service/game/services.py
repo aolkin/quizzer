@@ -7,6 +7,7 @@ separated from WebSocket protocol handling and REST API views.
 
 from dataclasses import dataclass
 from django.db import transaction
+from django.db.models import F
 from typing import Optional
 
 from .models import Player, PlayerAnswer, Question
@@ -38,8 +39,6 @@ def update_question_status(question_id: int, answered: bool) -> QuestionStatusRe
     Returns:
         QuestionStatusResult with question_id, answered status, and version
     """
-    from django.db.models import F
-
     question = Question.objects.select_for_update().get(id=question_id)
     question.answered = answered
     question.state_version = F('state_version') + 1
@@ -79,8 +78,6 @@ def record_player_answer(
     Returns:
         PlayerAnswerResult with player_id, updated score, and version
     """
-    from django.db.models import F
-
     try:
         answer = PlayerAnswer.objects.get(
             player_id=player_id,
