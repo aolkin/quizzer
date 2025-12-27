@@ -61,7 +61,29 @@ class Question(models.Model):
 
 ### Phase 2: Update Service Layer
 
-#### 2.1 Modify `record_player_answer()` to Return Version
+#### 2.1 Define Result Types
+**File**: `service/game/services.py`
+
+Add dataclass result types at the top of the file:
+```python
+from dataclasses import dataclass
+
+@dataclass
+class PlayerAnswerResult:
+    player_id: int
+    score: int
+    version: int
+
+@dataclass
+class QuestionStatusResult:
+    question_id: int
+    answered: bool
+    version: int
+```
+
+**Why**: Structured types are type-safe, self-documenting, and better than dicts
+
+#### 2.2 Modify `record_player_answer()` to Return Structured Result
 **File**: `service/game/services.py`
 
 Current signature:
@@ -72,19 +94,19 @@ def record_player_answer(...) -> int:
 
 New signature:
 ```python
-def record_player_answer(...) -> dict:
-    # Returns {'score': int, 'version': int}
+def record_player_answer(...) -> PlayerAnswerResult:
+    # Returns structured result with player_id, score, and version
 ```
 
 Implementation changes:
 1. Get player with `select_for_update()` for atomic lock
 2. After score update, increment version: `player.score_version = F('score_version') + 1`
 3. Save and refresh to get new version number
-4. Return dict with both score and version
+4. Return `PlayerAnswerResult(player_id=player.id, score=player.score, version=player.score_version)`
 
 **Why**: Atomic version increment prevents race conditions
 
-#### 2.2 Modify `update_question_status()` to Return Version
+#### 2.3 Modify `update_question_status()` to Return Structured Result
 **File**: `service/game/services.py`
 
 Current signature:
@@ -94,8 +116,8 @@ def update_question_status(...) -> None:
 
 New signature:
 ```python
-def update_question_status(...) -> dict:
-    # Returns {'answered': bool, 'version': int}
+def update_question_status(...) -> QuestionStatusResult:
+    # Returns structured result with question_id, answered, and version
 ```
 
 Implementation changes:
@@ -103,7 +125,7 @@ Implementation changes:
 2. Update answered status
 3. Increment version: `question.state_version = F('state_version') + 1`
 4. Save and refresh
-5. Return dict with answered status and version
+5. Return `QuestionStatusResult(question_id=question.id, answered=question.answered, version=question.state_version)`
 
 ### Phase 3: Create REST API Endpoints
 
@@ -125,7 +147,7 @@ Request body:
 Response (200 OK):
 ```json
 {
-  "success": true,
+  "playerId": 123,
   "score": 600,
   "version": 42
 }
@@ -136,13 +158,15 @@ Error responses:
 - `400 Bad Request`: Invalid data (missing fields, wrong types)
 - `500 Internal Server Error`: Database error
 
-Implementation:
-1. Validate request data
-2. Call `services.record_player_answer()`
-3. Broadcast update via channel layer
-4. Return response with score and version
+**Note**: No "success" field needed - HTTP status codes indicate success/failure
 
-**Broadcast message**:
+Implementation:
+1. Validate request data using serializer
+2. Call `services.record_player_answer()` to get `PlayerAnswerResult`
+3. **REST API broadcasts update** via channel layer to all WebSocket clients
+4. Return 200 OK response with score and version
+
+**Broadcast message** (sent by REST API):
 ```json
 {
   "type": "update_score",
@@ -151,6 +175,11 @@ Implementation:
   "version": 42
 }
 ```
+
+**Flow**:
+- Client → REST API → Service Layer → Database
+- REST API → Channel Layer → All WebSocket clients (including requester)
+- REST API → HTTP Response → Original requester
 
 #### 3.2 Add Question Toggle Endpoint
 **File**: `service/game/views.py`
@@ -167,7 +196,7 @@ Request body:
 Response (200 OK):
 ```json
 {
-  "success": true,
+  "questionId": 456,
   "answered": true,
   "version": 15
 }
@@ -177,13 +206,15 @@ Error responses:
 - `404 Not Found`: Question doesn't exist
 - `400 Bad Request`: Invalid data
 
-Implementation:
-1. Validate request data
-2. Call `services.update_question_status()`
-3. Broadcast update via channel layer
-4. Return response with status and version
+**Note**: No "success" field needed - HTTP status codes indicate success/failure
 
-**Broadcast message**:
+Implementation:
+1. Validate request data using serializer
+2. Call `services.update_question_status()` to get `QuestionStatusResult`
+3. **REST API broadcasts update** via channel layer to all WebSocket clients
+4. Return 200 OK response with status and version
+
+**Broadcast message** (sent by REST API):
 ```json
 {
   "type": "toggle_question",
@@ -192,6 +223,11 @@ Implementation:
   "version": 15
 }
 ```
+
+**Flow**:
+- Client → REST API → Service Layer → Database
+- REST API → Channel Layer → All WebSocket clients (including requester)
+- REST API → HTTP Response → Original requester
 
 #### 3.3 Create Serializers
 **File**: `service/game/serializers.py`
@@ -205,7 +241,7 @@ class RecordAnswerRequestSerializer(serializers.Serializer):
     points = serializers.IntegerField(required=False, allow_null=True)
 
 class RecordAnswerResponseSerializer(serializers.Serializer):
-    success = serializers.BooleanField()
+    playerId = serializers.IntegerField()
     score = serializers.IntegerField()
     version = serializers.IntegerField()
 
@@ -213,10 +249,12 @@ class ToggleQuestionRequestSerializer(serializers.Serializer):
     answered = serializers.BooleanField()
 
 class ToggleQuestionResponseSerializer(serializers.Serializer):
-    success = serializers.BooleanField()
+    questionId = serializers.IntegerField()
     answered = serializers.BooleanField()
     version = serializers.IntegerField()
 ```
+
+**Note**: Response serializers don't include "success" field - HTTP status codes handle that
 
 #### 3.4 Update URL Configuration
 **File**: `service/quizzer/urls.py`
@@ -240,12 +278,26 @@ Current behavior:
 - Calls service layer and broadcasts result
 
 New behavior:
-- Remove `record_answer` handling (will come via REST API)
-- Remove `toggle_question` handling (will come via REST API)
+- **Completely remove** `record_answer` handling (now via REST API)
+- **Completely remove** `toggle_question` handling (now via REST API)
 - Keep relay pattern for coordination messages (select_question, reveal_category, etc.)
-- Keep broadcast relay for messages from REST API
+- Continue receiving and forwarding broadcasts from REST API to clients
 
-**Why**: Separates concerns - WebSocket for real-time coordination, REST for persistence
+**Simplified consumer logic**:
+```python
+async def receive_json(self, content):
+    # Only handle coordination messages (relay pattern)
+    # Mutations are handled by REST API
+    await self.channel_layer.group_send(
+        self.room_group_name,
+        {
+            'type': 'game_message',
+            'message': content
+        }
+    )
+```
+
+**Why**: Clean separation - WebSocket for ephemeral coordination, REST for persistent mutations
 
 ### Phase 5: Update Frontend
 
@@ -428,22 +480,24 @@ Test cases:
 - [ ] **Multi-client sync**: Verify updates sync across multiple browser windows
 - [ ] **Error handling**: Test with invalid data, verify user sees error
 
-## Migration Strategy
+## Deployment Strategy
 
-### Step 1: Backend Changes (Non-Breaking)
+### Step 1: Backend Changes
 1. Add version fields to models (migration)
-2. Update service layer to return versions
-3. Add REST API endpoints
-4. Deploy backend (old frontend still works via WebSocket)
+2. Update service layer to return structured results with versions
+3. Add REST API endpoints that broadcast updates
+4. Remove mutation handling from WebSocket consumer
+5. Run migration: `python manage.py migrate`
+6. Deploy backend
 
 ### Step 2: Frontend Changes
 1. Add version tracking
-2. Update WebSocket handlers to check versions
-3. Switch mutations to REST API
-4. Deploy frontend
+2. Update WebSocket handlers to check versions before applying updates
+3. Switch mutations from WebSocket to REST API
+4. Add error handling UI
+5. Deploy frontend
 
-### Step 3: Cleanup
-1. Remove mutation handling from WebSocket consumer (optional, can keep for backwards compatibility)
+**Note**: This is a breaking change - frontend and backend must be deployed together or in quick succession
 
 ## Benefits of This Approach
 
@@ -490,19 +544,21 @@ Test cases:
 
 **Total**: 5-7 hours
 
-## Open Questions
+## Design Decisions
 
-1. **Buzzer presses**: Should these also move to REST API, or keep via WebSocket?
-   - **Recommendation**: Keep via WebSocket - they're ephemeral and don't need persistence
+1. **Buzzer presses**: Keep via WebSocket
+   - Ephemeral events that don't need persistence
+   - Low latency is critical for buzzers
 
-2. **Backwards compatibility**: Should we keep WebSocket mutation handlers for old clients?
-   - **Recommendation**: Remove after frontend deployed, simpler code
+2. **Error UI**: Toast notifications
+   - Non-blocking feedback
+   - User can continue interacting with the game
+   - Clear but not intrusive
 
-3. **Error UI**: What should error messages look like? Toast? Modal? Inline?
-   - **Recommendation**: Toast notifications for non-blocking feedback
-
-4. **Retry logic**: Should we auto-retry failed mutations?
-   - **Recommendation**: Start without auto-retry, add if needed
+3. **Retry logic**: Manual retry only
+   - Start without auto-retry
+   - User can click button again if request fails
+   - Add automatic retry later if needed based on real-world usage
 
 ## Notes
 
