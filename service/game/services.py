@@ -32,9 +32,11 @@ def record_player_answer(
     """
     Record a player's answer and return their updated score.
 
-    This handles the business logic for tracking player answers:
-    - If the correctness changes, delete the existing answer
-    - If only points change, update the existing answer
+    This handles the business logic for tracking player answers with an undo mechanism:
+    - If the correctness changes (e.g., correct→incorrect), delete the existing answer
+      This acts as an "undo" - clicking the opposite button removes the scoring entirely
+      rather than flipping it, preventing accidental double scoring
+    - If only points change (same correctness), update the existing answer
     - If no previous answer exists, create a new one
 
     Args:
@@ -52,15 +54,15 @@ def record_player_answer(
     ).first()
 
     if answer:
-        # If correctness changed, delete the answer
+        # If correctness changed, delete the answer (undo mechanism)
         if answer.is_correct != is_correct:
             answer.delete()
-        # If only points changed, update
+        # If only points changed (same correctness), update the answer
         elif answer.points != points:
             answer.points = points
             answer.save()
     else:
-        # No previous answer, create new one
+        # No previous answer exists, create new one
         PlayerAnswer.objects.create(
             player_id=player_id,
             question_id=question_id,
