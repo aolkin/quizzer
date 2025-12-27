@@ -1,5 +1,25 @@
 import { ENDPOINT } from './state.svelte';
 
+async function apiRequest<T>(
+	url: string,
+	method: string,
+	body: object,
+	errorMessage: string
+): Promise<T> {
+	const response = await fetch(`http://${ENDPOINT}${url}`, {
+		method,
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body)
+	});
+
+	if (!response.ok) {
+		const error = await response.text();
+		throw new Error(`${errorMessage}: ${response.statusText} - ${error}`);
+	}
+
+	return await response.json();
+}
+
 export async function recordPlayerAnswer(
 	boardId: number,
 	playerId: number,
@@ -7,36 +27,22 @@ export async function recordPlayerAnswer(
 	isCorrect: boolean,
 	points?: number
 ): Promise<{ playerId: number; score: number; version: number }> {
-	const response = await fetch(`http://${ENDPOINT}/api/board/${boardId}/answers/`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ playerId, questionId, isCorrect, points })
-	});
-
-	if (!response.ok) {
-		const error = await response.text();
-		throw new Error(`Failed to record answer: ${response.statusText} - ${error}`);
-	}
-
-	const data = await response.json();
-	return { playerId: data.playerId, score: data.score, version: data.version };
+	return apiRequest(
+		`/api/board/${boardId}/answers/`,
+		'POST',
+		{ playerId, questionId, isCorrect, points },
+		'Failed to record answer'
+	);
 }
 
 export async function toggleQuestion(
 	questionId: number,
 	answered: boolean
 ): Promise<{ questionId: number; answered: boolean; version: number }> {
-	const response = await fetch(`http://${ENDPOINT}/api/question/${questionId}/`, {
-		method: 'PATCH',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ answered })
-	});
-
-	if (!response.ok) {
-		const error = await response.text();
-		throw new Error(`Failed to toggle question: ${response.statusText} - ${error}`);
-	}
-
-	const data = await response.json();
-	return { questionId: data.questionId, answered: data.answered, version: data.version };
+	return apiRequest(
+		`/api/question/${questionId}/`,
+		'PATCH',
+		{ answered },
+		'Failed to toggle question'
+	);
 }
