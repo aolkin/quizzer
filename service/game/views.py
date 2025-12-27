@@ -41,20 +41,17 @@ def record_answer(request, board_id):
     Body: {playerId, questionId, isCorrect, points?}
     Returns: {playerId, score, version}
     """
-    # Validate request data
     request_serializer = RecordAnswerRequestSerializer(data=request.data)
     if not request_serializer.is_valid():
         return Response(request_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     data = request_serializer.validated_data
 
-    # Validate that board exists
     try:
         board = Board.objects.select_related('game').get(id=board_id)
     except Board.DoesNotExist:
         return Response({'error': 'Board not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Validate that player exists and belongs to this game
     try:
         player = Player.objects.select_related('team__game').get(id=data['playerId'])
         if player.team.game_id != board.game_id:
@@ -65,7 +62,6 @@ def record_answer(request, board_id):
     except Player.DoesNotExist:
         return Response({'error': 'Player not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Validate that question exists and belongs to this board
     try:
         question = Question.objects.select_related('category__board').get(id=data['questionId'])
         if question.category.board_id != board_id:
@@ -76,7 +72,6 @@ def record_answer(request, board_id):
     except Question.DoesNotExist:
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Call service layer to record answer
     result = services.record_player_answer(
         player_id=data['playerId'],
         question_id=data['questionId'],
@@ -84,7 +79,6 @@ def record_answer(request, board_id):
         points=data.get('points')
     )
 
-    # Broadcast update to all WebSocket clients connected to this board
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'board_{board_id}',
@@ -99,7 +93,6 @@ def record_answer(request, board_id):
         }
     )
 
-    # Return response
     response_data = {
         'playerId': result.player_id,
         'score': result.score,
@@ -118,14 +111,12 @@ def toggle_question(request, question_id):
     Body: {answered}
     Returns: {questionId, answered, version}
     """
-    # Validate request data
     request_serializer = ToggleQuestionRequestSerializer(data=request.data)
     if not request_serializer.is_valid():
         return Response(request_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     data = request_serializer.validated_data
 
-    # Validate that question exists and get board_id for broadcasting
     try:
         question = Question.objects.select_related(
             'category__board'
@@ -134,13 +125,11 @@ def toggle_question(request, question_id):
     except Question.DoesNotExist:
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Call service layer to update question status
     result = services.update_question_status(
         question_id=question_id,
         answered=data['answered']
     )
 
-    # Broadcast update to all WebSocket clients connected to this board
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'board_{board_id}',
@@ -155,7 +144,6 @@ def toggle_question(request, question_id):
         }
     )
 
-    # Return response
     response_data = {
         'questionId': result.question_id,
         'answered': result.answered,

@@ -33,7 +33,6 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         Database mutations (record_answer, toggle_question) are handled by REST API.
         This only handles ephemeral coordination messages.
         """
-        # Relay all messages to the group (broadcast pattern)
         await self.channel_layer.group_send(
             self.room_group_name,
             {
