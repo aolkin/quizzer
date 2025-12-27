@@ -53,10 +53,6 @@ def record_player_answer(
             player_id=player_id,
             question_id=question_id
         )
-    except PlayerAnswer.DoesNotExist:
-        answer = None
-
-    if answer:
         # If correctness changed, delete the answer (undo mechanism)
         if answer.is_correct != is_correct:
             answer.delete()
@@ -64,7 +60,7 @@ def record_player_answer(
         elif answer.points != points:
             answer.points = points
             answer.save()
-    else:
+    except PlayerAnswer.DoesNotExist:
         # No previous answer exists, create new one
         PlayerAnswer.objects.create(
             player_id=player_id,
