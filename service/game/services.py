@@ -33,7 +33,7 @@ def record_player_answer(
     Record a player's answer and return their updated score.
 
     This handles the business logic for tracking player answers:
-    - If the correctness changes, delete the old answer and create a new one
+    - If the correctness changes, delete the existing answer
     - If only points change, update the existing answer
     - If no previous answer exists, create a new one
 
@@ -52,15 +52,9 @@ def record_player_answer(
     ).first()
 
     if answer:
-        # If correctness changed, delete and recreate
+        # If correctness changed, delete the answer
         if answer.is_correct != is_correct:
             answer.delete()
-            PlayerAnswer.objects.create(
-                player_id=player_id,
-                question_id=question_id,
-                is_correct=is_correct,
-                points=points
-            )
         # If only points changed, update
         elif answer.points != points:
             answer.points = points
