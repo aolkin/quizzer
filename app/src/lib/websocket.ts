@@ -10,8 +10,9 @@ const CLIENT_ID = Math.random().toString(36);
 export class GameWebSocket {
   private socket: WebSocket;
   private reconnectAttempts = 0;
-  private maxReconnectTimeout = 1000;
+  private maxReconnectTimeout = 30000;  // 30 seconds max backoff
   private reconnectTimeout = 100;
+  private reconnectTimer?: number;
 
   constructor(private readonly gameId: string, private readonly mode: UiMode, private readonly audio?: AudioClient) {
     this.connect();
@@ -22,28 +23,49 @@ export class GameWebSocket {
     this.socket.onmessage = (event) => this.handleMessage(event);
 
     this.socket.onclose = () => {
-      setTimeout(() => {
-        this.reconnectAttempts++;
-        this.reconnectTimeout = Math.min(this.reconnectTimeout * 2, this.maxReconnectTimeout);
-        this.connect();
-      }, this.reconnectTimeout);
+      this.scheduleReconnect();
+    };
+
+    this.socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      // onclose will be called automatically after onerror
     };
 
     this.socket.onopen = () => {
       this.reconnectAttempts = 0;
       this.reconnectTimeout = 100;
+      console.log('WebSocket connected');
       this.send({ type: 'join_game' });
     };
   }
 
+  private scheduleReconnect() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+    }
+
+    this.reconnectAttempts++;
+    this.reconnectTimeout = Math.min(this.reconnectTimeout * 2, this.maxReconnectTimeout);
+
+    console.log(`Reconnecting in ${this.reconnectTimeout}ms (attempt ${this.reconnectAttempts})`);
+
+    this.reconnectTimer = setTimeout(() => {
+      this.connect();
+    }, this.reconnectTimeout);
+  }
+
   send(message: any) {
         if (this.socket?.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-              ...message,
-              clientId: CLIENT_ID,
-            }));
+            try {
+                this.socket.send(JSON.stringify({
+                  ...message,
+                  clientId: CLIENT_ID,
+                }));
+            } catch (error) {
+                console.error('Failed to send WebSocket message:', error);
+            }
         } else {
-          throw new Error('WebSocket is closed');
+            console.warn('Cannot send message: WebSocket is not open');
         }
     }
 
@@ -65,15 +87,23 @@ export class GameWebSocket {
       });
     } else if (data.type === 'select_board') {
       const updateBoard = async () => {
-        const response = await fetch(`http://${ENDPOINT}/api/board/${data.board}/`);
-        const board = await response.json();
-        gameState.update((state) => {
-          return state.currentBoard !== data.board ? state : ({
-            ...state,
-            answeredQuestions: new Set(allQuestions(board).filter(q => q.answered).map(q => q.id)),
-            board
+        try {
+          const response = await fetch(`http://${ENDPOINT}/api/board/${data.board}/`);
+          if (!response.ok) {
+            console.error('Failed to fetch board:', response.statusText);
+            return;
+          }
+          const board = await response.json();
+          gameState.update((state) => {
+            return state.currentBoard !== data.board ? state : ({
+              ...state,
+              answeredQuestions: new Set(allQuestions(board).filter(q => q.answered).map(q => q.id)),
+              board
+            });
           });
-        });
+        } catch (error) {
+          console.error('Error fetching board:', error);
+        }
       }
       gameState.update((state) => {
         if (state.currentBoard !== data.board) {
@@ -173,9 +203,9 @@ export class GameWebSocket {
   }
 
   toggleBuzzers(enabled: boolean) {
-    this.socket.send(JSON.stringify({
+    this.send({
       type: 'toggle_buzzers',
       enabled
-    }));
+    });
   }
 }

@@ -86,7 +86,7 @@ class BuzzerClient:
             try:
                 message = await self.websocket.recv()
                 data = json.loads(message)
-                
+
                 if data['type'] == 'toggle_buzzers':
                     self.buzzers.enabled = data['enabled']
                     if data['enabled']:
@@ -95,22 +95,27 @@ class BuzzerClient:
                             'type': 'buzzer_pressed',
                             'buzzerId': None
                         }))
-                        
+
             except websockets.ConnectionClosed:
-                print("Disconnected")
-                exit(1)
+                print("Disconnected, attempting to reconnect...")
                 await asyncio.sleep(1)
                 await self.connect(True)
                 return
+            except Exception as e:
+                print(f"Error in listen_for_messages: {e}")
+                await asyncio.sleep(1)
 
     async def handle_buzzer_press(self, buzzer_id: int):
         """
         Called by hardware when a buzzer is pressed
         """
-        await self.websocket.send(json.dumps({
-            'type': 'buzzer_pressed',
-            'buzzerId': buzzer_id
-        }))
+        try:
+            await self.websocket.send(json.dumps({
+                'type': 'buzzer_pressed',
+                'buzzerId': buzzer_id
+            }))
+        except Exception as e:
+            print(f"Failed to send buzzer press: {e}")
 
     def schedule_buzzer_press(self, buzzer_id: int):
         asyncio.run_coroutine_threadsafe(
@@ -130,4 +135,9 @@ if __name__ == "__main__":
         asyncio.get_event_loop().run_until_complete(client.run_async())
         asyncio.get_event_loop().run_forever()
     except KeyboardInterrupt:
+        print("\nShutting down gracefully...")
         gpio.cleanup()
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        gpio.cleanup()
+        raise

@@ -32,20 +32,28 @@ def broadcast_to_board(board_id: int, message_type: str, data: Dict[str, Any]) -
 
 @api_view(['GET'])
 def get_board(request, board_id):
-    board = Board.objects.select_related('game').prefetch_related(
-        'categories',
-        'categories__questions'
-    ).get(id=board_id)
+    try:
+        board = Board.objects.select_related('game').prefetch_related(
+            'categories',
+            'categories__questions'
+        ).get(id=board_id)
+    except Board.DoesNotExist:
+        return Response({'error': 'Board not found'}, status=status.HTTP_404_NOT_FOUND)
+
     return Response(BoardSerializer(board).data)
 
 
 @api_view(['GET'])
 def get_game(request, game_id):
-    game = Game.objects.prefetch_related(
-        'boards',
-        'teams',
-        'teams__players'
-    ).get(id=game_id)
+    try:
+        game = Game.objects.prefetch_related(
+            'boards',
+            'teams',
+            'teams__players'
+        ).get(id=game_id)
+    except Game.DoesNotExist:
+        return Response({'error': 'Game not found'}, status=status.HTTP_404_NOT_FOUND)
+
     return Response(GameSerializer(game).data)
 
 
