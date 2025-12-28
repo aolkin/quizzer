@@ -148,6 +148,17 @@ pip install -r requirements.lock
 
 # On Raspberry Pi:
 python buzzers.py <game_id>
+
+# With custom server:
+python buzzers.py <game_id> --server myserver.local:8000
+
+# With custom log level:
+python buzzers.py <game_id> --log-level DEBUG
+
+# Using environment variables:
+export QUIZZER_SERVER=myserver.local:8000
+export QUIZZER_LOG_LEVEL=DEBUG
+python buzzers.py <game_id>
 ```
 
 ## Game Setup
@@ -315,17 +326,57 @@ See [TESTING.md](TESTING.md) for our testing philosophy and guidelines. Key prin
 
 ## Hardware Buzzer Wiring
 
-For Raspberry Pi GPIO setup:
+The hardware buzzer system uses a Raspberry Pi with GPIO to support up to 8 buzzers through a 74HC4051 8-channel analog multiplexer.
 
+### Components Required
+- Raspberry Pi (any model with GPIO pins)
+- 74HC4051 8-channel analog multiplexer IC
+- 8 momentary push buttons (buzzers)
+- Pull-down resistors (10kΩ recommended for each buzzer)
+- Jumper wires
+- Breadboard (for prototyping) or custom PCB
+
+### Pin Connections
+
+#### Raspberry Pi GPIO to 74HC4051
 ```
-GPIO 23, 24, 25 → Multiplexer select pins (S0, S1, S2)
-GPIO 16 → Enable pin (EN)
-GPIO 18 → Input pin (SIG)
+Raspberry Pi GPIO → 74HC4051 Pin
+─────────────────────────────────
+GPIO 23 (Pin 16)  → S0 (Pin 11) - Select bit 0
+GPIO 24 (Pin 18)  → S1 (Pin 10) - Select bit 1  
+GPIO 25 (Pin 22)  → S2 (Pin 9)  - Select bit 2
+GPIO 16 (Pin 36)  → INH (Pin 6) - Enable/Inhibit (active low)
+GPIO 18 (Pin 12)  → Z (Pin 3)   - Signal input/output
+3.3V             → VCC (Pin 16) - Power supply
+GND              → VEE (Pin 8)  - Ground
+GND              → GND (Pin 7)  - Ground
 ```
 
-Connect up to 8 buzzers through a 74HC4051 multiplexer.
+#### 74HC4051 to Buzzers
+```
+74HC4051 Pin → Buzzer Connection
+────────────────────────────────
+Y0 (Pin 13)  → Buzzer 0 (one side)
+Y1 (Pin 14)  → Buzzer 1 (one side)
+Y2 (Pin 15)  → Buzzer 2 (one side)
+Y3 (Pin 12)  → Buzzer 3 (not used - reserved)
+Y4 (Pin 1)   → Buzzer 4 (one side)
+Y5 (Pin 5)   → Buzzer 5 (one side)
+Y6 (Pin 2)   → Buzzer 6 (one side)
+Y7 (Pin 4)   → Buzzer 7 (one side)
 
-TODO: Add more details on the wiring and hardware setup.
+Note: Buzzer 3 is skipped in the code (see line 62-63 in buzzers.py)
+```
+
+#### Buzzer Wiring
+Each buzzer should be wired as follows:
+```
+[3.3V] ──┬── [Buzzer Button] ──┬── [10kΩ Resistor] ── [GND]
+         │                      │
+         └──────────────────────┴── [74HC4051 Yx pin]
+```
+
+When a buzzer is pressed, it connects the multiplexer channel to 3.3V. The pull-down resistor ensures a clean LOW signal when not pressed.
 
 ## License
 
