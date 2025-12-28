@@ -102,6 +102,12 @@ class BuzzerClient:
                             'type': 'buzzer_pressed',
                             'buzzerId': None
                         }))
+                elif data['type'] == 'buzzer_set_log_level':
+                    level = data.get('level', 'INFO')
+                    numeric_level = getattr(logging, level.upper(), None)
+                    if isinstance(numeric_level, int):
+                        logging.getLogger().setLevel(numeric_level)
+                        logger.info(f"Log level changed to {level}")
 
             except websockets.ConnectionClosed:
                 logger.warning("Disconnected, attempting to reconnect...")

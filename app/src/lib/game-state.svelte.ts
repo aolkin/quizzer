@@ -11,6 +11,7 @@ interface GameState {
   selectedQuestion?: number;
   buzzersEnabled: boolean;
   activeBuzzerId?: number;
+  buzzerConnected: boolean;
 }
 
 class GameStateManager {
@@ -23,6 +24,7 @@ class GameStateManager {
   selectedQuestion = $state<number | undefined>(undefined);
   buzzersEnabled = $state(false);
   activeBuzzerId = $state<number | undefined>(undefined);
+  buzzerConnected = $state(false);
 
   // Methods to update state (separation of concerns)
   setWebsocket(websocket: GameWebSocket) {
@@ -76,12 +78,17 @@ class GameStateManager {
     this.activeBuzzerId = buzzerId;
   }
 
+  setBuzzerConnected(connected: boolean) {
+    this.buzzerConnected = connected;
+  }
+
   reset() {
     this.visibleCategories = new Set();
     this.answeredQuestions = new Set();
     this.selectedQuestion = undefined;
     this.buzzersEnabled = false;
     this.activeBuzzerId = undefined;
+    this.buzzerConnected = false;
   }
 }
 

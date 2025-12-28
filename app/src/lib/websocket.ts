@@ -106,6 +106,12 @@ export class GameWebSocket {
         this.audio?.play(Sound.Buzzer);
       }
       gameState.setActiveBuzzer(data.buzzerId);
+    } else if (data.type === 'buzzer_connection_status') {
+      gameState.setBuzzerConnected(data.connected);
+      // When buzzer client connects, send current buzzer state
+      if (data.connected && this.mode === UiMode.Host) {
+        this.toggleBuzzers(gameState.buzzersEnabled);
+      }
     } else if (data.type === 'update_score') {
       if (shouldUpdatePlayer(data.player_id, data.version)) {
         gameState.updateScore(data.player_id, data.score);
@@ -164,6 +170,13 @@ export class GameWebSocket {
     this.send({
       type: 'toggle_buzzers',
       enabled,
+    });
+  }
+
+  setBuzzerLogLevel(level: 'DEBUG' | 'WARN') {
+    this.send({
+      type: 'buzzer_set_log_level',
+      level,
     });
   }
 }
