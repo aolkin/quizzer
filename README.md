@@ -115,11 +115,13 @@ This hybrid approach combines the simplicity of broadcast relay with the robustn
 ### Backend Setup
 ```bash
 cd service
-# Install uv package manager (modern, fast Python package manager)
-pip install uv
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies from lock file
-uv pip install -r requirements.lock
+pip install -r requirements.lock
 
 # Run migrations
 python manage.py migrate
@@ -141,8 +143,8 @@ bun run dev
 ### Hardware Buzzers (Optional)
 ```bash
 cd hardware
-# Install dependencies from lock file
-uv pip install -r requirements.lock
+# Install dependencies directly (embedded device - no venv needed)
+pip install -r requirements.lock
 
 # On Raspberry Pi:
 python buzzers.py <game_id>
@@ -260,37 +262,25 @@ flake8 .                      # Lint code
 
 ### Dependency Management
 
-This project uses **uv** (modern, fast Python package manager) with **pyproject.toml** for dependency management.
+Python dependencies are managed with **pyproject.toml** and lock files for reproducibility.
 
-#### Python Dependencies (Backend & Hardware)
-
-**Adding a new dependency:**
+**Adding a dependency:**
 ```bash
-# Add to pyproject.toml [project.dependencies] section
 cd service  # or hardware
-nano pyproject.toml  # Add package to dependencies list
-
-# Regenerate lock file
+# 1. Add package to pyproject.toml [project.dependencies]
+# 2. Regenerate lock file:
+pip install uv
 uv pip compile pyproject.toml -o requirements.lock
-
-# Install updated dependencies
-uv pip install -r requirements.lock
+# 3. Install:
+pip install -r requirements.lock
 ```
 
 **Updating dependencies:**
 ```bash
 cd service  # or hardware
-# Update to latest compatible versions
 uv pip compile pyproject.toml -o requirements.lock --upgrade
-
-# Install updated dependencies
-uv pip install -r requirements.lock
+pip install -r requirements.lock
 ```
-
-**Lock files:**
-- `service/requirements.lock` - Pinned versions for backend
-- `hardware/requirements.lock` - Pinned versions for buzzer hardware
-- Commit lock files to ensure reproducible builds across environments
 
 ### Running Quality Checks Locally
 
