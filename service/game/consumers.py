@@ -1,5 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from urllib.parse import parse_qs
+from collections import defaultdict
 
 
 class GameConsumer(AsyncJsonWebsocketConsumer):
@@ -13,7 +14,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
 
     # Class-level dictionary to track clients by type per board
     # Structure: {board_id: {client_type: channel_name}}
-    clients_by_type = {}
+    clients_by_type = defaultdict(dict)
 
     async def connect(self):
         self.board_id = self.scope["url_route"]["kwargs"]["board_id"]
@@ -29,8 +30,6 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
 
         # Track client by type and broadcast connection status
         if self.client_type:
-            if self.board_id not in GameConsumer.clients_by_type:
-                GameConsumer.clients_by_type[self.board_id] = {}
             GameConsumer.clients_by_type[self.board_id][self.client_type] = self.channel_name
 
             await self.channel_layer.group_send(
