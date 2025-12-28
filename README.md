@@ -7,11 +7,6 @@ A modern, multi-client Jeopardy game application with real-time synchronization,
 host mode, and support for custom hardware buzzers. Built with SvelteKit
 frontend and Django backend.
 
-Also an experiment in AI-assisted coding, portions of the repository were
-bootstrapped or improved with the use of AI assistants (including this README).
-
-> **For AI Agents**: Code quality checks are REQUIRED before committing. See [AGENTS.md](AGENTS.md) for detailed instructions on running linters, tests, and type checking.
-
 ## Features
 
 ### 🎯 Core Game Features
@@ -208,7 +203,6 @@ Connect to: `ws://localhost:8000/ws/game/{game_id}/`
 ### Prerequisites for Development
 - Python 3.12+ (for backend)
 - Bun (for frontend)
-- Git
 - (Optional) pre-commit for automated code quality checks
 
 ### Setting Up Pre-commit Hooks
@@ -283,10 +277,6 @@ See [TESTING.md](TESTING.md) for our testing philosophy and guidelines. Key prin
 - Avoid trivial tests for simple setters/getters or framework behavior
 - Test behavior, not implementation
 - Mock external dependencies
-
-### Contributing
-
-For AI agents and assistants, see [AGENTS.md](AGENTS.md) for required quality checks before committing.
 
 ## Hardware Buzzer Wiring
 

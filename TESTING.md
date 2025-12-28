@@ -88,9 +88,8 @@ def test_score_calculation_with_daily_double(self):
 
 ### Frontend
 ```bash
-npm test              # Run all tests once
-npm run test:unit     # Run tests in watch mode
-bun run test          # Run with Bun
+bun run test          # Run all tests once
+bun run test:unit     # Run tests in watch mode
 ```
 
 ### Backend
