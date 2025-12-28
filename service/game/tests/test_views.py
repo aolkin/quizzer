@@ -68,9 +68,7 @@ class RecordAnswerViewTestCase(BaseGameTestCase):
 
         # Question not on board
         other_board = Board.objects.create(game=self.game, name="Other Board", order=2)
-        other_category = Category.objects.create(
-            board=other_board, name="Other Category", order=1
-        )
+        other_category = Category.objects.create(board=other_board, name="Other Category", order=1)
         other_question = Question.objects.create(
             category=other_category, text="Q", answer="A", points=100, order=1
         )
@@ -105,9 +103,7 @@ class ToggleQuestionViewTestCase(BaseGameTestCase):
 
     def test_toggle_question_invalid_data(self):
         """Test that invalid data returns validation errors."""
-        response = self.client.patch(
-            self.url, {"answered": "not_a_boolean"}, format="json"
-        )
+        response = self.client.patch(self.url, {"answered": "not_a_boolean"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
@@ -129,9 +125,7 @@ class GetEndpointsTestCase(BaseGameTestCase):
 
     def test_get_game_with_nested_data(self):
         """Test retrieving game includes boards, teams, players with efficient score queries."""
-        PlayerAnswer.objects.create(
-            player=self.player1, question=self.q1, is_correct=True
-        )
+        PlayerAnswer.objects.create(player=self.player1, question=self.q1, is_correct=True)
 
         response = self.client.get(f"/api/game/{self.game.id}/")
 

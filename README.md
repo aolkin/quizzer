@@ -1,11 +1,11 @@
 # Quizzer - Interactive Jeopardy Game System
 
+[![Backend CI](https://github.com/aolkin/quizzer/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/aolkin/quizzer/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/aolkin/quizzer/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/aolkin/quizzer/actions/workflows/frontend-ci.yml)
+
 A modern, multi-client Jeopardy game application with real-time synchronization,
 host mode, and support for custom hardware buzzers. Built with SvelteKit
 frontend and Django backend.
-
-Also an experiment in AI-assisted coding, portions of the repository were
-bootstrapped or improved with the use of AI assistants (including this README).
 
 ## Features
 
@@ -200,6 +200,32 @@ Connect to: `ws://localhost:8000/ws/game/{game_id}/`
 
 ## Development
 
+### Prerequisites for Development
+- Python 3.12+ (for backend)
+- Bun (for frontend)
+- (Optional) pre-commit for automated code quality checks
+
+### Setting Up Pre-commit Hooks
+
+For the best development experience, install pre-commit hooks to automatically check code quality before commits:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+
+# (Optional) Run against all files
+pre-commit run --all-files
+```
+
+The pre-commit hooks will automatically:
+- Format Python code with Black (configured in `service/pyproject.toml`)
+- Lint Python code with Flake8 (configured in `service/.flake8`)
+- Format JavaScript/TypeScript/Svelte with Prettier
+- Check for trailing whitespace and other common issues
+
 ### Frontend Development
 ```bash
 cd app
@@ -217,7 +243,40 @@ cd service
 python manage.py runserver    # Start dev server
 python manage.py shell        # Django shell
 python manage.py test         # Run tests
+black .                       # Format code
+flake8 .                      # Lint code
 ```
+
+### Running Quality Checks Locally
+
+Before submitting a PR, ensure all checks pass:
+
+```bash
+# Backend checks
+cd service
+black --check .
+flake8 .
+python manage.py test
+
+# Frontend checks
+cd app
+bun run lint
+bun run check
+bun run test
+bun run build
+```
+
+Configuration for linters and formatters:
+- **Backend**: Black configured in `service/pyproject.toml` (line length: 100), Flake8 configured in `service/.flake8` (max line length: 100, ignores: E203, W503)
+- **Frontend**: JavaScript/TypeScript style configured via ESLint and Prettier configs in `app/`
+
+### Testing
+
+See [TESTING.md](TESTING.md) for our testing philosophy and guidelines. Key principles:
+- Focus on **high-value tests** that verify complex logic and prevent regressions
+- Avoid trivial tests for simple setters/getters or framework behavior
+- Test behavior, not implementation
+- Mock external dependencies
 
 ## Hardware Buzzer Wiring
 

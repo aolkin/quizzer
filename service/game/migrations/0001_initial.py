@@ -122,9 +122,7 @@ class Migration(migrations.Migration):
                 ("answer", models.TextField()),
                 (
                     "points",
-                    models.IntegerField(
-                        validators=[django.core.validators.MinValueValidator(0)]
-                    ),
+                    models.IntegerField(validators=[django.core.validators.MinValueValidator(0)]),
                 ),
                 ("order", models.PositiveIntegerField()),
                 ("media_url", models.URLField(blank=True, null=True)),

@@ -68,9 +68,7 @@ def record_answer(request, board_id):
 
     board = get_object_or_404(Board.objects.select_related("game"), id=board_id)
 
-    player = get_object_or_404(
-        Player.objects.select_related("team__game"), id=data["player_id"]
-    )
+    player = get_object_or_404(Player.objects.select_related("team__game"), id=data["player_id"])
     if player.team.game_id != board.game_id:
         return Response(
             {"error": "Player does not belong to this game"},
@@ -113,14 +111,10 @@ def toggle_question(request, question_id):
 
     data = request_serializer.validated_data
 
-    question = get_object_or_404(
-        Question.objects.select_related("category__board"), id=question_id
-    )
+    question = get_object_or_404(Question.objects.select_related("category__board"), id=question_id)
     board_id = question.category.board_id
 
-    result = services.update_question_status(
-        question_id=question_id, answered=data["answered"]
-    )
+    result = services.update_question_status(question_id=question_id, answered=data["answered"])
 
     response_data = asdict(result)
     broadcast_to_board(board_id, "toggle_question", response_data)

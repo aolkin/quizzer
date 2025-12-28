@@ -92,9 +92,7 @@ class RecordPlayerAnswerTestCase(BaseGameTestCase, TransactionTestCase):
         self.assertEqual(result1.version, 1)
 
         # Answer q2 with custom points
-        result2 = services.record_player_answer(
-            self.player1.id, self.q2.id, True, points=250
-        )
+        result2 = services.record_player_answer(self.player1.id, self.q2.id, True, points=250)
         self.assertEqual(result2.version, 2)
 
         # Answer q3 incorrectly (300 points still counted)
