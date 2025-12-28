@@ -4,27 +4,25 @@
   import { fly } from 'svelte/transition';
   import { allQuestions, type Board, type Question, UiMode } from '$lib/state.svelte';
   import type { AudioClient } from '../audio.svelte';
-  import { gameState } from '../stores';
-  import { GameWebSocket } from '../websocket';
+  import { gameState } from '../game-state.svelte';
   import QuestionDisplay from './QuestionDisplay.svelte';
 
   let { mode, board, audio }: { board: Board; mode: UiMode, audio: AudioClient } = $props();
 
-  let websocket: GameWebSocket | undefined = $derived($gameState.websocket);
-  let hoveredQuestion = $state(undefined);
-  let selectedQuestion = $state(undefined);
+  let hoveredQuestion = $state<Question | undefined>(undefined);
+  let selectedQuestion = $state<Question | undefined>(undefined);
   let sidebarQuestion = $derived(hoveredQuestion || selectedQuestion ||
-    allQuestions(board).find(q => q.id === $gameState.selectedQuestion));
+    allQuestions(board).find(q => q.id === gameState.selectedQuestion));
 
   function isColumnVisible(categoryId: number): boolean {
-    return $gameState.visibleCategories.has(categoryId);
+    return gameState.visibleCategories.has(categoryId);
   }
 
   function handleQuestionClick(question: Question) {
     if (mode === 'host') {
       console.log(question, selectedQuestion);
       if (selectedQuestion?.id === question.id) {
-        selectedQuestion = null;
+        selectedQuestion = undefined;
       } else {
         selectedQuestion = question;
       }
@@ -32,8 +30,8 @@
   }
 
   function presentQuestion(question: Question) {
-    websocket?.toggleBuzzers(true);
-    websocket?.selectQuestion(question.id);
+    gameState.websocket?.toggleBuzzers(true);
+    gameState.websocket?.selectQuestion(question.id);
   }
 </script>
 
@@ -44,7 +42,7 @@
         <div class="flex flex-col gap-2" class:opacity-50={mode === 'host' && !isColumnVisible(category.id)}>
           <button
             class="h-24 bg-primary-700 rounded-md font-bold p-2 text-center uppercase text-2xl hover:bg-primary-600 transition-colors"
-            onclick={() => mode === 'host' && websocket.revealCategory(category.id)}
+            onclick={() => mode === 'host' && gameState.websocket?.revealCategory(category.id)}
           >
             {#if mode === UiMode.Host || isColumnVisible(category.id)}
               <div transition:fly={{ x: 100 }}>{category.name}</div>
@@ -63,9 +61,9 @@
                 <QuestionDisplay
                   {question}
                   {audio}
-                  visible={$gameState.selectedQuestion === question.id && mode === 'presentation'}
+                  visible={gameState.selectedQuestion === question.id && mode === 'presentation'}
                 />
-                {#if (mode === UiMode.Host || isColumnVisible(category.id)) && !$gameState.answeredQuestions.has(question.id)}
+                {#if (mode === UiMode.Host || isColumnVisible(category.id)) && !gameState.answeredQuestions.has(question.id)}
                   <div transition:fly={{ x: 100 }}>{question.points}</div>
                 {/if}
               </button>
@@ -76,7 +74,7 @@
     </div>
 
     {#if mode === 'host' && sidebarQuestion}
-      <div class="bg-surface-800 p-4 rounded-lg border-primary-500 {$gameState.selectedQuestion === sidebarQuestion.id && 'border-2'} transition-all"
+      <div class="bg-surface-800 p-4 rounded-lg border-primary-500 {gameState.selectedQuestion === sidebarQuestion.id && 'border-2'} transition-all"
       transition:fly={{ x: 100 }}>
         <h3 class="text-xl mb-4">
           {#if sidebarQuestion.special}
@@ -96,21 +94,21 @@
           <button
             type="button"
             class="btn btn-variant-filled"
-            onclick={() => websocket.updateQuestionStatus(sidebarQuestion.id, true)}
+            onclick={() => gameState.websocket?.updateQuestionStatus(sidebarQuestion.id, true)}
           >
             Mark Answered
           </button>
           <button
             type="button"
             class="btn btn-variant-ringed"
-            onclick={() => websocket.updateQuestionStatus(sidebarQuestion.id, false)}
+            onclick={() => gameState.websocket?.updateQuestionStatus(sidebarQuestion.id, false)}
           >
             Skip
           </button>
           <button
             type="button"
             class="btn btn-variant-filled"
-            onclick={() => websocket.selectQuestion(undefined)}
+            onclick={() => gameState.websocket?.selectQuestion(undefined)}
           >
             Complete
           </button>

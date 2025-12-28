@@ -1,33 +1,31 @@
 <script lang="ts">
-	import { gameState } from '$lib/stores';
+	import { gameState } from '$lib/game-state.svelte';
 	import Icon from '@iconify/svelte';
 	import { allQuestions, type Game, type Player, type Team, type UiMode } from '../state.svelte';
 
 	const { mode, game }: { mode: UiMode, game: Game } = $props();
-	
-	let websocket = $derived($gameState.websocket);
 
-	let currentQuestion = $derived(allQuestions($gameState.board)
-		.find(q => q.id === $gameState.selectedQuestion));
+	let currentQuestion = $derived(allQuestions(gameState.board)
+		.find(q => q.id === gameState.selectedQuestion));
 	let pointsToAward = $state(0);
 	$effect(() => {
 		pointsToAward = currentQuestion?.points ?? 0;
 	});
 
 	function recordAnswer(playerId: number, correct: boolean) {
-		websocket.recordPlayerAnswer(playerId, currentQuestion.id, correct,
+		gameState.websocket?.recordPlayerAnswer(playerId, currentQuestion!.id, correct,
 			correct ? pointsToAward : -pointsToAward);
 	}
 
 	function toggleBuzzers(state?: boolean) {
-		websocket.toggleBuzzers(state ?? !$gameState.buzzersEnabled);
+		gameState.websocket?.toggleBuzzers(state ?? !gameState.buzzersEnabled);
 	}
 
 	function getScore(entity: Team | Player) {
 		if ('players' in entity) {
-			return entity.players.reduce((acc, player) => acc + $gameState.scores[player.id] ?? 0, 0);
+			return entity.players.reduce((acc, player) => acc + gameState.scores[player.id] ?? 0, 0);
 		}
-		return $gameState.scores[entity.id] ?? 0;
+		return gameState.scores[entity.id] ?? 0;
 	}
 </script>
 
@@ -39,10 +37,10 @@
 				<input class="input variant-form-material" title="Points to award" type="number" bind:value={pointsToAward} />
 			</div>
 			<button
-				class="px-4 py-2 rounded {$gameState.activeBuzzerId !== null ? 'bg-orange-600' : $gameState.buzzersEnabled ? 'bg-red-600' : 'bg-green-600'}"
-				onclick={() => $gameState.activeBuzzerId !== null ? toggleBuzzers(true) : toggleBuzzers()}
+				class="px-4 py-2 rounded {gameState.activeBuzzerId !== null ? 'bg-orange-600' : gameState.buzzersEnabled ? 'bg-red-600' : 'bg-green-600'}"
+				onclick={() => gameState.activeBuzzerId !== null ? toggleBuzzers(true) : toggleBuzzers()}
 			>
-				{$gameState.activeBuzzerId !== null ? 'Reset' : $gameState.buzzersEnabled ? 'Disable' : 'Enable'} Buzzers
+				{gameState.activeBuzzerId !== null ? 'Reset' : gameState.buzzersEnabled ? 'Disable' : 'Enable'} Buzzers
 			</button>
 		</div>
 	{/if}
@@ -60,7 +58,7 @@
 						{#each team.players as player}
 							<div
 								class="flex justify-between items-center p-2 rounded"
-								class:bg-primary-600={$gameState.activeBuzzerId === player.buzzer}
+								class:bg-primary-600={gameState.activeBuzzerId === player.buzzer}
 							>
 								<span>{player.name}</span>
 								<div class="flex gap-2">
@@ -86,7 +84,7 @@
 					{:else}
 					<div class="flex justify-center items-center gap-2">
 						{#each team.players as player}
-							<span class="chip text-md {$gameState.activeBuzzerId === player.buzzer ? 'variant-filled-primary' : 'variant-ghost-secondary'}">{player.name}</span>
+							<span class="chip text-md {gameState.activeBuzzerId === player.buzzer ? 'variant-filled-primary' : 'variant-ghost-secondary'}">{player.name}</span>
 							{/each}
 					</div>
 				{/if}

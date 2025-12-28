@@ -1,8 +1,7 @@
 import { goto } from '$app/navigation';
-import { get } from 'svelte/store';
 import { AudioClient, Sound } from './audio.svelte';
 import { allQuestions, ENDPOINT, UiMode, shouldUpdatePlayer, shouldUpdateQuestion } from './state.svelte';
-import { gameState } from './stores';
+import { gameState } from './game-state.svelte';
 import { recordPlayerAnswer as apiRecordPlayerAnswer, toggleQuestion as apiToggleQuestion, getBoard as apiGetBoard } from './api';
 
 const CLIENT_ID = Math.random().toString(36);
@@ -50,85 +49,47 @@ export class GameWebSocket {
   handleMessage(event) {
     const data = JSON.parse(event.data);
     if (data.type === 'join_game' && this.mode === UiMode.Host && data.clientId !== CLIENT_ID) {
-      const currentState = get(gameState);
-      if (currentState.currentBoard) {
-        this.selectBoard(currentState.currentBoard);
+      if (gameState.currentBoard) {
+        this.selectBoard(gameState.currentBoard);
       }
-      currentState.visibleCategories.forEach(categoryId => this.revealCategory(categoryId))
-      if (currentState.selectedQuestion) {
-        this.selectQuestion(currentState.selectedQuestion);
+      gameState.visibleCategories.forEach(categoryId => this.revealCategory(categoryId))
+      if (gameState.selectedQuestion) {
+        this.selectQuestion(gameState.selectedQuestion);
       }
     } else if (data.type === 'reveal_category') {
-      gameState.update((state) => {
-        state.visibleCategories.add(data.categoryId);
-        return state;
-      });
+      gameState.revealCategory(data.categoryId);
     } else if (data.type === 'select_board') {
       const updateBoard = async () => {
         try {
           const board = await apiGetBoard(data.board);
-          gameState.update((state) => {
-            return state.currentBoard !== data.board ? state : ({
-              ...state,
-              answeredQuestions: new Set(allQuestions(board).filter(q => q.answered).map(q => q.id)),
-              board
-            });
-          });
+          if (gameState.currentBoard === data.board) {
+            const answeredQuestionIds = allQuestions(board).filter(q => q.answered).map(q => q.id);
+            gameState.setBoard(board, answeredQuestionIds);
+          }
         } catch (error) {
           console.error('Error fetching board:', error);
         }
       }
-      gameState.update((state) => {
-        if (state.currentBoard !== data.board) {
-          updateBoard();
-          return ({
-            ...state,
-            visibleCategories: new Set(),
-            selectedQuestion: undefined,
-            currentBoard: data.board
-          });
-        } else {
-          return state;
-        }
-      });
+      if (gameState.currentBoard !== data.board) {
+        gameState.selectBoard(data.board);
+        updateBoard();
+      }
     } else if (data.type === 'select_question') {
-      gameState.update((state) => ({
-        ...state,
-        selectedQuestion: data.question,
-      }));
+      gameState.selectQuestion(data.question);
     } else if (data.type === 'toggle_question') {
       if (shouldUpdateQuestion(data.question_id, data.version)) {
-        gameState.update((state) => {
-          if (data.answered) {
-            state.answeredQuestions.add(data.question_id);
-          } else if (data.answered === false) {
-            state.answeredQuestions.delete(data.question_id);
-          }
-          return state;
-        });
+        gameState.markQuestionAnswered(data.question_id, data.answered);
       }
     } else if (data.type === 'toggle_buzzers') {
-      gameState.update(state => ({
-        ...state,
-        buzzersEnabled: data.enabled
-      }));
+      gameState.setBuzzersEnabled(data.enabled);
     } else if (data.type === 'buzzer_pressed') {
       if (data.buzzerId !== null) {
         this.audio?.play(Sound.Buzzer);
       }
-      gameState.update(state => ({
-        ...state,
-        activeBuzzerId: data.buzzerId
-      }));
+      gameState.setActiveBuzzer(data.buzzerId);
     } else if (data.type === 'update_score') {
       if (shouldUpdatePlayer(data.player_id, data.version)) {
-        gameState.update(state => ({
-          ...state,
-          scores: {
-            ...state.scores,
-            [data.player_id]: data.score,
-          }
-        }));
+        gameState.updateScore(data.player_id, data.score);
       }
     }
   }
