@@ -2,9 +2,10 @@
     import Icon from '@iconify/svelte';
     import { gameState } from '$lib/stores';
     import type { Game } from '../state.svelte';
-    import type { GameWebSocket } from '../websocket';
 
-    const { game, websocket }: { game: Game, websocket: GameWebSocket } = $props();
+    const { game }: { game: Game } = $props();
+    
+    let websocket = $derived($gameState.websocket);
 </script>
 
 <header class="bg-surface-800 p-2 mb-2">

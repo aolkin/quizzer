@@ -2,9 +2,10 @@
 	import { gameState } from '$lib/stores';
 	import Icon from '@iconify/svelte';
 	import { allQuestions, type Game, type Player, type Team, type UiMode } from '../state.svelte';
-	import type { GameWebSocket } from '../websocket';
 
-	const { mode, game, websocket }: { mode: UiMode, game: Game, websocket: GameWebSocket } = $props();
+	const { mode, game }: { mode: UiMode, game: Game } = $props();
+	
+	let websocket = $derived($gameState.websocket);
 
 	let currentQuestion = $derived(allQuestions($gameState.board)
 		.find(q => q.id === $gameState.selectedQuestion));

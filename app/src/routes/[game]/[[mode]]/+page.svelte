@@ -14,15 +14,13 @@
 
   let { data: game } = $props();
 
-  let websocket: GameWebSocket | undefined = $state(undefined);
   let audioClient: AudioClient | undefined = $state(undefined);
 
   onMount(async () => {
     audioClient = mode === UiMode.Presentation ? new AudioClient() : undefined;
     $gameState.scores = Object.fromEntries(game.teams.flatMap((team) =>
       team.players.map((player) => [player.id, player.score])));
-    websocket = new GameWebSocket(gameId, mode, audioClient);
-    $gameState.websocket = websocket;
+    $gameState.websocket = new GameWebSocket(gameId, mode, audioClient);
   });
 
   onDestroy(() => {
@@ -32,10 +30,10 @@
 
 <div class="min-h-screen bg-surface-900 text-surface-50">
   {#if mode === 'host'}
-    <BoardSelector {game} {websocket} />
+    <BoardSelector {game} />
   {/if}
   {#if $gameState.board}
-    <Board board={$gameState.board} {mode} {websocket} audio={audioClient} />
+    <Board board={$gameState.board} {mode} audio={audioClient} />
   {/if}
-  <ScoreFooter {mode} {game} {websocket} />
+  <ScoreFooter {mode} {game} />
 </div>
