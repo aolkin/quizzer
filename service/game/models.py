@@ -20,22 +20,6 @@ def get_score_annotation():
     )
 
 
-def get_score_aggregate():
-    """
-    Returns the aggregation expression for computing player scores on a PlayerAnswer queryset.
-    
-    This can be used when aggregating PlayerAnswer objects for a specific player.
-    For each answer, uses answer.points if not null, otherwise question.points.
-    """
-    return Sum(
-        Case(
-            When(points__isnull=False, then='points'),
-            default='question__points',
-        ),
-        default=Value(0, output_field=IntegerField())
-    )
-
-
 class Game(models.Model):
     GAME_MODES = [
         ('jeopardy', 'Jeopardy'),

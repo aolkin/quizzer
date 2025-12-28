@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import F
 from typing import Optional
 
-from .models import Player, PlayerAnswer, Question, get_score_aggregate
+from .models import Player, PlayerAnswer, Question
 
 
 @dataclass
@@ -103,17 +103,12 @@ def record_player_answer(
     player = Player.objects.select_for_update().get(id=player_id)
     player.score_version = F('score_version') + 1
     player.save(update_fields=['score_version'])
-    player.refresh_from_db()
     
-    # Compute score efficiently using database aggregation
-    # Uses the aggregate helper since we're working with PlayerAnswer queryset
-    score_result = PlayerAnswer.objects.filter(player_id=player_id).aggregate(
-        total=get_score_aggregate()
-    )
-    score = score_result['total'] or 0
+    # Reload player with annotated score to get both version and score in one query
+    player = Player.objects.filter(id=player_id).with_scores().first()
 
     return PlayerAnswerResult(
         player_id=player.id,
-        score=score,
+        score=player.computed_score,
         version=player.score_version
     )
