@@ -55,22 +55,20 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
 
         # Broadcast disconnection status for tracked client types
         if self.client_type and self.client_id:
-            clients_of_type = GameConsumer.clients_by_type[self.board_id][self.client_type]
-            if self.client_id in clients_of_type:
-                clients_of_type.discard(self.client_id)
+            GameConsumer.clients_by_type[self.board_id][self.client_type].discard(self.client_id)
 
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        "type": "game_message",
-                        "message": {
-                            "type": "client_connection_status",
-                            "client_type": self.client_type,
-                            "client_id": self.client_id,
-                            "connected": False,
-                        },
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "game_message",
+                    "message": {
+                        "type": "client_connection_status",
+                        "client_type": self.client_type,
+                        "client_id": self.client_id,
+                        "connected": False,
                     },
-                )
+                },
+            )
 
     async def receive_json(self, content):
         """
