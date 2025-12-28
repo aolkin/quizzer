@@ -80,7 +80,7 @@ class BuzzerClient:
         self.websocket = None
     
     async def connect(self):
-        uri = f"ws://{self.server_url}/ws/game/{self.game_id}/"
+        uri = f"ws://{self.server_url}/ws/game/{self.game_id}/?client_type=buzzer"
         self.websocket = await websockets.connect(
             uri,
             ping_interval=15,
