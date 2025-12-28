@@ -115,11 +115,21 @@ This hybrid approach combines the simplicity of broadcast relay with the robustn
 ### Backend Setup
 ```bash
 cd service
-# Install python packages
-# TODO: Actually create a requirements.txt
-pip install -r requirements.txt
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies from lock file
+pip install -r requirements.lock
+
+# Run migrations
 python manage.py migrate
+
+# Create admin user
 python manage.py createsuperuser
+
+# Start server
 python manage.py runserver
 ```
 
@@ -133,7 +143,9 @@ bun run dev
 ### Hardware Buzzers (Optional)
 ```bash
 cd hardware
-pip install -r requirements.txt
+# Install dependencies directly (embedded device - no venv needed)
+pip install -r requirements.lock
+
 # On Raspberry Pi:
 python buzzers.py <game_id>
 
@@ -257,6 +269,28 @@ python manage.py shell        # Django shell
 python manage.py test         # Run tests
 black .                       # Format code
 flake8 .                      # Lint code
+```
+
+### Dependency Management
+
+Python dependencies are managed with **pyproject.toml** and lock files for reproducibility.
+
+**Adding a dependency:**
+```bash
+cd service  # or hardware
+# 1. Add package to pyproject.toml [project.dependencies]
+# 2. Regenerate lock file:
+pip install uv
+uv pip compile pyproject.toml -o requirements.lock
+# 3. Install:
+pip install -r requirements.lock
+```
+
+**Updating dependencies:**
+```bash
+cd service  # or hardware
+uv pip compile pyproject.toml -o requirements.lock --upgrade
+pip install -r requirements.lock
 ```
 
 ### Running Quality Checks Locally

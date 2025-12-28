@@ -1,2 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quizzer-service"
+version = "0.1.0"
+description = "Django backend for Quizzer interactive Jeopardy game"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.1,<5.2",
+    "djangorestframework>=3.14,<4.0",
+    "django-cors-headers>=4.0,<5.0",
+    "channels>=4.0,<5.0",
+    "daphne>=4.0,<5.0",
+    "django-colorfield>=0.11,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.0",
+    "flake8>=7.0",
+    "coverage>=7.0",
+]
+
 [tool.black]
 line-length = 100
+
+[tool.flake8]
+max-line-length = 100
+ignore = ["E203", "W503"]

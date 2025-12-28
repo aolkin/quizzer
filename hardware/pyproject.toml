@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quizzer-hardware"
+version = "0.1.0"
+description = "Hardware buzzer client for Quizzer on Raspberry Pi"
+readme = "../README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "websockets>=15.0,<16.0",
+    "RPi.GPIO>=0.7,<1.0",
+]
