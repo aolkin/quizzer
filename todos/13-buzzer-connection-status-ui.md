@@ -1,21 +1,20 @@
 # Buzzer Connection Status in UI
 
 ## Problem
-Currently there's no way to see if the hardware buzzer client is connected to the game server. When the buzzer script disconnects/reconnects, players and hosts have no visibility into whether buzzers are actually working.
+Currently there's no way to see if the hardware buzzer client is connected to the game server. Hosts need a simple visual indicator to know if the buzzers are working.
 
 ## Requirements
 
 ### Frontend Display
-- Show connection status indicator for buzzer client(s)
-- Display states: Connected, Disconnected, Reconnecting
-- Show last connection time / last heartbeat
-- Visual indicator (green dot = connected, red = disconnected, yellow = reconnecting)
-- Should be visible to host (maybe spectator view too)
+- Simple red/green indicator near the buzzer controls
+- Green = buzzer client connected
+- Red = no buzzer client connected
+- **Host-only visibility** (not shown in spectator view)
 
 ### Backend Changes
-- Track buzzer client connection state in WebSocket consumer
-- Broadcast connection state changes to all clients
-- Include connection metadata (last seen, client ID, etc.)
+- Track if a buzzer client WebSocket is currently connected
+- Broadcast connection state changes (connected/disconnected) to all clients
+- No need to track multiple clients - single buzzer system
 
 ### WebSocket Messages
 
@@ -23,37 +22,27 @@ Currently there's no way to see if the hardware buzzer client is connected to th
 ```json
 {
   "type": "buzzer_connection_status",
-  "status": "connected" | "disconnected" | "reconnecting",
-  "lastSeen": "2024-01-15T10:30:00Z",
-  "clientId": "buzzer-client-1"  // Optional: for multi-buzzer setups
+  "connected": true | false
 }
 ```
 
 ### Location in UI
-Options to consider:
-- Status bar at top/bottom of game view
-- Settings/debug panel
-- Always visible vs. collapsed indicator
-- Host-only vs. visible to all
+- Near existing buzzer enable/disable controls in host view
+- Simple status dot or small indicator
 
 ## Implementation Tasks
-- [ ] Add connection state tracking to backend WebSocket consumer
-- [ ] Broadcast connection status changes when client connects/disconnects
-- [ ] Add frontend component to display connection status
-- [ ] Style visual indicator (connected/disconnected/reconnecting states)
-- [ ] Add timestamp display for last connection event
+- [ ] Track buzzer client connection in backend WebSocket consumer (service/game/consumers.py)
+  - Set flag when client with buzzer role connects
+  - Clear flag when buzzer client disconnects
+- [ ] Broadcast `buzzer_connection_status` message when state changes
+- [ ] Add simple status indicator to host UI near buzzer controls
+  - Green dot/icon when connected
+  - Red dot/icon when disconnected
+- [ ] Filter indicator to only show in host view (not spectators)
 - [ ] Test with actual hardware buzzer client
-- [ ] Consider adding connection history/log for debugging
 
-## Nice-to-Have Features
-- Sound/notification when buzzer disconnects during active game
-- Auto-disable questions when buzzer disconnects
-- Connection quality indicator (latency, packet loss)
-- Support for multiple buzzer clients (show each separately)
-- Reconnection attempt counter
-
-## Open Questions
-- Should this be visible to players, or host-only?
-- Should we pause/disable the game automatically when buzzer disconnects?
-- How to handle multiple buzzer clients (if that's a future feature)?
-- Should we show this on spectator view?
+## Scope Decisions
+- **No automatic game manipulation** - just an indicator
+- **Single buzzer client** - no need to handle multiples
+- **Host-only** - not visible to spectators or players
+- **Simple states** - just connected/disconnected (server can't know "reconnecting")
