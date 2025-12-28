@@ -5,7 +5,17 @@ from .models import Game, Board, Category, Player, Question, Team
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ['id', 'type', 'text', 'answer', 'points', 'special', 'order', 'media_url', 'answered']
+        fields = [
+            "id",
+            "type",
+            "text",
+            "answer",
+            "points",
+            "special",
+            "order",
+            "media_url",
+            "answered",
+        ]
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -13,7 +23,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'order', 'questions']
+        fields = ["id", "name", "order", "questions"]
 
 
 class BoardSerializer(serializers.ModelSerializer):
@@ -21,35 +31,39 @@ class BoardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = ['id', 'name', 'order', 'categories']
+        fields = ["id", "name", "order", "categories"]
+
 
 class BoardMetaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
-        fields = ['id', 'name', 'order']
+        fields = ["id", "name", "order"]
+
 
 class PlayerSerializer(serializers.ModelSerializer):
     score = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Player
-        fields = ['id', 'name', 'buzzer', 'score']
-    
+        fields = ["id", "name", "buzzer", "score"]
+
     def get_score(self, obj):
         """
         Get score from annotated computed_score if available, otherwise fall back to property.
         This prevents N+1 queries when players are annotated with scores in the view.
         """
-        if hasattr(obj, 'computed_score'):
+        if hasattr(obj, "computed_score"):
             return obj.computed_score
         return obj.score
+
 
 class TeamSerializer(serializers.ModelSerializer):
     players = PlayerSerializer(many=True)
 
     class Meta:
         model = Team
-        fields = ['id', 'name', 'color', 'players']
+        fields = ["id", "name", "color", "players"]
+
 
 class GameSerializer(serializers.ModelSerializer):
     boards = BoardMetaSerializer(many=True)
@@ -57,7 +71,7 @@ class GameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Game
-        fields = ['id', 'name', 'mode', 'boards', 'teams']
+        fields = ["id", "name", "mode", "boards", "teams"]
 
 
 # API request serializers for mutations

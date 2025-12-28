@@ -9,106 +9,231 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Board',
+            name="Board",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(blank=True, max_length=200)),
-                ('order', models.SmallIntegerField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(blank=True, max_length=200)),
+                ("order", models.SmallIntegerField()),
             ],
             options={
-                'ordering': ['order'],
+                "ordering": ["order"],
             },
         ),
         migrations.CreateModel(
-            name='Game',
+            name="Game",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('mode', models.CharField(choices=[('jeopardy', 'Jeopardy')], default='jeopardy', max_length=20)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "mode",
+                    models.CharField(
+                        choices=[("jeopardy", "Jeopardy")],
+                        default="jeopardy",
+                        max_length=20,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Category',
+            name="Category",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('order', models.SmallIntegerField()),
-                ('board', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='categories', to='game.board')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("order", models.SmallIntegerField()),
+                (
+                    "board",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="categories",
+                        to="game.board",
+                    ),
+                ),
             ],
             options={
-                'verbose_name_plural': 'categories',
-                'ordering': ['order'],
-                'unique_together': {('board', 'order')},
+                "verbose_name_plural": "categories",
+                "ordering": ["order"],
+                "unique_together": {("board", "order")},
             },
         ),
         migrations.AddField(
-            model_name='board',
-            name='game',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='boards', to='game.game'),
+            model_name="board",
+            name="game",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="boards",
+                to="game.game",
+            ),
         ),
         migrations.CreateModel(
-            name='Question',
+            name="Question",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('type', models.CharField(choices=[('text', 'Text Only'), ('image', 'Image'), ('video', 'Video'), ('audio', 'Audio')], default='text', max_length=5)),
-                ('text', models.TextField()),
-                ('answer', models.TextField()),
-                ('points', models.IntegerField(validators=[django.core.validators.MinValueValidator(0)])),
-                ('order', models.PositiveIntegerField()),
-                ('media_url', models.URLField(blank=True, null=True)),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='questions', to='game.category')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("text", "Text Only"),
+                            ("image", "Image"),
+                            ("video", "Video"),
+                            ("audio", "Audio"),
+                        ],
+                        default="text",
+                        max_length=5,
+                    ),
+                ),
+                ("text", models.TextField()),
+                ("answer", models.TextField()),
+                (
+                    "points",
+                    models.IntegerField(
+                        validators=[django.core.validators.MinValueValidator(0)]
+                    ),
+                ),
+                ("order", models.PositiveIntegerField()),
+                ("media_url", models.URLField(blank=True, null=True)),
+                (
+                    "category",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="questions",
+                        to="game.category",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['order'],
-                'unique_together': {('category', 'order')},
+                "ordering": ["order"],
+                "unique_together": {("category", "order")},
             },
         ),
         migrations.CreateModel(
-            name='Team',
+            name="Team",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('game', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teams', to='game.game')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "game",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="teams",
+                        to="game.game",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('game', 'name')},
+                "unique_together": {("game", "name")},
             },
         ),
         migrations.CreateModel(
-            name='Player',
+            name="Player",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('team', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='players', to='game.team')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "team",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="players",
+                        to="game.team",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('team', 'name')},
+                "unique_together": {("team", "name")},
             },
         ),
         migrations.AlterUniqueTogether(
-            name='board',
-            unique_together={('game', 'order')},
+            name="board",
+            unique_together={("game", "order")},
         ),
         migrations.CreateModel(
-            name='PlayerAnswer',
+            name="PlayerAnswer",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('is_correct', models.BooleanField()),
-                ('points', models.IntegerField(blank=True, null=True)),
-                ('answered_at', models.DateTimeField(auto_now_add=True)),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='answers', to='game.player')),
-                ('question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='player_answers', to='game.question')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("is_correct", models.BooleanField()),
+                ("points", models.IntegerField(blank=True, null=True)),
+                ("answered_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="answers",
+                        to="game.player",
+                    ),
+                ),
+                (
+                    "question",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="player_answers",
+                        to="game.question",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('player', 'question')},
+                "unique_together": {("player", "question")},
             },
         ),
     ]
