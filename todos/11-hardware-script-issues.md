@@ -28,6 +28,7 @@ Should be configurable via environment variable or command-line argument.
 - No ping/pong to detect stale connections
 - Could sit "connected" to dead socket
 - No timeout handling
+- Buzzers stay enabled even when disconnected
 
 ### 5. Debug Code Left In *(Keeping as-is)*
 - Line 14: `# gc.disable()` commented out
@@ -71,9 +72,10 @@ signal.signal(signal.SIGINT, cleanup_handler)
 - [x] Remove `exit(1)` call, fix reconnection *(Completed)*
 - [ ] Add server URL configuration (env var + CLI arg, default to `quasar.local:8000`)
 - [ ] Add signal handlers for graceful shutdown (SIGTERM + SIGINT)
-- [ ] Add WebSocket ping/pong heartbeat (client pings every 30s, recv timeout 90s)
-  - **Risk**: Moderate - silent connection death, no auto-recovery from stale connections
-  - **Requires**: Client-side ping loop + timeout on recv(), minimal server changes
+- [ ] Add WebSocket ping/pong heartbeat (built-in websockets library support)
+  - Add `ping_interval=15` and `ping_timeout=5` to `websockets.connect()`
+  - No separate tasks/threads needed - library handles it automatically
+  - Force buzzers to disabled state when connection drops (set `self.buzzers.enabled = False`)
 - [ ] Replace print() with logging module (support dynamic log level via env/CLI)
   - Use `QUIZZER_LOG_LEVEL` env var or `--log-level` CLI argument
   - Enables runtime control: DEBUG, INFO, WARNING, ERROR
