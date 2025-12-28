@@ -97,32 +97,32 @@ class PlayerSerializerTestCase(BaseGameTestCase):
 class RequestSerializerTestCase(TestCase):
     """Tests for API request serializers."""
     
-    def test_record_answer_serializer_valid_data(self):
-        """Test RecordAnswerRequestSerializer with valid data."""
-        data = {
+    def test_record_answer_serializer(self):
+        """Test RecordAnswerRequestSerializer with and without optional fields."""
+        # Valid data with all fields
+        data_with_points = {
             'player_id': 1,
             'question_id': 2,
             'is_correct': True,
             'points': 150
         }
-        serializer = RecordAnswerRequestSerializer(data=data)
+        serializer = RecordAnswerRequestSerializer(data=data_with_points)
         self.assertTrue(serializer.is_valid())
         self.assertEqual(serializer.validated_data['player_id'], 1)
         self.assertEqual(serializer.validated_data['points'], 150)
-    
-    def test_record_answer_serializer_without_points(self):
-        """Test RecordAnswerRequestSerializer without optional points field."""
-        data = {
+        
+        # Valid data without optional points field
+        data_without_points = {
             'player_id': 1,
             'question_id': 2,
             'is_correct': False
         }
-        serializer = RecordAnswerRequestSerializer(data=data)
+        serializer = RecordAnswerRequestSerializer(data=data_without_points)
         self.assertTrue(serializer.is_valid())
         self.assertNotIn('points', serializer.validated_data)
     
-    def test_toggle_question_serializer_valid_data(self):
-        """Test ToggleQuestionRequestSerializer with valid data."""
+    def test_toggle_question_serializer(self):
+        """Test ToggleQuestionRequestSerializer."""
         data = {'answered': True}
         serializer = ToggleQuestionRequestSerializer(data=data)
         self.assertTrue(serializer.is_valid())
