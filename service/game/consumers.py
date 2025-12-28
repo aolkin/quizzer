@@ -1,6 +1,5 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from urllib.parse import parse_qs
-from collections import defaultdict
 
 
 class GameConsumer(AsyncJsonWebsocketConsumer):
@@ -11,10 +10,6 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     using the relay/broadcast pattern. Database mutations (scores, question status)
     are handled by REST API endpoints which broadcast updates via the channel layer.
     """
-
-    # Class-level dictionary to track clients by type per board
-    # Structure: {board_id: {client_type: {client_id1, client_id2, ...}}}
-    clients_by_type = defaultdict(lambda: defaultdict(set))
 
     async def connect(self):
         self.board_id = self.scope["url_route"]["kwargs"]["board_id"]
@@ -33,10 +28,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        # Track client by type and broadcast connection status
+        # Broadcast connection status for clients with a type
         if self.client_type:
-            GameConsumer.clients_by_type[self.board_id][self.client_type].add(self.client_id)
-
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -53,10 +46,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-        # Broadcast disconnection status for tracked client types
+        # Broadcast disconnection status for clients with a type
         if self.client_type and self.client_id:
-            GameConsumer.clients_by_type[self.board_id][self.client_type].discard(self.client_id)
-
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
