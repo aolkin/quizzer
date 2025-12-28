@@ -71,22 +71,17 @@ class BuzzerClient:
         self.buzzers = buzzers
         self.websocket = None
     
-    async def connect(self, reconnect=False):
+    async def connect(self):
         uri = f"ws://quasar.local:8000/ws/game/{self.game_id}/"
         self.websocket = await websockets.connect(uri)
         print("Connected")
-        await self.websocket.send(json.dumps({
-            'type': 'toggle_buzzers',
-            'enabled': self.buzzers.enabled
-        }))
-        asyncio.create_task(self.listen_for_messages())
 
     async def listen_for_messages(self):
         while True:
             try:
                 message = await self.websocket.recv()
                 data = json.loads(message)
-                
+
                 if data['type'] == 'toggle_buzzers':
                     self.buzzers.enabled = data['enabled']
                     if data['enabled']:
@@ -95,22 +90,32 @@ class BuzzerClient:
                             'type': 'buzzer_pressed',
                             'buzzerId': None
                         }))
-                        
+
             except websockets.ConnectionClosed:
-                print("Disconnected")
-                exit(1)
+                print("Disconnected, attempting to reconnect...")
                 await asyncio.sleep(1)
-                await self.connect(True)
-                return
+                await self.connect()
+                # Continue the loop with the new connection
+            except Exception as e:
+                print(f"Error in listen_for_messages: {e}")
+                await asyncio.sleep(1)
+                # Attempt to reconnect in case of persistent errors
+                try:
+                    await self.connect()
+                except Exception as reconnect_error:
+                    print(f"Reconnection failed: {reconnect_error}")
 
     async def handle_buzzer_press(self, buzzer_id: int):
         """
         Called by hardware when a buzzer is pressed
         """
-        await self.websocket.send(json.dumps({
-            'type': 'buzzer_pressed',
-            'buzzerId': buzzer_id
-        }))
+        try:
+            await self.websocket.send(json.dumps({
+                'type': 'buzzer_pressed',
+                'buzzerId': buzzer_id
+            }))
+        except Exception as e:
+            print(f"Failed to send buzzer press: {e}")
 
     def schedule_buzzer_press(self, buzzer_id: int):
         asyncio.run_coroutine_threadsafe(
@@ -121,6 +126,7 @@ class BuzzerClient:
         self.buzzers.callback = self.schedule_buzzer_press
         self.buzzers.start()
         await self.connect()
+        asyncio.create_task(self.listen_for_messages())
 
 
 if __name__ == "__main__":
@@ -130,4 +136,9 @@ if __name__ == "__main__":
         asyncio.get_event_loop().run_until_complete(client.run_async())
         asyncio.get_event_loop().run_forever()
     except KeyboardInterrupt:
+        print("\nShutting down gracefully...")
         gpio.cleanup()
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        gpio.cleanup()
+        raise

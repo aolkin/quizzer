@@ -33,6 +33,13 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         Database mutations (record_answer, toggle_question) are handled by REST API.
         This only handles ephemeral coordination messages.
         """
+        # Basic validation - reject obviously malformed messages
+        if not isinstance(content, dict):
+            return
+
+        if 'type' not in content or not isinstance(content['type'], str):
+            return
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {

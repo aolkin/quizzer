@@ -3,7 +3,7 @@ import { get } from 'svelte/store';
 import { AudioClient, Sound } from './audio.svelte';
 import { allQuestions, ENDPOINT, UiMode, shouldUpdatePlayer, shouldUpdateQuestion } from './state.svelte';
 import { gameState } from './stores';
-import { recordPlayerAnswer as apiRecordPlayerAnswer, toggleQuestion as apiToggleQuestion } from './api';
+import { recordPlayerAnswer as apiRecordPlayerAnswer, toggleQuestion as apiToggleQuestion, getBoard as apiGetBoard } from './api';
 
 const CLIENT_ID = Math.random().toString(36);
 
@@ -37,15 +37,15 @@ export class GameWebSocket {
   }
 
   send(message: any) {
-        if (this.socket?.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-              ...message,
-              clientId: CLIENT_ID,
-            }));
-        } else {
-          throw new Error('WebSocket is closed');
-        }
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({
+        ...message,
+        clientId: CLIENT_ID,
+      }));
+    } else {
+      throw new Error('WebSocket is closed');
     }
+  }
 
   handleMessage(event) {
     const data = JSON.parse(event.data);
@@ -65,15 +65,18 @@ export class GameWebSocket {
       });
     } else if (data.type === 'select_board') {
       const updateBoard = async () => {
-        const response = await fetch(`http://${ENDPOINT}/api/board/${data.board}/`);
-        const board = await response.json();
-        gameState.update((state) => {
-          return state.currentBoard !== data.board ? state : ({
-            ...state,
-            answeredQuestions: new Set(allQuestions(board).filter(q => q.answered).map(q => q.id)),
-            board
+        try {
+          const board = await apiGetBoard(data.board);
+          gameState.update((state) => {
+            return state.currentBoard !== data.board ? state : ({
+              ...state,
+              answeredQuestions: new Set(allQuestions(board).filter(q => q.answered).map(q => q.id)),
+              board
+            });
           });
-        });
+        } catch (error) {
+          console.error('Error fetching board:', error);
+        }
       }
       gameState.update((state) => {
         if (state.currentBoard !== data.board) {
@@ -173,9 +176,9 @@ export class GameWebSocket {
   }
 
   toggleBuzzers(enabled: boolean) {
-    this.socket.send(JSON.stringify({
+    this.send({
       type: 'toggle_buzzers',
       enabled
-    }));
+    });
   }
 }

@@ -1,6 +1,7 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from dataclasses import asdict
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -32,20 +33,26 @@ def broadcast_to_board(board_id: int, message_type: str, data: Dict[str, Any]) -
 
 @api_view(['GET'])
 def get_board(request, board_id):
-    board = Board.objects.select_related('game').prefetch_related(
-        'categories',
-        'categories__questions'
-    ).get(id=board_id)
+    board = get_object_or_404(
+        Board.objects.select_related('game').prefetch_related(
+            'categories',
+            'categories__questions'
+        ),
+        id=board_id
+    )
     return Response(BoardSerializer(board).data)
 
 
 @api_view(['GET'])
 def get_game(request, game_id):
-    game = Game.objects.prefetch_related(
-        'boards',
-        'teams',
-        'teams__players'
-    ).get(id=game_id)
+    game = get_object_or_404(
+        Game.objects.prefetch_related(
+            'boards',
+            'teams',
+            'teams__players'
+        ),
+        id=game_id
+    )
     return Response(GameSerializer(game).data)
 
 
@@ -64,30 +71,21 @@ def record_answer(request, board_id):
 
     data = request_serializer.validated_data
 
-    try:
-        board = Board.objects.select_related('game').get(id=board_id)
-    except Board.DoesNotExist:
-        return Response({'error': 'Board not found'}, status=status.HTTP_404_NOT_FOUND)
+    board = get_object_or_404(Board.objects.select_related('game'), id=board_id)
 
-    try:
-        player = Player.objects.select_related('team__game').get(id=data['player_id'])
-        if player.team.game_id != board.game_id:
-            return Response(
-                {'error': 'Player does not belong to this game'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    except Player.DoesNotExist:
-        return Response({'error': 'Player not found'}, status=status.HTTP_404_NOT_FOUND)
+    player = get_object_or_404(Player.objects.select_related('team__game'), id=data['player_id'])
+    if player.team.game_id != board.game_id:
+        return Response(
+            {'error': 'Player does not belong to this game'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-    try:
-        question = Question.objects.select_related('category__board').get(id=data['question_id'])
-        if question.category.board_id != board_id:
-            return Response(
-                {'error': 'Question does not belong to this board'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    except Question.DoesNotExist:
-        return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+    question = get_object_or_404(Question.objects.select_related('category__board'), id=data['question_id'])
+    if question.category.board_id != board_id:
+        return Response(
+            {'error': 'Question does not belong to this board'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     result = services.record_player_answer(
         player_id=data['player_id'],
@@ -116,11 +114,8 @@ def toggle_question(request, question_id):
 
     data = request_serializer.validated_data
 
-    try:
-        question = Question.objects.select_related('category__board').get(id=question_id)
-        board_id = question.category.board_id
-    except Question.DoesNotExist:
-        return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+    question = get_object_or_404(Question.objects.select_related('category__board'), id=question_id)
+    board_id = question.category.board_id
 
     result = services.update_question_status(
         question_id=question_id,
