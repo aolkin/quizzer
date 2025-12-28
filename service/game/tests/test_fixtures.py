@@ -13,9 +13,7 @@ class BaseGameTestCase(TestCase):
         """Set up test data used by multiple test cases."""
         self.game = Game.objects.create(name="Test Game", mode="jeopardy")
         self.board = Board.objects.create(game=self.game, name="Test Board", order=1)
-        self.category = Category.objects.create(
-            board=self.board, name="Test Category", order=1
-        )
+        self.category = Category.objects.create(board=self.board, name="Test Category", order=1)
 
         # Create questions with varying point values
         self.q1 = Question.objects.create(

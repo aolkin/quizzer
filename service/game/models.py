@@ -47,9 +47,7 @@ class Board(models.Model):
 
 
 class Category(models.Model):
-    board = models.ForeignKey(
-        Board, on_delete=models.PROTECT, related_name="categories"
-    )
+    board = models.ForeignKey(Board, on_delete=models.PROTECT, related_name="categories")
     name = models.CharField(max_length=200)
     order = models.SmallIntegerField()
 
@@ -70,9 +68,7 @@ class Question(models.Model):
         ("audio", "Audio"),
     ]
 
-    category = models.ForeignKey(
-        Category, on_delete=models.CASCADE, related_name="questions"
-    )
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="questions")
     special = models.BooleanField(default=False)
     type = models.CharField(max_length=5, choices=QUESTION_TYPES, default="text")
     text = models.TextField()
@@ -146,9 +142,7 @@ class Player(models.Model):
 
 class PlayerAnswer(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="answers")
-    question = models.ForeignKey(
-        Question, on_delete=models.CASCADE, related_name="player_answers"
-    )
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="player_answers")
     is_correct = models.BooleanField()
     points = models.IntegerField(null=True, blank=True)
     answered_at = models.DateTimeField(auto_now_add=True)

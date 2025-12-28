@@ -1,0 +1,33 @@
+# AI Agent Rules for Quizzer Project
+
+## Code Quality Requirements
+
+BEFORE committing ANY code changes, you MUST run these checks:
+
+### Backend (Python/Django in /service)
+1. Format: `cd service && black --check --line-length=100 .`
+2. Lint: `cd service && flake8 . --max-line-length=100 --extend-ignore=E203,W503`
+3. Test: `cd service && python manage.py test`
+
+### Frontend (TypeScript/Svelte in /app)
+1. Lint: `cd app && bun run lint`
+2. Type check: `cd app && bun run check`
+3. Test: `cd app && bun run test`
+4. Build: `cd app && bun run build`
+
+## Why These Checks Are Required
+
+- GitHub Actions CI/CD runs these same checks
+- Failing to run them locally will cause CI failures
+- These ensure code quality and prevent regressions
+
+## Testing Philosophy
+
+See app/TESTING.md for testing guidelines:
+- Focus on high-value tests for complex logic
+- Avoid trivial tests for simple setters/getters
+- Test behavior, not implementation
+
+## More Info
+
+See CONTRIBUTING.md and .github/copilot-instructions.md for complete guidelines.

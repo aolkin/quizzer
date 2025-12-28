@@ -63,9 +63,7 @@ class PlayerSerializerTestCase(BaseGameTestCase):
     def test_player_serializer_uses_annotated_score(self):
         """Test that PlayerSerializer uses annotated score when available."""
         # Add some answers
-        PlayerAnswer.objects.create(
-            player=self.player1, question=self.q1, is_correct=True
-        )
+        PlayerAnswer.objects.create(player=self.player1, question=self.q1, is_correct=True)
         PlayerAnswer.objects.create(
             player=self.player1, question=self.q2, is_correct=True, points=250
         )
@@ -73,9 +71,7 @@ class PlayerSerializerTestCase(BaseGameTestCase):
         # Get player with annotated score
         from ..models import Player
 
-        annotated_player = (
-            Player.objects.filter(id=self.player1.id).with_scores().first()
-        )
+        annotated_player = Player.objects.filter(id=self.player1.id).with_scores().first()
 
         serializer = PlayerSerializer(annotated_player)
         data = serializer.data
@@ -88,9 +84,7 @@ class PlayerSerializerTestCase(BaseGameTestCase):
     def test_player_serializer_falls_back_to_property(self):
         """Test that PlayerSerializer falls back to property when not annotated."""
         # Add some answers
-        PlayerAnswer.objects.create(
-            player=self.player1, question=self.q1, is_correct=True
-        )
+        PlayerAnswer.objects.create(player=self.player1, question=self.q1, is_correct=True)
 
         # Get player without annotation
         serializer = PlayerSerializer(self.player1)
