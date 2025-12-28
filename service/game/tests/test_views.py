@@ -42,8 +42,9 @@ class RecordAnswerViewTestCase(BaseGameTestCase):
         
         # Verify broadcast was called
         mock_broadcast.assert_called_once()
-        self.assertEqual(mock_broadcast.call_args[0][0], self.board.id)
-        self.assertEqual(mock_broadcast.call_args[0][1], 'update_score')
+        call_args = mock_broadcast.call_args
+        self.assertEqual(call_args.args[0], self.board.id)
+        self.assertEqual(call_args.args[1], 'update_score')
     
     def test_record_answer_validation_errors(self):
         """Test validation errors for invalid data and cross-game violations."""
@@ -96,7 +97,8 @@ class ToggleQuestionViewTestCase(BaseGameTestCase):
         
         # Verify broadcast
         mock_broadcast.assert_called_once()
-        self.assertEqual(mock_broadcast.call_args[0][1], 'toggle_question')
+        call_args = mock_broadcast.call_args
+        self.assertEqual(call_args.args[1], 'toggle_question')
     
     def test_toggle_question_invalid_data(self):
         """Test that invalid data returns validation errors."""
