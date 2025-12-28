@@ -1,5 +1,9 @@
 # Hardware Buzzer Client Dependencies
-# For Raspberry Pi buzzer system
+# This file has been superseded by pyproject.toml
+# To update dependencies:
+#   1. Edit dependencies in pyproject.toml
+#   2. Run: uv pip compile pyproject.toml -o requirements.lock
+#   3. Install: pip install -r requirements.lock
 
 # WebSocket Client Library
 websockets>=15.0,<16.0

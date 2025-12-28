@@ -1,5 +1,12 @@
 # Django Backend Dependencies for Quizzer Application
-# Generated based on imports and settings.py analysis
+# This file has been superseded by pyproject.toml
+# To update dependencies:
+#   1. Edit dependencies in pyproject.toml
+#   2. Run: uv pip compile pyproject.toml -o requirements.lock
+#   3. Install: pip install -r requirements.lock
+#
+# For development, you can still install from this file,
+# but the lock file (requirements.lock) is preferred for reproducibility.
 
 # Core Django Framework
 Django>=5.1,<5.2

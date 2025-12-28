@@ -115,11 +115,19 @@ This hybrid approach combines the simplicity of broadcast relay with the robustn
 ### Backend Setup
 ```bash
 cd service
-# Install python packages
-# TODO: Actually create a requirements.txt
-pip install -r requirements.txt
+# Install uv package manager (modern, fast Python package manager)
+pip install uv
+
+# Install dependencies from lock file
+uv pip install -r requirements.lock
+
+# Run migrations
 python manage.py migrate
+
+# Create admin user
 python manage.py createsuperuser
+
+# Start server
 python manage.py runserver
 ```
 
@@ -133,6 +141,9 @@ bun run dev
 ### Hardware Buzzers (Optional)
 ```bash
 cd hardware
+# Install dependencies from lock file
+uv pip install -r requirements.lock
+
 # On Raspberry Pi:
 python buzzers.py <game_id>
 ```
@@ -246,6 +257,40 @@ python manage.py test         # Run tests
 black .                       # Format code
 flake8 .                      # Lint code
 ```
+
+### Dependency Management
+
+This project uses **uv** (modern, fast Python package manager) with **pyproject.toml** for dependency management.
+
+#### Python Dependencies (Backend & Hardware)
+
+**Adding a new dependency:**
+```bash
+# Add to pyproject.toml [project.dependencies] section
+cd service  # or hardware
+nano pyproject.toml  # Add package to dependencies list
+
+# Regenerate lock file
+uv pip compile pyproject.toml -o requirements.lock
+
+# Install updated dependencies
+uv pip install -r requirements.lock
+```
+
+**Updating dependencies:**
+```bash
+cd service  # or hardware
+# Update to latest compatible versions
+uv pip compile pyproject.toml -o requirements.lock --upgrade
+
+# Install updated dependencies
+uv pip install -r requirements.lock
+```
+
+**Lock files:**
+- `service/requirements.lock` - Pinned versions for backend
+- `hardware/requirements.lock` - Pinned versions for buzzer hardware
+- Commit lock files to ensure reproducible builds across environments
 
 ### Running Quality Checks Locally
 
