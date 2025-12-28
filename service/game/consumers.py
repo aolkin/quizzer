@@ -11,6 +11,21 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     are handled by REST API endpoints which broadcast updates via the channel layer.
     """
 
+    async def broadcast_client_status(self, connected: bool):
+        """Broadcast client connection status to the group."""
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "game_message",
+                "message": {
+                    "type": "client_connection_status",
+                    "client_type": self.client_type,
+                    "client_id": self.client_id,
+                    "connected": connected,
+                },
+            },
+        )
+
     async def connect(self):
         self.board_id = self.scope["url_route"]["kwargs"]["board_id"]
         self.room_group_name = f"board_{self.board_id}"
@@ -30,36 +45,14 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
 
         # Broadcast connection status for clients with a type
         if self.client_type:
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "game_message",
-                    "message": {
-                        "type": "client_connection_status",
-                        "client_type": self.client_type,
-                        "client_id": self.client_id,
-                        "connected": True,
-                    },
-                },
-            )
+            await self.broadcast_client_status(connected=True)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
         # Broadcast disconnection status for clients with a type
         if self.client_type and self.client_id:
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "game_message",
-                    "message": {
-                        "type": "client_connection_status",
-                        "client_type": self.client_type,
-                        "client_id": self.client_id,
-                        "connected": False,
-                    },
-                },
-            )
+            await self.broadcast_client_status(connected=False)
 
     async def receive_json(self, content):
         """
