@@ -344,51 +344,6 @@ Each buzzer should be wired as follows:
 
 When a buzzer is pressed, it connects the multiplexer channel to 3.3V. The pull-down resistor ensures a clean LOW signal when not pressed.
 
-### Software Configuration
-
-#### Basic Usage
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run with default server (quasar.local:8000)
-python buzzers.py 1
-
-# Run with custom server
-python buzzers.py 1 --server 192.168.1.100:8000
-
-# Run with debug logging
-python buzzers.py 1 --log-level DEBUG
-```
-
-#### Environment Variables
-- `QUIZZER_SERVER`: Server URL (default: `quasar.local:8000`)
-- `QUIZZER_LOG_LEVEL`: Logging level - DEBUG, INFO, WARNING, ERROR, CRITICAL (default: `INFO`)
-
-#### Features
-- **Automatic reconnection**: If the WebSocket connection drops, the script automatically attempts to reconnect
-- **Health monitoring**: Built-in ping/pong heartbeat (15s interval, 5s timeout) to detect stale connections
-- **Graceful shutdown**: Handles SIGTERM and SIGINT signals to properly cleanup GPIO pins
-- **Buzzer safety**: Buzzers are automatically disabled when connection is lost to prevent phantom presses
-
-### Troubleshooting
-
-**Buzzers not responding:**
-- Check that all GPIO connections are secure
-- Verify 74HC4051 is receiving 3.3V power
-- Test individual buzzers with a multimeter
-- Run with `--log-level DEBUG` to see detailed connection info
-
-**Connection issues:**
-- Verify the server URL is correct
-- Check network connectivity to the server
-- Ensure the game ID exists in the database
-- Check firewall settings allow WebSocket connections on port 8000
-
-**GPIO cleanup errors:**
-- The script automatically cleans up GPIO on exit
-- If pins are left in a bad state, run: `python -c "import RPi.GPIO as gpio; gpio.setmode(gpio.BCM); gpio.cleanup()"`
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

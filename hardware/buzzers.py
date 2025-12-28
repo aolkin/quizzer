@@ -149,8 +149,7 @@ def cleanup_gpio(signum=None, frame=None):
     """Cleanup GPIO pins on shutdown"""
     logger.info("Cleaning up GPIO...")
     gpio.cleanup()
-    if signum is not None:
-        sys.exit(0)
+    sys.exit(0)
 
 
 def setup_logging(log_level: str):
@@ -205,9 +204,6 @@ if __name__ == "__main__":
     try:
         asyncio.get_event_loop().run_until_complete(client.run_async())
         asyncio.get_event_loop().run_forever()
-    except KeyboardInterrupt:
-        logger.info("Shutting down gracefully...")
-        gpio.cleanup()
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         gpio.cleanup()
