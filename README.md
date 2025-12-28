@@ -10,7 +10,7 @@ frontend and Django backend.
 Also an experiment in AI-assisted coding, portions of the repository were
 bootstrapped or improved with the use of AI assistants (including this README).
 
-> **For AI Agents**: Code quality checks are REQUIRED before committing. See [.github/copilot-instructions.md](.github/copilot-instructions.md), [CONTRIBUTING.md](CONTRIBUTING.md), or the `.clinerules`/`.cursorrules` files for detailed instructions on running linters, tests, and type checking.
+> **For AI Agents**: Code quality checks are REQUIRED before committing. See [AGENTS.md](AGENTS.md) or [CONTRIBUTING.md](CONTRIBUTING.md) for detailed instructions on running linters, tests, and type checking.
 
 ## Features
 
