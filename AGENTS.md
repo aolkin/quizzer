@@ -97,4 +97,4 @@ When writing tests, follow our testing philosophy documented in [TESTING.md](TES
 
 ## More Information
 
-For complete development guidelines and workflow, see the README.
+For complete development guidelines and workflow, see [README.md](README.md).
