@@ -41,23 +41,20 @@ def update_question_status(question_id: int, answered: bool) -> QuestionStatusRe
     """
     question = Question.objects.select_for_update().get(id=question_id)
     question.answered = answered
-    question.state_version = F('state_version') + 1
-    question.save(update_fields=['answered', 'state_version'])
+    question.state_version = F("state_version") + 1
+    question.save(update_fields=["answered", "state_version"])
     question.refresh_from_db()
 
     return QuestionStatusResult(
         question_id=question.id,
         answered=question.answered,
-        version=question.state_version
+        version=question.state_version,
     )
 
 
 @transaction.atomic
 def record_player_answer(
-    player_id: int,
-    question_id: int,
-    is_correct: bool,
-    points: Optional[int] = None
+    player_id: int, question_id: int, is_correct: bool, points: Optional[int] = None
 ) -> PlayerAnswerResult:
     """
     Record a player's answer and return their updated score with version.
@@ -79,10 +76,7 @@ def record_player_answer(
         PlayerAnswerResult with player_id, updated score, and version
     """
     try:
-        answer = PlayerAnswer.objects.get(
-            player_id=player_id,
-            question_id=question_id
-        )
+        answer = PlayerAnswer.objects.get(player_id=player_id, question_id=question_id)
         # If correctness changed, delete the answer (undo mechanism)
         if answer.is_correct != is_correct:
             answer.delete()
@@ -96,19 +90,17 @@ def record_player_answer(
             player_id=player_id,
             question_id=question_id,
             is_correct=is_correct,
-            points=points
+            points=points,
         )
 
     # Get player with lock and increment version
     player = Player.objects.select_for_update().get(id=player_id)
-    player.score_version = F('score_version') + 1
-    player.save(update_fields=['score_version'])
-    
+    player.score_version = F("score_version") + 1
+    player.save(update_fields=["score_version"])
+
     # Reload player with annotated score to get both version and score in one query
     player = Player.objects.filter(id=player_id).with_scores().get()
 
     return PlayerAnswerResult(
-        player_id=player.id,
-        score=player.computed_score,
-        version=player.score_version
+        player_id=player.id, score=player.computed_score, version=player.score_version
     )
