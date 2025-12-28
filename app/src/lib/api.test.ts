@@ -19,19 +19,16 @@ describe('API', () => {
 
     const result = await recordPlayerAnswer(1, 2, 3, true, 100);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://quasar.local:8000/api/board/1/answers/',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player_id: 2,
-          question_id: 3,
-          is_correct: true,
-          points: 100
-        })
-      }
-    );
+    expect(fetchMock).toHaveBeenCalledWith('http://quasar.local:8000/api/board/1/answers/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player_id: 2,
+        question_id: 3,
+        is_correct: true,
+        points: 100,
+      }),
+    });
     expect(result.version).toBe(42);
   });
 
@@ -48,11 +45,11 @@ describe('API', () => {
     fetchMock.mockResolvedValue({
       ok: false,
       statusText: 'Bad Request',
-      text: async () => 'Invalid player ID'
+      text: async () => 'Invalid player ID',
     });
 
     await expect(recordPlayerAnswer(1, 1, 1, true)).rejects.toThrow(
-      'Failed to record answer: Bad Request - Invalid player ID'
+      'Failed to record answer: Bad Request - Invalid player ID',
     );
   });
 });

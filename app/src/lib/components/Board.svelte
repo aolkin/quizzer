@@ -7,12 +7,15 @@
   import { gameState } from '../game-state.svelte';
   import QuestionDisplay from './QuestionDisplay.svelte';
 
-  let { mode, board, audio }: { board: Board; mode: UiMode, audio: AudioClient } = $props();
+  let { mode, board, audio }: { board: Board; mode: UiMode; audio: AudioClient } = $props();
 
   let hoveredQuestion = $state<Question | undefined>(undefined);
   let selectedQuestion = $state<Question | undefined>(undefined);
-  let sidebarQuestion = $derived(hoveredQuestion || selectedQuestion ||
-    allQuestions(board).find(q => q.id === gameState.selectedQuestion));
+  let sidebarQuestion = $derived(
+    hoveredQuestion ||
+      selectedQuestion ||
+      allQuestions(board).find((q) => q.id === gameState.selectedQuestion),
+  );
 
   function isColumnVisible(categoryId: number): boolean {
     return gameState.visibleCategories.has(categoryId);
@@ -35,13 +38,20 @@
   }
 </script>
 
-<div class="grid gap-4 p-2" class:grid-cols-[3fr,1fr]={mode === 'host'} class:grid-cols-1={mode === 'presentation'}>
+<div
+  class="grid gap-4 p-2"
+  class:grid-cols-[3fr,1fr]={mode === 'host'}
+  class:grid-cols-1={mode === 'presentation'}
+>
   {#if board}
     <div class="grid grid-cols-6 gap-2">
       {#each board.categories as category}
-        <div class="flex flex-col gap-2" class:opacity-50={mode === 'host' && !isColumnVisible(category.id)}>
+        <div
+          class="flex flex-col gap-2"
+          class:opacity-50={mode === 'host' && !isColumnVisible(category.id)}
+        >
           <button
-            class="h-24 bg-primary-700 rounded-md font-bold p-2 text-center uppercase text-2xl hover:bg-primary-600 transition-colors"
+            class="h-24 rounded-md bg-primary-700 p-2 text-center text-2xl font-bold uppercase transition-colors hover:bg-primary-600"
             onclick={() => mode === 'host' && gameState.websocket?.revealCategory(category.id)}
           >
             {#if mode === UiMode.Host || isColumnVisible(category.id)}
@@ -52,7 +62,7 @@
           <div class="flex flex-col gap-2">
             {#each category.questions as question}
               <button
-                class="aspect-video bg-primary-800 rounded-md flex items-center justify-center text-8xl font-bold hover:bg-primary-700 transition-colors"
+                class="flex aspect-video items-center justify-center rounded-md bg-primary-800 text-8xl font-bold transition-colors hover:bg-primary-700"
                 class:opacity-75={question.status === 'answered'}
                 onclick={() => handleQuestionClick(question)}
                 onmouseenter={() => mode === 'host' && (hoveredQuestion = question)}
@@ -74,40 +84,43 @@
     </div>
 
     {#if mode === 'host' && sidebarQuestion}
-      <div class="bg-surface-800 p-4 rounded-lg border-primary-500 {gameState.selectedQuestion === sidebarQuestion.id && 'border-2'} transition-all"
-      transition:fly={{ x: 100 }}>
-        <h3 class="text-xl mb-4">
+      <div
+        class="rounded-lg border-primary-500 bg-surface-800 p-4 {gameState.selectedQuestion ===
+          sidebarQuestion.id && 'border-2'} transition-all"
+        transition:fly={{ x: 100 }}
+      >
+        <h3 class="mb-4 text-xl">
           {#if sidebarQuestion.special}
-            <Icon icon="mdi:star" class="text-warning-400 inline" />
+            <Icon icon="mdi:star" class="inline text-warning-400" />
           {/if}
           {sidebarQuestion.points} - {sidebarQuestion.text}
         </h3>
-        <p class="text-primary-400 mb-4">{sidebarQuestion.answer}</p>
+        <p class="mb-4 text-primary-400">{sidebarQuestion.answer}</p>
         <div class="flex gap-2">
           <button
             type="button"
-            class="btn btn-variant-filled"
+            class="btn-variant-filled btn"
             onclick={() => presentQuestion(sidebarQuestion)}
           >
             Present
           </button>
           <button
             type="button"
-            class="btn btn-variant-filled"
+            class="btn-variant-filled btn"
             onclick={() => gameState.websocket?.updateQuestionStatus(sidebarQuestion.id, true)}
           >
             Mark Answered
           </button>
           <button
             type="button"
-            class="btn btn-variant-ringed"
+            class="btn-variant-ringed btn"
             onclick={() => gameState.websocket?.updateQuestionStatus(sidebarQuestion.id, false)}
           >
             Skip
           </button>
           <button
             type="button"
-            class="btn btn-variant-filled"
+            class="btn-variant-filled btn"
             onclick={() => gameState.websocket?.selectQuestion(undefined)}
           >
             Complete

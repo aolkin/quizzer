@@ -16,9 +16,9 @@ describe('GameStateManager', () => {
   it('resets state when selecting new board', () => {
     gameState.revealCategory(1);
     gameState.selectQuestion(10);
-    
+
     gameState.selectBoard(5);
-    
+
     expect(gameState.visibleCategories.size).toBe(0);
     expect(gameState.selectedQuestion).toBeUndefined();
   });
@@ -34,15 +34,31 @@ describe('GameStateManager', () => {
           name: 'Category 1',
           order: 1,
           questions: [
-            { id: 1, text: 'Q1', type: 'text', special: false, answer: 'A1', points: 100, answered: true },
-            { id: 2, text: 'Q2', type: 'text', special: false, answer: 'A2', points: 200, answered: false }
-          ]
-        }
-      ]
+            {
+              id: 1,
+              text: 'Q1',
+              type: 'text',
+              special: false,
+              answer: 'A1',
+              points: 100,
+              answered: true,
+            },
+            {
+              id: 2,
+              text: 'Q2',
+              type: 'text',
+              special: false,
+              answer: 'A2',
+              points: 200,
+              answered: false,
+            },
+          ],
+        },
+      ],
     };
 
     gameState.setBoard(board, [1]);
-    
+
     expect(gameState.answeredQuestions.has(1)).toBe(true);
     expect(gameState.answeredQuestions.has(2)).toBe(false);
   });
@@ -50,7 +66,7 @@ describe('GameStateManager', () => {
   it('toggles question answered state', () => {
     gameState.markQuestionAnswered(1, true);
     expect(gameState.answeredQuestions.has(1)).toBe(true);
-    
+
     gameState.markQuestionAnswered(1, false);
     expect(gameState.answeredQuestions.has(1)).toBe(false);
   });
