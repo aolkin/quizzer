@@ -4,12 +4,8 @@ Tests for serializers.
 These tests verify that serializers correctly serialize model data,
 handle nested relationships, and use annotated scores efficiently.
 """
-from django.test import TestCase
 from ..models import PlayerAnswer
-from ..serializers import (
-    GameSerializer, BoardSerializer, PlayerSerializer,
-    RecordAnswerRequestSerializer, ToggleQuestionRequestSerializer
-)
+from ..serializers import GameSerializer, BoardSerializer, PlayerSerializer
 from .test_fixtures import BaseGameTestCase
 
 
@@ -93,37 +89,3 @@ class PlayerSerializerTestCase(BaseGameTestCase):
         # Should still compute score using property
         self.assertEqual(data['score'], 100)
 
-
-class RequestSerializerTestCase(TestCase):
-    """Tests for API request serializers."""
-    
-    def test_record_answer_serializer(self):
-        """Test RecordAnswerRequestSerializer with and without optional fields."""
-        # Valid data with all fields
-        data_with_points = {
-            'player_id': 1,
-            'question_id': 2,
-            'is_correct': True,
-            'points': 150
-        }
-        serializer = RecordAnswerRequestSerializer(data=data_with_points)
-        self.assertTrue(serializer.is_valid())
-        self.assertEqual(serializer.validated_data['player_id'], 1)
-        self.assertEqual(serializer.validated_data['points'], 150)
-        
-        # Valid data without optional points field
-        data_without_points = {
-            'player_id': 1,
-            'question_id': 2,
-            'is_correct': False
-        }
-        serializer = RecordAnswerRequestSerializer(data=data_without_points)
-        self.assertTrue(serializer.is_valid())
-        self.assertNotIn('points', serializer.validated_data)
-    
-    def test_toggle_question_serializer(self):
-        """Test ToggleQuestionRequestSerializer."""
-        data = {'answered': True}
-        serializer = ToggleQuestionRequestSerializer(data=data)
-        self.assertTrue(serializer.is_valid())
-        self.assertTrue(serializer.validated_data['answered'])

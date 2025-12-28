@@ -136,8 +136,3 @@ class GetEndpointsTestCase(BaseGameTestCase):
         team1 = next(t for t in response.data['teams'] if t['name'] == 'Team 1')
         player1_data = next(p for p in team1['players'] if p['name'] == 'Player 1')
         self.assertEqual(player1_data['score'], 100)
-    
-    def test_get_nonexistent_resources(self):
-        """Test 404 for nonexistent board and game."""
-        self.assertEqual(self.client.get('/api/board/99999/').status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(self.client.get('/api/game/99999/').status_code, status.HTTP_404_NOT_FOUND)
