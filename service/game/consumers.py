@@ -13,8 +13,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     """
 
     # Class-level dictionary to track clients by type per board
-    # Structure: {board_id: {client_type: {client_id: channel_name}}}
-    clients_by_type = defaultdict(lambda: defaultdict(dict))
+    # Structure: {board_id: {client_type: {client_id1, client_id2, ...}}}
+    clients_by_type = defaultdict(lambda: defaultdict(set))
 
     async def connect(self):
         self.board_id = self.scope["url_route"]["kwargs"]["board_id"]
@@ -35,9 +35,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
 
         # Track client by type and broadcast connection status
         if self.client_type:
-            GameConsumer.clients_by_type[self.board_id][self.client_type][
-                self.client_id
-            ] = self.channel_name
+            GameConsumer.clients_by_type[self.board_id][self.client_type].add(self.client_id)
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -59,7 +57,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         if self.client_type and self.client_id:
             clients_of_type = GameConsumer.clients_by_type[self.board_id][self.client_type]
             if self.client_id in clients_of_type:
-                del clients_of_type[self.client_id]
+                clients_of_type.discard(self.client_id)
 
                 await self.channel_layer.group_send(
                     self.room_group_name,
