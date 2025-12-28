@@ -7,7 +7,7 @@ separated from WebSocket protocol handling and REST API views.
 
 from dataclasses import dataclass
 from django.db import transaction
-from django.db.models import F, Sum, Q, Value, IntegerField
+from django.db.models import F, Sum, Q, Value, IntegerField, Case, When
 from typing import Optional
 
 from .models import Player, PlayerAnswer, Question
@@ -107,8 +107,6 @@ def record_player_answer(
     
     # Compute score efficiently using database aggregation
     # For each answer, use answer.points if not null, otherwise question.points
-    from django.db.models import Case, When
-    
     score_result = PlayerAnswer.objects.filter(player_id=player_id).aggregate(
         total=Sum(
             Case(
