@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import F
 from typing import Optional
 
-from .models import Player, PlayerAnswer, Question, get_score_annotation
+from .models import Player, PlayerAnswer, Question, get_score_aggregate
 
 
 @dataclass
@@ -106,9 +106,9 @@ def record_player_answer(
     player.refresh_from_db()
     
     # Compute score efficiently using database aggregation
-    # Uses the same annotation logic as the queryset for consistency
+    # Uses the aggregate helper since we're working with PlayerAnswer queryset
     score_result = PlayerAnswer.objects.filter(player_id=player_id).aggregate(
-        total=get_score_annotation()
+        total=get_score_aggregate()
     )
     score = score_result['total'] or 0
 

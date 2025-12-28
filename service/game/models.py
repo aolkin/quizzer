@@ -6,16 +6,31 @@ from colorfield.fields import ColorField
 
 def get_score_annotation():
     """
-    Returns the annotation expression for computing player scores.
+    Returns the annotation expression for computing player scores on a Player queryset.
     
-    This can be used both in querysets and in aggregations to compute
-    scores efficiently. For each answer, uses answer.points if not null,
-    otherwise question.points.
+    This can be used in Player querysets to annotate scores efficiently.
+    For each answer, uses answer.points if not null, otherwise question.points.
     """
     return Sum(
         Case(
             When(answers__points__isnull=False, then='answers__points'),
             default='answers__question__points',
+        ),
+        default=Value(0, output_field=IntegerField())
+    )
+
+
+def get_score_aggregate():
+    """
+    Returns the aggregation expression for computing player scores on a PlayerAnswer queryset.
+    
+    This can be used when aggregating PlayerAnswer objects for a specific player.
+    For each answer, uses answer.points if not null, otherwise question.points.
+    """
+    return Sum(
+        Case(
+            When(points__isnull=False, then='points'),
+            default='question__points',
         ),
         default=Value(0, output_field=IntegerField())
     )
