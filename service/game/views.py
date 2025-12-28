@@ -1,19 +1,43 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from dataclasses import asdict
+from django.db import models
+from django.db.models import Sum, Q, Value, IntegerField
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from typing import Dict, Any
 
-from .models import Game, Board, Player, Question
+from .models import Game, Board, Player, Question, Team
 from .serializers import (
     BoardSerializer, GameSerializer,
     RecordAnswerRequestSerializer,
     ToggleQuestionRequestSerializer
 )
 from . import services
+
+
+def annotate_player_scores(queryset):
+    """
+    Annotate a Player queryset with computed scores to avoid N+1 queries.
+    
+    Uses database aggregation to compute scores efficiently instead of the
+    Player.score property which triggers a query for each player.
+    
+    For each answer, uses answer.points if not null, otherwise question.points.
+    """
+    from django.db.models import Case, When
+    
+    return queryset.annotate(
+        computed_score=Sum(
+            Case(
+                When(answers__points__isnull=False, then='answers__points'),
+                default='answers__question__points',
+            ),
+            default=Value(0, output_field=IntegerField())
+        )
+    )
 
 
 def broadcast_to_board(board_id: int, message_type: str, data: Dict[str, Any]) -> None:
@@ -45,14 +69,23 @@ def get_board(request, board_id):
 
 @api_view(['GET'])
 def get_game(request, game_id):
+    # First get the game with teams
     game = get_object_or_404(
-        Game.objects.prefetch_related(
-            'boards',
-            'teams',
-            'teams__players'
-        ),
+        Game.objects.prefetch_related('boards'),
         id=game_id
     )
+    
+    # Get teams for this game with annotated player scores
+    teams = Team.objects.filter(game_id=game_id).prefetch_related(
+        models.Prefetch(
+            'players',
+            queryset=annotate_player_scores(Player.objects.all())
+        )
+    )
+    
+    # Attach teams to game object for serialization
+    game._prefetched_teams = list(teams)
+    
     return Response(GameSerializer(game).data)
 
 
