@@ -10,7 +10,7 @@ frontend and Django backend.
 Also an experiment in AI-assisted coding, portions of the repository were
 bootstrapped or improved with the use of AI assistants (including this README).
 
-> **For AI Agents**: Code quality checks are REQUIRED before committing. See [AGENTS.md](AGENTS.md) or [CONTRIBUTING.md](CONTRIBUTING.md) for detailed instructions on running linters, tests, and type checking.
+> **For AI Agents**: Code quality checks are REQUIRED before committing. See [AGENTS.md](AGENTS.md) for detailed instructions on running linters, tests, and type checking.
 
 ## Features
 
@@ -206,7 +206,7 @@ Connect to: `ws://localhost:8000/ws/game/{game_id}/`
 ## Development
 
 ### Prerequisites for Development
-- Python 3.11+ (for backend)
+- Python 3.12+ (for backend)
 - Bun (for frontend)
 - Git
 - (Optional) pre-commit for automated code quality checks
@@ -227,8 +227,8 @@ pre-commit run --all-files
 ```
 
 The pre-commit hooks will automatically:
-- Format Python code with Black
-- Lint Python code with Flake8
+- Format Python code with Black (configured in `service/pyproject.toml`)
+- Lint Python code with Flake8 (configured in `service/.flake8`)
 - Format JavaScript/TypeScript/Svelte with Prettier
 - Check for trailing whitespace and other common issues
 
@@ -260,8 +260,8 @@ Before submitting a PR, ensure all checks pass:
 ```bash
 # Backend checks
 cd service
-black --check --line-length=100 .
-flake8 . --max-line-length=100 --extend-ignore=E203,W503
+black --check .
+flake8 .
 python manage.py test
 
 # Frontend checks
@@ -272,9 +272,21 @@ bun run test
 bun run build
 ```
 
+Configuration for linters and formatters:
+- **Backend**: Black configured in `service/pyproject.toml` (line length: 100), Flake8 configured in `service/.flake8` (max line length: 100, ignores: E203, W503)
+- **Frontend**: JavaScript/TypeScript style configured via ESLint and Prettier configs in `app/`
+
+### Testing
+
+See [TESTING.md](TESTING.md) for our testing philosophy and guidelines. Key principles:
+- Focus on **high-value tests** that verify complex logic and prevent regressions
+- Avoid trivial tests for simple setters/getters or framework behavior
+- Test behavior, not implementation
+- Mock external dependencies
+
 ### Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development workflow, code quality standards, and guidelines for AI agents and assistants.
+For AI agents and assistants, see [AGENTS.md](AGENTS.md) for required quality checks before committing.
 
 ## Hardware Buzzer Wiring
 

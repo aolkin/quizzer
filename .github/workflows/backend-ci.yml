@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
@@ -56,13 +56,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install linters
         run: pip install black flake8
 
       - name: Run black
-        run: black --check --line-length=100 service/
+        run: black --check service/
 
       - name: Run flake8
-        run: flake8 service/ --max-line-length=100 --extend-ignore=E203,W503
+        run: flake8 service/

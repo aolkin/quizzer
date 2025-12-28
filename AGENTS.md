@@ -85,6 +85,14 @@ pip install pre-commit
 pre-commit install
 ```
 
+## Testing Philosophy
+
+When writing tests, follow our testing philosophy documented in [TESTING.md](TESTING.md):
+- Focus on **high-value tests** that verify complex logic and prevent regressions
+- Avoid trivial tests for simple setters/getters or framework behavior
+- Test behavior, not implementation
+- Mock external dependencies (WebSocket, fetch, database)
+
 ## More Information
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for complete development guidelines and workflow.
+For complete development guidelines and workflow, see the README.
