@@ -44,11 +44,8 @@ class GameStateManager {
     this.visibleCategories.add(categoryId);
   }
 
-  selectBoard(boardId: number, board?: Board) {
+  selectBoard(boardId: number) {
     this.currentBoard = boardId;
-    if (board) {
-      this.board = board;
-    }
     // Reset state when selecting a new board
     this.visibleCategories = new Set();
     this.selectedQuestion = undefined;

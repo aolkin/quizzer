@@ -59,20 +59,21 @@ export class GameWebSocket {
     } else if (data.type === 'reveal_category') {
       gameState.revealCategory(data.categoryId);
     } else if (data.type === 'select_board') {
-      const updateBoard = async () => {
-        try {
-          const board = await apiGetBoard(data.board);
-          if (gameState.currentBoard === data.board) {
-            const answeredQuestionIds = allQuestions(board).filter(q => q.answered).map(q => q.id);
-            gameState.setBoard(board, answeredQuestionIds);
-          }
-        } catch (error) {
-          console.error('Error fetching board:', error);
-        }
-      }
       if (gameState.currentBoard !== data.board) {
         gameState.selectBoard(data.board);
-        updateBoard();
+        // Fetch and set board data asynchronously
+        (async () => {
+          try {
+            const board = await apiGetBoard(data.board);
+            // Only update if we're still on the same board (handles race conditions)
+            if (gameState.currentBoard === data.board) {
+              const answeredQuestionIds = allQuestions(board).filter(q => q.answered).map(q => q.id);
+              gameState.setBoard(board, answeredQuestionIds);
+            }
+          } catch (error) {
+            console.error('Error fetching board:', error);
+          }
+        })();
       }
     } else if (data.type === 'select_question') {
       gameState.selectQuestion(data.question);

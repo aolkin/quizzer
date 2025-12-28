@@ -13,7 +13,8 @@
 	});
 
 	function recordAnswer(playerId: number, correct: boolean) {
-		gameState.websocket?.recordPlayerAnswer(playerId, currentQuestion!.id, correct,
+		if (!currentQuestion) return;
+		gameState.websocket?.recordPlayerAnswer(playerId, currentQuestion.id, correct,
 			correct ? pointsToAward : -pointsToAward);
 	}
 
