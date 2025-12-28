@@ -29,10 +29,11 @@ Should be configurable via environment variable or command-line argument.
 - Could sit "connected" to dead socket
 - No timeout handling
 
-### 5. Debug Code Left In
+### 5. Debug Code Left In *(Keeping as-is)*
 - Line 14: `# gc.disable()` commented out
 - Lines 42, 49: Debug print statements
 - Line 51: Magic number calculations without explanation
+- **Decision**: Leaving debug code in place for development/troubleshooting
 
 ## Proposed Fixes
 
@@ -48,9 +49,11 @@ except websockets.ConnectionClosed:
 ### Priority 2: Make URL Configurable
 ```python
 import os
+# Keep quasar.local:8000 as default fallback
 SERVER_URL = os.getenv('QUIZZER_SERVER', 'quasar.local:8000')
 uri = f"ws://{SERVER_URL}/ws/game/{self.game_id}/"
 ```
+Could also add command-line argument: `--server SERVER_URL`
 
 ### Priority 3: Graceful Shutdown
 ```python
@@ -65,11 +68,18 @@ signal.signal(signal.SIGINT, cleanup_handler)
 ```
 
 ## Action Items
-- [ ] Remove `exit(1)` call, fix reconnection
-- [ ] Add server URL configuration
-- [ ] Add signal handlers for graceful shutdown
-- [ ] Add WebSocket ping/pong heartbeat
-- [ ] Clean up debug code and comments
-- [ ] Add logging instead of print statements
-- [ ] Document hardware setup in README
-- [ ] Add requirements.txt for hardware dependencies
+- [x] Remove `exit(1)` call, fix reconnection *(Completed)*
+- [ ] Add server URL configuration (env var + CLI arg, default to `quasar.local:8000`)
+- [ ] Add signal handlers for graceful shutdown (SIGTERM + SIGINT)
+- [ ] Add WebSocket ping/pong heartbeat (client pings every 30s, recv timeout 90s)
+  - **Risk**: Moderate - silent connection death, no auto-recovery from stale connections
+  - **Requires**: Client-side ping loop + timeout on recv(), minimal server changes
+- [ ] Replace print() with logging module (support dynamic log level via env/CLI)
+  - Use `QUIZZER_LOG_LEVEL` env var or `--log-level` CLI argument
+  - Enables runtime control: DEBUG, INFO, WARNING, ERROR
+- [ ] Complete hardware documentation in README (expand wiring details)
+- [x] Add requirements.txt for hardware dependencies *(Completed)*
+
+## Decisions
+- **Debug code**: Keeping commented code and debug statements in place for development
+- **Default URL**: Keep `quasar.local:8000` as fallback when making URL configurable
