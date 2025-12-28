@@ -10,7 +10,7 @@
   import { onDestroy, onMount } from 'svelte';
 
   const gameId = page.params.game;
-  const mode = page.params.mode as UiMode || UiMode.Presentation;
+  const mode = (page.params.mode as UiMode) || UiMode.Presentation;
 
   let { data: game } = $props();
 
@@ -18,8 +18,11 @@
 
   onMount(async () => {
     audioClient = mode === UiMode.Presentation ? new AudioClient() : undefined;
-    gameState.setScores(Object.fromEntries(game.teams.flatMap((team) =>
-      team.players.map((player) => [player.id, player.score]))));
+    gameState.setScores(
+      Object.fromEntries(
+        game.teams.flatMap((team) => team.players.map((player) => [player.id, player.score])),
+      ),
+    );
     gameState.setWebsocket(new GameWebSocket(gameId, mode, audioClient));
   });
 

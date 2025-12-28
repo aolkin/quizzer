@@ -1,8 +1,18 @@
 import { goto } from '$app/navigation';
 import { AudioClient, Sound } from './audio.svelte';
-import { allQuestions, ENDPOINT, UiMode, shouldUpdatePlayer, shouldUpdateQuestion } from './state.svelte';
+import {
+  allQuestions,
+  ENDPOINT,
+  UiMode,
+  shouldUpdatePlayer,
+  shouldUpdateQuestion,
+} from './state.svelte';
 import { gameState } from './game-state.svelte';
-import { recordPlayerAnswer as apiRecordPlayerAnswer, toggleQuestion as apiToggleQuestion, getBoard as apiGetBoard } from './api';
+import {
+  recordPlayerAnswer as apiRecordPlayerAnswer,
+  toggleQuestion as apiToggleQuestion,
+  getBoard as apiGetBoard,
+} from './api';
 
 const CLIENT_ID = Math.random().toString(36);
 
@@ -12,7 +22,11 @@ export class GameWebSocket {
   private maxReconnectTimeout = 1000;
   private reconnectTimeout = 100;
 
-  constructor(private readonly gameId: string, private readonly mode: UiMode, private readonly audio?: AudioClient) {
+  constructor(
+    private readonly gameId: string,
+    private readonly mode: UiMode,
+    private readonly audio?: AudioClient,
+  ) {
     this.connect();
   }
 
@@ -37,10 +51,12 @@ export class GameWebSocket {
 
   send(message: any) {
     if (this.socket?.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({
-        ...message,
-        clientId: CLIENT_ID,
-      }));
+      this.socket.send(
+        JSON.stringify({
+          ...message,
+          clientId: CLIENT_ID,
+        }),
+      );
     } else {
       throw new Error('WebSocket is closed');
     }
@@ -52,7 +68,7 @@ export class GameWebSocket {
       if (gameState.currentBoard) {
         this.selectBoard(gameState.currentBoard);
       }
-      gameState.visibleCategories.forEach(categoryId => this.revealCategory(categoryId))
+      gameState.visibleCategories.forEach((categoryId) => this.revealCategory(categoryId));
       if (gameState.selectedQuestion) {
         this.selectQuestion(gameState.selectedQuestion);
       }
@@ -67,7 +83,9 @@ export class GameWebSocket {
             const board = await apiGetBoard(data.board);
             // Only update if we're still on the same board (handles race conditions)
             if (gameState.currentBoard === data.board) {
-              const answeredQuestionIds = allQuestions(board).filter(q => q.answered).map(q => q.id);
+              const answeredQuestionIds = allQuestions(board)
+                .filter((q) => q.answered)
+                .map((q) => q.id);
               gameState.setBoard(board, answeredQuestionIds);
             }
           } catch (error) {
@@ -105,14 +123,14 @@ export class GameWebSocket {
   selectBoard(board) {
     this.send({
       type: 'select_board',
-      board
+      board,
     });
   }
 
   selectQuestion(question) {
     this.send({
       type: 'select_question',
-      question
+      question,
     });
   }
 
@@ -126,9 +144,14 @@ export class GameWebSocket {
     }
   }
 
-  async recordPlayerAnswer(playerId: number, questionId: number, isCorrect: boolean, points?: number) {
+  async recordPlayerAnswer(
+    playerId: number,
+    questionId: number,
+    isCorrect: boolean,
+    points?: number,
+  ) {
     try {
-      const boardId = Number(this.gameId);  // this.gameId is actually the board ID
+      const boardId = Number(this.gameId); // this.gameId is actually the board ID
       await apiRecordPlayerAnswer(boardId, playerId, questionId, isCorrect, points);
       // Update will come via WebSocket broadcast
     } catch (error) {
@@ -140,7 +163,7 @@ export class GameWebSocket {
   toggleBuzzers(enabled: boolean) {
     this.send({
       type: 'toggle_buzzers',
-      enabled
+      enabled,
     });
   }
 }

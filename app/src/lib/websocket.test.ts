@@ -41,7 +41,7 @@ class MockWebSocket {
   simulateMessage(data: any) {
     if (this.onmessage) {
       const event = new MessageEvent('message', {
-        data: JSON.stringify(data)
+        data: JSON.stringify(data),
       });
       this.onmessage(event);
     }
@@ -54,10 +54,10 @@ describe('GameWebSocket', () => {
   beforeEach(() => {
     // Store original WebSocket
     originalWebSocket = global.WebSocket as any;
-    
+
     // Reset current mock
     currentMockSocket = null;
-    
+
     // Replace WebSocket with mock
     global.WebSocket = MockWebSocket as any;
 
@@ -79,12 +79,12 @@ describe('GameWebSocket', () => {
   describe('connection', () => {
     it('sends join_game message on connection', () => {
       new GameWebSocket('123', UiMode.Host);
-      
+
       // Trigger onopen callback
       if (currentMockSocket.onopen) {
         currentMockSocket.onopen(new Event('open'));
       }
-      
+
       expect(currentMockSocket.sentMessages.length).toBeGreaterThan(0);
       const message = JSON.parse(currentMockSocket.sentMessages[0]);
       expect(message.type).toBe('join_game');
@@ -95,39 +95,39 @@ describe('GameWebSocket', () => {
   describe('message handling', () => {
     it('handles update_score with version check', () => {
       new GameWebSocket('123', UiMode.Host);
-      
+
       currentMockSocket.simulateMessage({
         type: 'update_score',
         player_id: 1,
         score: 500,
-        version: 1
+        version: 1,
       });
-      
+
       expect(gameState.scores[1]).toBe(500);
     });
 
     it('handles toggle_question with version check', () => {
       new GameWebSocket('123', UiMode.Host);
-      
+
       currentMockSocket.simulateMessage({
         type: 'toggle_question',
         question_id: 10,
         answered: true,
-        version: 1
+        version: 1,
       });
-      
+
       expect(gameState.answeredQuestions.has(10)).toBe(true);
     });
 
     it('updates game state for UI messages', () => {
       new GameWebSocket('123', UiMode.Host);
-      
+
       currentMockSocket.simulateMessage({ type: 'reveal_category', categoryId: 5 });
       expect(gameState.visibleCategories.has(5)).toBe(true);
-      
+
       currentMockSocket.simulateMessage({ type: 'select_question', question: 42 });
       expect(gameState.selectedQuestion).toBe(42);
-      
+
       currentMockSocket.simulateMessage({ type: 'buzzer_pressed', buzzerId: 3 });
       expect(gameState.activeBuzzerId).toBe(3);
     });
@@ -137,13 +137,13 @@ describe('GameWebSocket', () => {
     it('sends coordination messages with clientId', () => {
       const ws = new GameWebSocket('123', UiMode.Host);
       currentMockSocket.sentMessages = [];
-      
+
       ws.revealCategory(7);
       const msg1 = JSON.parse(currentMockSocket.sentMessages[0]);
       expect(msg1.type).toBe('reveal_category');
       expect(msg1.categoryId).toBe(7);
       expect(msg1.clientId).toBeDefined();
-      
+
       ws.selectQuestion(42);
       const msg2 = JSON.parse(currentMockSocket.sentMessages[1]);
       expect(msg2.type).toBe('select_question');
@@ -154,22 +154,21 @@ describe('GameWebSocket', () => {
   describe('reconnection', () => {
     it('attempts to reconnect on disconnect', () => {
       vi.useFakeTimers();
-      
+
       new GameWebSocket('123', UiMode.Host);
       const firstSocket = currentMockSocket;
-      
+
       // Simulate disconnect
       firstSocket.close();
-      
+
       // Fast-forward time to trigger reconnection
       vi.advanceTimersByTime(150);
-      
+
       // A new socket should be created
       expect(currentMockSocket).toBeTruthy();
       expect(currentMockSocket).not.toBe(firstSocket);
-      
+
       vi.useRealTimers();
     });
   });
 });
-

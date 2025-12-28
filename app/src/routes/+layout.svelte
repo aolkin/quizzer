@@ -1,8 +1,8 @@
 <script lang="ts">
   import '../app.css';
-	import { initializeStores } from '@skeletonlabs/skeleton';
+  import { initializeStores } from '@skeletonlabs/skeleton';
 
-	initializeStores();
+  initializeStores();
 
   let { children } = $props();
 </script>
