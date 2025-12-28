@@ -85,6 +85,7 @@ describe('GameWebSocket', () => {
         currentMockSocket.onopen(new Event('open'));
       }
       
+      expect(currentMockSocket.sentMessages.length).toBeGreaterThan(0);
       const message = JSON.parse(currentMockSocket.sentMessages[0]);
       expect(message.type).toBe('join_game');
       expect(message.clientId).toBeDefined();
