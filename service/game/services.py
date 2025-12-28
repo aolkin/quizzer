@@ -105,7 +105,7 @@ def record_player_answer(
     player.save(update_fields=['score_version'])
     
     # Reload player with annotated score to get both version and score in one query
-    player = Player.objects.filter(id=player_id).with_scores().first()
+    player = Player.objects.filter(id=player_id).with_scores().get()
 
     return PlayerAnswerResult(
         player_id=player.id,
