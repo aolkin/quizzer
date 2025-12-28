@@ -62,7 +62,11 @@ jobs:
         run: pip install black flake8
 
       - name: Run black
-        run: black --check service/
+        run: |
+          cd service
+          black --check .
 
       - name: Run flake8
-        run: flake8 service/
+        run: |
+          cd service
+          flake8 .
