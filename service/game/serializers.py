@@ -29,9 +29,20 @@ class BoardMetaSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'order']
 
 class PlayerSerializer(serializers.ModelSerializer):
+    score = serializers.SerializerMethodField()
+    
     class Meta:
         model = Player
         fields = ['id', 'name', 'buzzer', 'score']
+    
+    def get_score(self, obj):
+        """
+        Get score from annotated computed_score if available, otherwise fall back to property.
+        This prevents N+1 queries when players are annotated with scores in the view.
+        """
+        if hasattr(obj, 'computed_score'):
+            return obj.computed_score
+        return obj.score
 
 class TeamSerializer(serializers.ModelSerializer):
     players = PlayerSerializer(many=True)

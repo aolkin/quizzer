@@ -103,10 +103,12 @@ def record_player_answer(
     player = Player.objects.select_for_update().get(id=player_id)
     player.score_version = F('score_version') + 1
     player.save(update_fields=['score_version'])
-    player.refresh_from_db()
+    
+    # Reload player with annotated score to get both version and score in one query
+    player = Player.objects.filter(id=player_id).with_scores().get()
 
     return PlayerAnswerResult(
         player_id=player.id,
-        score=player.score,
+        score=player.computed_score,
         version=player.score_version
     )

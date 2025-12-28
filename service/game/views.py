@@ -1,13 +1,14 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from dataclasses import asdict
+from django.db import models
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from typing import Dict, Any
 
-from .models import Game, Board, Player, Question
+from .models import Game, Board, Player, Question, Team
 from .serializers import (
     BoardSerializer, GameSerializer,
     RecordAnswerRequestSerializer,
@@ -48,8 +49,11 @@ def get_game(request, game_id):
     game = get_object_or_404(
         Game.objects.prefetch_related(
             'boards',
-            'teams',
-            'teams__players'
+            models.Prefetch(
+                'teams__players',
+                queryset=Player.objects.with_scores()
+            ),
+            'teams'
         ),
         id=game_id
     )
