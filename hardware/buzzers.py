@@ -75,10 +75,6 @@ class BuzzerClient:
         uri = f"ws://quasar.local:8000/ws/game/{self.game_id}/"
         self.websocket = await websockets.connect(uri)
         print("Connected")
-        await self.websocket.send(json.dumps({
-            'type': 'toggle_buzzers',
-            'enabled': self.buzzers.enabled
-        }))
 
     async def listen_for_messages(self):
         while True:
