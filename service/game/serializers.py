@@ -40,7 +40,9 @@ class PlayerSerializer(serializers.ModelSerializer):
         Get score from annotated computed_score if available, otherwise fall back to property.
         This prevents N+1 queries when players are annotated with scores in the view.
         """
-        return getattr(obj, 'computed_score', obj.score)
+        if hasattr(obj, 'computed_score'):
+            return obj.computed_score
+        return obj.score
 
 class TeamSerializer(serializers.ModelSerializer):
     players = PlayerSerializer(many=True)

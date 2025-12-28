@@ -1,6 +1,24 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Sum, Case, When, Value, IntegerField
 from colorfield.fields import ColorField
+
+
+def get_score_annotation():
+    """
+    Returns the annotation expression for computing player scores.
+    
+    This can be used both in querysets and in aggregations to compute
+    scores efficiently. For each answer, uses answer.points if not null,
+    otherwise question.points.
+    """
+    return Sum(
+        Case(
+            When(answers__points__isnull=False, then='answers__points'),
+            default='answers__question__points',
+        ),
+        default=Value(0, output_field=IntegerField())
+    )
 
 
 class Game(models.Model):
@@ -84,12 +102,26 @@ class Team(models.Model):
     def total_score(self):
         return sum(player.score for player in self.players.all())
 
+class PlayerQuerySet(models.QuerySet):
+    def with_scores(self):
+        """
+        Annotate players with computed scores to avoid N+1 queries.
+        
+        Uses database aggregation to compute scores efficiently instead of the
+        Player.score property which triggers a query for each player.
+        
+        For each answer, uses answer.points if not null, otherwise question.points.
+        """
+        return self.annotate(computed_score=get_score_annotation())
+
 class Player(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='players')
     name = models.CharField(max_length=200)
     buzzer = models.PositiveSmallIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     score_version = models.IntegerField(default=0)
+    
+    objects = PlayerQuerySet.as_manager()
 
     @property
     def score(self):

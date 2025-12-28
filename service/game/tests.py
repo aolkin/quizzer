@@ -1,5 +1,4 @@
 from django.test import TestCase
-from django.db.models import Case, When, Sum, Value, IntegerField
 from .models import Game, Board, Category, Question, Team, Player, PlayerAnswer
 
 
@@ -35,34 +34,8 @@ class PlayerScoreTestCase(TestCase):
         self.team = Team.objects.create(game=self.game, name="Test Team", color="#FF0000")
         self.player = Player.objects.create(team=self.team, name="Test Player")
     
-    def test_score_with_default_points(self):
-        """Test score calculation when using question's default points."""
-        # Answer with default points (points=None)
-        PlayerAnswer.objects.create(
-            player=self.player,
-            question=self.q1,
-            is_correct=True,
-            points=None
-        )
-        
-        # Score should be question's points (100)
-        self.assertEqual(self.player.score, 100)
-    
-    def test_score_with_custom_points(self):
-        """Test score calculation when using custom points."""
-        # Answer with custom points
-        PlayerAnswer.objects.create(
-            player=self.player,
-            question=self.q1,
-            is_correct=True,
-            points=150
-        )
-        
-        # Score should be custom points (150)
-        self.assertEqual(self.player.score, 150)
-    
     def test_score_with_multiple_answers(self):
-        """Test score calculation with multiple answers."""
+        """Test score calculation with multiple answers (default and custom points)."""
         # Answer 1 with default points
         PlayerAnswer.objects.create(
             player=self.player,
@@ -104,18 +77,11 @@ class PlayerScoreTestCase(TestCase):
             points=250
         )
         
-        # Get player with annotated score
-        annotated_player = Player.objects.filter(id=self.player.id).annotate(
-            computed_score=Sum(
-                Case(
-                    When(answers__points__isnull=False, then='answers__points'),
-                    default='answers__question__points',
-                ),
-                default=Value(0, output_field=IntegerField())
-            )
-        ).first()
+        # Get player with annotated score using the queryset method
+        annotated_player = Player.objects.filter(id=self.player.id).with_scores().first()
         
         # Verify annotated score matches property
         self.assertEqual(annotated_player.computed_score, self.player.score)
         self.assertEqual(annotated_player.computed_score, 350)  # 100 + 250
+
 

@@ -7,10 +7,10 @@ separated from WebSocket protocol handling and REST API views.
 
 from dataclasses import dataclass
 from django.db import transaction
-from django.db.models import F, Sum, Q, Value, IntegerField, Case, When
+from django.db.models import F
 from typing import Optional
 
-from .models import Player, PlayerAnswer, Question
+from .models import Player, PlayerAnswer, Question, get_score_annotation
 
 
 @dataclass
@@ -106,15 +106,9 @@ def record_player_answer(
     player.refresh_from_db()
     
     # Compute score efficiently using database aggregation
-    # For each answer, use answer.points if not null, otherwise question.points
+    # Uses the same annotation logic as the queryset for consistency
     score_result = PlayerAnswer.objects.filter(player_id=player_id).aggregate(
-        total=Sum(
-            Case(
-                When(points__isnull=False, then='points'),
-                default='question__points',
-            ),
-            default=Value(0, output_field=IntegerField())
-        )
+        total=get_score_annotation()
     )
     score = score_result['total'] or 0
 

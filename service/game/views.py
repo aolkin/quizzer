@@ -2,7 +2,6 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from dataclasses import asdict
 from django.db import models
-from django.db.models import Sum, Q, Value, IntegerField, Case, When
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
@@ -16,26 +15,6 @@ from .serializers import (
     ToggleQuestionRequestSerializer
 )
 from . import services
-
-
-def annotate_player_scores(queryset):
-    """
-    Annotate a Player queryset with computed scores to avoid N+1 queries.
-    
-    Uses database aggregation to compute scores efficiently instead of the
-    Player.score property which triggers a query for each player.
-    
-    For each answer, uses answer.points if not null, otherwise question.points.
-    """
-    return queryset.annotate(
-        computed_score=Sum(
-            Case(
-                When(answers__points__isnull=False, then='answers__points'),
-                default='answers__question__points',
-            ),
-            default=Value(0, output_field=IntegerField())
-        )
-    )
 
 
 def broadcast_to_board(board_id: int, message_type: str, data: Dict[str, Any]) -> None:
@@ -72,7 +51,7 @@ def get_game(request, game_id):
             'boards',
             models.Prefetch(
                 'teams__players',
-                queryset=annotate_player_scores(Player.objects.all())
+                queryset=Player.objects.with_scores()
             ),
             'teams'
         ),
