@@ -9,9 +9,11 @@
 **Linting & Formatting:**
 ```bash
 cd service
-black --check --line-length=100 .
-flake8 . --max-line-length=100 --extend-ignore=E203,W503
+black --check .
+flake8 .
 ```
+
+**Note:** Configuration is in `service/pyproject.toml` (Black) and `service/.flake8` (Flake8).
 
 **Testing:**
 ```bash
@@ -71,7 +73,7 @@ All checks in one place:
 
 ```bash
 # Backend
-cd service && black --check --line-length=100 . && flake8 . --max-line-length=100 --extend-ignore=E203,W503 && python manage.py test && cd ..
+cd service && black --check . && flake8 . && python manage.py test && cd ..
 
 # Frontend
 cd app && bun run lint && bun run check && bun run test && bun run build && cd ..
