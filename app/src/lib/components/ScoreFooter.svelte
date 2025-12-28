@@ -9,6 +9,8 @@
     allQuestions(gameState.board).find((q) => q.id === gameState.selectedQuestion),
   );
   let pointsToAward = $state(0);
+  let buzzerLogLevel = $state<'WARN' | 'DEBUG'>('WARN');
+
   $effect(() => {
     pointsToAward = currentQuestion?.points ?? 0;
   });
@@ -25,6 +27,11 @@
 
   function toggleBuzzers(state?: boolean) {
     gameState.websocket?.toggleBuzzers(state ?? !gameState.buzzersEnabled);
+  }
+
+  function toggleBuzzerLogLevel() {
+    buzzerLogLevel = buzzerLogLevel === 'WARN' ? 'DEBUG' : 'WARN';
+    gameState.websocket?.setBuzzerLogLevel(buzzerLogLevel);
   }
 
   function getScore(entity: Team | Player) {
@@ -47,20 +54,31 @@
           bind:value={pointsToAward}
         />
       </div>
-      <button
-        class="rounded px-4 py-2 {gameState.activeBuzzerId !== null
-          ? 'bg-orange-600'
-          : gameState.buzzersEnabled
-            ? 'bg-red-600'
-            : 'bg-green-600'}"
-        onclick={() => (gameState.activeBuzzerId !== null ? toggleBuzzers(true) : toggleBuzzers())}
-      >
-        {gameState.activeBuzzerId !== null
-          ? 'Reset'
-          : gameState.buzzersEnabled
-            ? 'Disable'
-            : 'Enable'} Buzzers
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full {gameState.buzzerConnected
+            ? 'bg-green-600'
+            : 'bg-red-600'}"
+          onclick={toggleBuzzerLogLevel}
+          title="Buzzer {gameState.buzzerConnected ? 'connected' : 'disconnected'} - Click to toggle log level ({buzzerLogLevel})"
+        >
+          <span class="text-xs font-bold">{buzzerLogLevel === 'DEBUG' ? 'D' : 'W'}</span>
+        </button>
+        <button
+          class="rounded px-4 py-2 {gameState.activeBuzzerId !== null
+            ? 'bg-orange-600'
+            : gameState.buzzersEnabled
+              ? 'bg-red-600'
+              : 'bg-green-600'}"
+          onclick={() => (gameState.activeBuzzerId !== null ? toggleBuzzers(true) : toggleBuzzers())}
+        >
+          {gameState.activeBuzzerId !== null
+            ? 'Reset'
+            : gameState.buzzersEnabled
+              ? 'Disable'
+              : 'Enable'} Buzzers
+        </button>
+      </div>
     </div>
   {/if}
 

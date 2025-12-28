@@ -1,4 +1,5 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from urllib.parse import parse_qs
 
 
 class GameConsumer(AsyncJsonWebsocketConsumer):
@@ -14,11 +15,51 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         self.board_id = self.scope["url_route"]["kwargs"]["board_id"]
         self.room_group_name = f"board_{self.board_id}"
 
+        # Parse query params to identify client type and ID
+        query_string = self.scope.get("query_string", b"").decode()
+        query_params = parse_qs(query_string)
+        self.client_type = query_params.get("client_type", [None])[0]
+        self.client_id = query_params.get("client_id", [None])[0]
+
+        # Fallback to channel_name if no client_id provided
+        if self.client_type and not self.client_id:
+            self.client_id = self.channel_name
+
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
+        # Broadcast connection status for clients with a type
+        if self.client_type:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "game_message",
+                    "message": {
+                        "type": "client_connection_status",
+                        "client_type": self.client_type,
+                        "client_id": self.client_id,
+                        "connected": True,
+                    },
+                },
+            )
+
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+        # Broadcast disconnection status for clients with a type
+        if self.client_type and self.client_id:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "game_message",
+                    "message": {
+                        "type": "client_connection_status",
+                        "client_type": self.client_type,
+                        "client_id": self.client_id,
+                        "connected": False,
+                    },
+                },
+            )
 
     async def receive_json(self, content):
         """
@@ -34,6 +75,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         if "type" not in content or not isinstance(content["type"], str):
             return
 
+        # Simple broadcast relay - no special handling
         await self.channel_layer.group_send(
             self.room_group_name, {"type": "game_message", "message": content}
         )
