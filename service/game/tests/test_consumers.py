@@ -13,33 +13,8 @@ from .test_fixtures import BaseGameTestCase
 class GameConsumerTestCase(BaseGameTestCase):
     """Tests for GameConsumer WebSocket behavior."""
     
-    async def test_connect_and_join_group(self):
-        """Test that WebSocket connection is accepted and joins correct group."""
-        communicator = WebsocketCommunicator(
-            GameConsumer.as_asgi(),
-            f'/ws/board/{self.board.id}/'
-        )
-        communicator.scope['url_route'] = {'kwargs': {'board_id': self.board.id}}
-        
-        connected, _ = await communicator.connect()
-        self.assertTrue(connected)
-        
-        await communicator.disconnect()
-    
-    async def test_disconnect(self):
-        """Test that WebSocket disconnects cleanly."""
-        communicator = WebsocketCommunicator(
-            GameConsumer.as_asgi(),
-            f'/ws/board/{self.board.id}/'
-        )
-        communicator.scope['url_route'] = {'kwargs': {'board_id': self.board.id}}
-        
-        await communicator.connect()
-        await communicator.disconnect()
-        # If disconnect completes without error, test passes
-    
     async def test_relay_coordination_message(self):
-        """Test that coordination messages are relayed to all clients."""
+        """Test relay pattern: messages are broadcast to all clients in the group."""
         # Create two communicators for the same board
         communicator1 = WebsocketCommunicator(
             GameConsumer.as_asgi(),
@@ -53,6 +28,7 @@ class GameConsumerTestCase(BaseGameTestCase):
         )
         communicator2.scope['url_route'] = {'kwargs': {'board_id': self.board.id}}
         
+        # Connect both (implicitly tests connection)
         await communicator1.connect()
         await communicator2.connect()
         
@@ -71,11 +47,12 @@ class GameConsumerTestCase(BaseGameTestCase):
         self.assertEqual(response2['type'], 'select_question')
         self.assertEqual(response2['question_id'], self.q1.id)
         
+        # Disconnect (implicitly tests disconnection)
         await communicator1.disconnect()
         await communicator2.disconnect()
     
-    async def test_reject_malformed_message_non_dict(self):
-        """Test that non-dict messages are rejected."""
+    async def test_reject_invalid_messages(self):
+        """Test that malformed messages (non-dict or missing 'type') are rejected."""
         communicator = WebsocketCommunicator(
             GameConsumer.as_asgi(),
             f'/ws/board/{self.board.id}/'
@@ -84,30 +61,13 @@ class GameConsumerTestCase(BaseGameTestCase):
         
         await communicator.connect()
         
-        # Send a non-dict message (should be silently rejected)
+        # Non-dict message should be rejected
         await communicator.send_json_to("not a dict")
-        
-        # Should not receive anything back (message was rejected)
-        # We use receive_nothing to verify no message was sent
         result = await communicator.receive_nothing(timeout=0.1)
         self.assertTrue(result)
         
-        await communicator.disconnect()
-    
-    async def test_reject_message_without_type(self):
-        """Test that messages without 'type' field are rejected."""
-        communicator = WebsocketCommunicator(
-            GameConsumer.as_asgi(),
-            f'/ws/board/{self.board.id}/'
-        )
-        communicator.scope['url_route'] = {'kwargs': {'board_id': self.board.id}}
-        
-        await communicator.connect()
-        
-        # Send a message without 'type' field
+        # Message without 'type' field should be rejected
         await communicator.send_json_to({'data': 'some data'})
-        
-        # Should not receive anything back
         result = await communicator.receive_nothing(timeout=0.1)
         self.assertTrue(result)
         
