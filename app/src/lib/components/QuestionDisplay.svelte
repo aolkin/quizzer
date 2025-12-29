@@ -54,6 +54,7 @@
           class="mx-auto max-w-full rounded-lg shadow-lg"
         />
       {:else if question.type === 'video'}
+        <!-- svelte-ignore a11y_media_has_caption -->
         <video src={question.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg"></video>
       {:else if question.type === 'audio'}
         <audio src={question.media_url} controls class="w-full"></audio>

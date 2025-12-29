@@ -3,7 +3,7 @@
   import Board from '$lib/components/Board.svelte';
   import BoardSelector from '$lib/components/BoardSelector.svelte';
   import ScoreFooter from '$lib/components/ScoreFooter.svelte';
-  import { UiMode } from '$lib/state.svelte.js';
+  import { UiMode, type Player } from '$lib/state.svelte.js';
   import { gameState } from '$lib/game-state.svelte';
   import { GameWebSocket } from '$lib/websocket';
   import { onDestroy, onMount } from 'svelte';
@@ -20,7 +20,9 @@
     audioClient = mode === UiMode.Presentation ? new AudioClient() : undefined;
     gameState.setScores(
       Object.fromEntries(
-        game.teams.flatMap((team) => team.players.map((player) => [player.id, player.score])),
+        game.teams.flatMap((team) =>
+          team.players.map((player: Player) => [player.id, player.score]),
+        ),
       ),
     );
     gameState.setWebsocket(new GameWebSocket(gameId, mode, audioClient));
