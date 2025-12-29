@@ -333,7 +333,7 @@ class GameImportSerializer(serializers.Serializer):
                         answer=question_data["answer"],
                         points=question_data["points"],
                         type=question_data.get("type", "text"),
-                        media_url=question_data.get("media_url", None) or None,
+                        media_url=question_data.get("media_url") or None,
                         special=question_data.get("special", False),
                         order=question_order,
                     )
