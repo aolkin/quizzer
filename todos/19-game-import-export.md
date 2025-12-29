@@ -47,25 +47,27 @@ GET /api/game/{game_id}/export?mode=template|full
     "boards": [
       {
         "name": "Round 1",
-        "order": 0,
         "categories": [
           {
             "name": "Physics",
-            "order": 0,
             "questions": [
               {
                 "text": "What is the speed of light?",
                 "answer": "299,792,458 m/s",
-                "points": 100,
-                "type": "text",
-                "media_url": null
+                "points": 100
+              },
+              {
+                "text": "Who discovered gravity?",
+                "answer": "Isaac Newton",
+                "points": 200,
+                "type": "image",
+                "media_url": "https://example.com/newton.jpg"
               }
             ]
           }
         ]
       }
     ],
-    "teams": [],  // Empty in template mode
     "metadata": {
       "original_game_id": 123,
       "created_at": "2025-12-20T10:00:00Z"
@@ -73,6 +75,12 @@ GET /api/game/{game_id}/export?mode=template|full
   }
 }
 ```
+
+**Format Notes:**
+- **No `order` fields**: Array position determines order (index 0 = first, index 1 = second, etc.)
+- **No `null` fields**: Fields with `null` values are omitted entirely
+- **Default `type`**: Questions default to `type: "text"` if not specified (omit for text questions)
+- **Empty `teams`**: Omitted in template mode (not shown as empty array)
 
 ### Import Endpoint
 
@@ -106,9 +114,9 @@ POST /api/game/import
 ### Template Mode (Default)
 **Exports:**
 - ✅ Game name and mode
-- ✅ Boards (name, order)
-- ✅ Categories (name, order)
-- ✅ Questions (text, answer, points, type, media_url)
+- ✅ Boards (name only - order inferred from array position)
+- ✅ Categories (name only - order inferred from array position)
+- ✅ Questions (text, answer, points; type/media_url only if non-default)
 - ✅ Metadata (original game ID, creation date)
 
 **Excludes:**
@@ -117,6 +125,9 @@ POST /api/game/import
 - ❌ Question answered state
 - ❌ Player scores
 - ❌ Database IDs (regenerated on import)
+- ❌ Order fields (inferred from array position)
+- ❌ Null/empty fields (omitted from JSON)
+- ❌ Default values (e.g., `type: "text"` omitted for text questions)
 
 **Use case:** Sharing reusable game content
 
@@ -132,6 +143,9 @@ POST /api/game/import
 - ❌ Database IDs (regenerated on import)
 - ❌ Created/updated timestamps (regenerated)
 - ❌ WebSocket connection state
+- ❌ Order fields (inferred from array position)
+- ❌ Null/empty fields (omitted from JSON)
+- ❌ Default values (e.g., `type: "text"` omitted for text questions)
 
 **Use case:** Complete backup/restore
 
@@ -201,10 +215,16 @@ POST /api/game/import
 
 ### High Priority
 - [ ] Create export serializers (template and full modes)
+  - [ ] Omit `null` fields from JSON output
+  - [ ] Omit `order` fields (use array position)
+  - [ ] Omit `type` field when value is "text" (default)
 - [ ] Create `GET /api/game/{game_id}/export` endpoint
 - [ ] Add mode parameter handling (template vs full)
 - [ ] Implement JSON export with proper nesting (boards → categories → questions)
 - [ ] Create import serializer with validation
+  - [ ] Derive order from array position
+  - [ ] Default `type` to "text" if not provided
+  - [ ] Handle missing optional fields gracefully
 - [ ] Create `POST /api/game/import` endpoint
 - [ ] Implement atomic import transaction
 - [ ] Add authentication and authorization checks
@@ -253,18 +273,16 @@ POST /api/game/import
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "order", "categories"],
+            "required": ["name", "categories"],
             "properties": {
               "name": {"type": "string"},
-              "order": {"type": "integer"},
               "categories": {
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": ["name", "order", "questions"],
+                  "required": ["name", "questions"],
                   "properties": {
                     "name": {"type": "string"},
-                    "order": {"type": "integer"},
                     "questions": {
                       "type": "array",
                       "items": {
@@ -274,8 +292,8 @@ POST /api/game/import
                           "text": {"type": "string"},
                           "answer": {"type": "string"},
                           "points": {"type": "integer"},
-                          "type": {"type": "string", "enum": ["text", "image", "video", "audio"]},
-                          "media_url": {"type": ["string", "null"]}
+                          "type": {"type": "string", "enum": ["text", "image", "video", "audio"], "default": "text"},
+                          "media_url": {"type": "string"}
                         }
                       }
                     }
@@ -285,7 +303,6 @@ POST /api/game/import
             }
           }
         },
-        "teams": {"type": "array"},
         "metadata": {
           "type": "object",
           "properties": {
@@ -298,6 +315,12 @@ POST /api/game/import
   }
 }
 ```
+
+**Schema Notes:**
+- `order` fields removed - order determined by array position
+- `type` field optional with default value "text"
+- `media_url` only present when non-null (not in schema required fields)
+- `teams` array omitted in template mode (not present in schema)
 
 ## Future Enhancements (Not in Initial Scope)
 
