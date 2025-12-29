@@ -1,4 +1,3 @@
-import { goto } from '$app/navigation';
 import { AudioClient, Sound } from './audio.svelte';
 import {
   allQuestions,
@@ -51,7 +50,7 @@ export class GameWebSocket {
     this.socket = this.createSocket();
   }
 
-  send(message: any) {
+  send(message: Record<string, unknown>) {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(
         JSON.stringify({

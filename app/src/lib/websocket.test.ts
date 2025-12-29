@@ -4,7 +4,7 @@ import { UiMode } from './state.svelte';
 import { gameState } from './game-state.svelte';
 
 // Create a proper mock WebSocket that maintains state
-let currentMockSocket: any = null;
+let currentMockSocket: MockWebSocket | null = null;
 
 class MockWebSocket {
   static CONNECTING = 0;
@@ -20,6 +20,7 @@ class MockWebSocket {
   sentMessages: string[] = [];
 
   constructor(public url: string) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     currentMockSocket = this;
   }
 
@@ -38,7 +39,7 @@ class MockWebSocket {
   }
 
   // Helper method for testing
-  simulateMessage(data: any) {
+  simulateMessage(data: object) {
     if (this.onmessage) {
       const event = new MessageEvent('message', {
         data: JSON.stringify(data),
@@ -53,13 +54,13 @@ describe('GameWebSocket', () => {
 
   beforeEach(() => {
     // Store original WebSocket
-    originalWebSocket = global.WebSocket as any;
+    originalWebSocket = global.WebSocket as typeof WebSocket;
 
     // Reset current mock
     currentMockSocket = null;
 
     // Replace WebSocket with mock
-    global.WebSocket = MockWebSocket as any;
+    global.WebSocket = MockWebSocket as unknown as typeof WebSocket;
 
     // Reset game state
     gameState.reset();
@@ -81,12 +82,12 @@ describe('GameWebSocket', () => {
       new GameWebSocket('123', UiMode.Host);
 
       // Trigger onopen callback
-      if (currentMockSocket.onopen) {
-        currentMockSocket.onopen(new Event('open'));
+      if (currentMockSocket!.onopen) {
+        currentMockSocket!.onopen(new Event('open'));
       }
 
-      expect(currentMockSocket.sentMessages.length).toBeGreaterThan(0);
-      const message = JSON.parse(currentMockSocket.sentMessages[0]);
+      expect(currentMockSocket!.sentMessages.length).toBeGreaterThan(0);
+      const message = JSON.parse(currentMockSocket!.sentMessages[0]);
       expect(message.type).toBe('join_game');
       expect(message.clientId).toBeDefined();
     });
@@ -96,7 +97,7 @@ describe('GameWebSocket', () => {
     it('handles update_score with version check', () => {
       new GameWebSocket('123', UiMode.Host);
 
-      currentMockSocket.simulateMessage({
+      currentMockSocket!.simulateMessage({
         type: 'update_score',
         player_id: 1,
         score: 500,
@@ -109,7 +110,7 @@ describe('GameWebSocket', () => {
     it('handles toggle_question with version check', () => {
       new GameWebSocket('123', UiMode.Host);
 
-      currentMockSocket.simulateMessage({
+      currentMockSocket!.simulateMessage({
         type: 'toggle_question',
         question_id: 10,
         answered: true,
@@ -122,13 +123,13 @@ describe('GameWebSocket', () => {
     it('updates game state for UI messages', () => {
       new GameWebSocket('123', UiMode.Host);
 
-      currentMockSocket.simulateMessage({ type: 'reveal_category', categoryId: 5 });
+      currentMockSocket!.simulateMessage({ type: 'reveal_category', categoryId: 5 });
       expect(gameState.visibleCategories.has(5)).toBe(true);
 
-      currentMockSocket.simulateMessage({ type: 'select_question', question: 42 });
+      currentMockSocket!.simulateMessage({ type: 'select_question', question: 42 });
       expect(gameState.selectedQuestion).toBe(42);
 
-      currentMockSocket.simulateMessage({ type: 'buzzer_pressed', buzzerId: 3 });
+      currentMockSocket!.simulateMessage({ type: 'buzzer_pressed', buzzerId: 3 });
       expect(gameState.activeBuzzerId).toBe(3);
     });
   });
@@ -136,16 +137,16 @@ describe('GameWebSocket', () => {
   describe('sending messages', () => {
     it('sends coordination messages with clientId', () => {
       const ws = new GameWebSocket('123', UiMode.Host);
-      currentMockSocket.sentMessages = [];
+      currentMockSocket!.sentMessages = [];
 
       ws.revealCategory(7);
-      const msg1 = JSON.parse(currentMockSocket.sentMessages[0]);
+      const msg1 = JSON.parse(currentMockSocket!.sentMessages[0]);
       expect(msg1.type).toBe('reveal_category');
       expect(msg1.categoryId).toBe(7);
       expect(msg1.clientId).toBeDefined();
 
       ws.selectQuestion(42);
-      const msg2 = JSON.parse(currentMockSocket.sentMessages[1]);
+      const msg2 = JSON.parse(currentMockSocket!.sentMessages[1]);
       expect(msg2.type).toBe('select_question');
       expect(msg2.question).toBe(42);
     });
@@ -156,7 +157,7 @@ describe('GameWebSocket', () => {
       vi.useFakeTimers();
 
       new GameWebSocket('123', UiMode.Host);
-      const firstSocket = currentMockSocket;
+      const firstSocket = currentMockSocket!;
 
       // Simulate disconnect
       firstSocket.close();

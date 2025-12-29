@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { recordPlayerAnswer, toggleQuestion, getBoard } from './api';
+import { recordPlayerAnswer, toggleQuestion } from './api';
 
 describe('API', () => {
-  let fetchMock: any;
+  let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     fetchMock = vi.fn();

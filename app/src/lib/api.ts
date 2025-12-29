@@ -1,4 +1,4 @@
-import { ENDPOINT } from './state.svelte';
+import { ENDPOINT, type Board } from './state.svelte';
 
 async function apiRequest<T>(
   url: string,
@@ -52,6 +52,6 @@ export async function toggleQuestion(
   );
 }
 
-export async function getBoard(boardId: number): Promise<any> {
+export async function getBoard(boardId: number): Promise<Board> {
   return apiRequest(`/api/board/${boardId}/`, 'GET', undefined, 'Failed to fetch board');
 }

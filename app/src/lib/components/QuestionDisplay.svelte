@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition';
   import { type AudioClient, Sound } from '../audio.svelte';
   import type { Question } from '../state.svelte';
 

@@ -1,19 +1,6 @@
 import type { Board } from './state.svelte';
 import type { GameWebSocket } from './websocket';
 
-interface GameState {
-  websocket?: GameWebSocket;
-  currentBoard?: number;
-  board?: Board;
-  scores: Record<number, number>;
-  visibleCategories: Set<number>;
-  answeredQuestions: Set<number>;
-  selectedQuestion?: number;
-  buzzersEnabled: boolean;
-  activeBuzzerId?: number;
-  buzzerConnected: boolean;
-}
-
 class GameStateManager {
   websocket = $state<GameWebSocket | undefined>(undefined);
   currentBoard = $state<number | undefined>(undefined);

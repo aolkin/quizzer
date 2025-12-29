@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { shouldUpdatePlayer, shouldUpdateQuestion, allQuestions } from './state.svelte';
+import { shouldUpdatePlayer, allQuestions } from './state.svelte';
 
 describe('Version tracking', () => {
   it('prevents out-of-order updates for race condition safety', () => {
