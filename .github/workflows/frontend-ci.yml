@@ -115,12 +115,12 @@ jobs:
       - name: Install Playwright browsers
         run: |
           cd app
-          npx playwright install chromium
+          bunx playwright install chromium
 
       - name: Install Playwright system dependencies
         run: |
           cd app
-          npx playwright install-deps chromium
+          bunx playwright install-deps chromium
 
       - name: Start backend server
         run: |
