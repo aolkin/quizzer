@@ -12,6 +12,17 @@ Machine clients (CLI tools, hardware controllers, automation scripts) cannot use
 
 Implement API key authentication for machine clients using token-based authentication with the same game-level access control as human accounts.
 
+### Recommended Library
+
+Use **`djangorestframework-api-key`** - a well-maintained library for API key management:
+- Provides `APIKey` model with secure hashing
+- Includes DRF authentication class
+- Built-in admin interface
+- Supports key prefixes and revocation
+- PyPI: `pip install djangorestframework-api-key`
+
+**Alternative consideration**: Custom implementation using Django's built-in auth, but the library provides battle-tested security and convenience.
+
 ### Key Features
 
 1. **API Keys**
@@ -33,22 +44,25 @@ Implement API key authentication for machine clients using token-based authentic
 
 ## Data Model
 
+### From `djangorestframework-api-key` library:
 ```python
-APIKey:
+APIKey:  # Provided by the library
   - id
-  - name: CharField  # Human-readable identifier (e.g., "Buzzer Controller 1")
-  - key_prefix: CharField  # First 8 chars for display (e.g., "qz_dev_1")
-  - key_hash: CharField  # Hashed full key (bcrypt/scrypt)
-  - created_at: DateTimeField
-  - created_by: ForeignKey(User)  # Human who created this key
-  - last_used_at: DateTimeField(null=True)
-  - is_active: BooleanField  # For soft-delete/revocation
+  - prefix: CharField  # e.g., "qz_dev_ab"
+  - hashed_key: CharField  # Securely hashed
+  - created: DateTimeField
+  - name: CharField  # Human-readable identifier
+  - revoked: BooleanField  # For revocation
+```
 
+### Custom model for game access:
+```python
 APIKeyGameAccess:
   - id
-  - api_key: ForeignKey(APIKey)
+  - api_key: ForeignKey(APIKey)  # From library
   - game: ForeignKey(Game)
   - granted_at: DateTimeField
+  - granted_by: ForeignKey(User, null=True)  # Who granted access
 
   class Meta:
     unique_together = [['api_key', 'game']]
@@ -69,24 +83,13 @@ Components:
 - 32 character random hex string
 ```
 
-## API Endpoints
+## API Key Management
 
-### API Key Management
-- `POST /api/api-keys/` - Create new API key (returns full key once)
-  - Body: `{name, game_ids: [...]}`
-  - Response: `{id, name, key, key_prefix, created_at}`
-  - ⚠️ Full key shown only on creation, never retrievable again
-
-- `GET /api/api-keys/` - List user's API keys (shows prefix only)
-  - Response: `[{id, name, key_prefix, created_at, last_used_at, is_active}]`
-
-- `DELETE /api/api-keys/{id}/` - Revoke API key
-  - Sets `is_active = False`
-
-- `POST /api/api-keys/{id}/grant-access/` - Grant game access
-  - Body: `{game_id}`
-
-- `DELETE /api/api-keys/{id}/revoke-access/{game_id}/` - Revoke game access
+API keys will be managed through **Django Admin** interface:
+- Create new API keys (full key displayed once)
+- List existing keys (prefix only)
+- Revoke keys (soft delete via `is_active` flag)
+- Grant/revoke game access via inline forms
 
 ### Using API Keys
 All existing endpoints accept:
@@ -97,19 +100,20 @@ Authorization: Bearer qz_dev_a8f4c2e9b3d1f6a2c8e4b9d3f1a6c2e8
 ## Implementation Steps
 
 ### High Priority
-- [ ] Create `APIKey` and `APIKeyGameAccess` models
-- [ ] Implement API key generation with secure random bytes
-- [ ] Implement API key hashing (use Django's `make_password`)
-- [ ] Create custom authentication backend for API keys
-- [ ] Add `APIKeyAuthentication` class for DRF
+- [ ] Install `djangorestframework-api-key` package
+- [ ] Create `APIKeyGameAccess` model for many-to-many game access
+- [ ] Configure Django admin for API key management
+  - [ ] Register `APIKey` model (from library) with custom admin
+  - [ ] Add inline for `APIKeyGameAccess` in admin
+  - [ ] Display full key only on creation (customize save method)
+- [ ] Add `APIKeyAuthentication` to DRF authentication classes
 - [ ] Update view permission checks to handle both User and APIKey auth
-- [ ] Create API key management endpoints
-- [ ] Add migrations
+- [ ] Add migrations for `APIKeyGameAccess`
 
 ### Medium Priority
-- [ ] Implement `last_used_at` tracking (update on each request)
-- [ ] Add API key prefix indexing for faster lookups
-- [ ] Create management command to generate API keys from CLI
+- [ ] Customize API key prefix format (e.g., "qz_dev_", "qz_prod_")
+- [ ] Add helpful text in admin for key management
+- [ ] Document Django admin workflow for creating keys
 - [ ] Add rate limiting per API key (optional)
 
 ### Testing
@@ -127,33 +131,21 @@ Authorization: Bearer qz_dev_a8f4c2e9b3d1f6a2c8e4b9d3f1a6c2e8
 
 ## Authentication Flow
 
+The `djangorestframework-api-key` library provides `APIKeyAuthentication` class that handles:
+1. Extracting API key from `Authorization: Api-Key <key>` or custom header
+2. Validating key format and checking hash
+3. Returning the APIKey object if valid
+
+We'll configure it to use `Authorization: Bearer <key>` for consistency with standard patterns.
+
 ```python
-# In custom authentication backend
-def authenticate_api_key(request):
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return None
-
-    key = auth_header[7:]  # Remove "Bearer "
-
-    # Extract prefix for fast lookup
-    prefix = key[:11]  # "qz_dev_xxx"
-
-    # Find potential keys by prefix
-    api_keys = APIKey.objects.filter(
-        key_prefix=prefix,
-        is_active=True
-    )
-
-    # Check each key's hash
-    for api_key in api_keys:
-        if check_password(key, api_key.key_hash):
-            # Update last used timestamp (async?)
-            api_key.last_used_at = timezone.now()
-            api_key.save(update_fields=['last_used_at'])
-            return api_key
-
-    return None
+# In settings.py
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',  # For users
+        'rest_framework_api_key.permissions.HasAPIKey',  # For API keys
+    ],
+}
 ```
 
 ## Authorization Logic
@@ -216,8 +208,11 @@ response = requests.post(
 
 ## Dependencies
 
-- Django built-in password hashing (already available)
-- No additional packages required
+- **`djangorestframework-api-key`** - Primary package for API key management
+  - Install: `pip install djangorestframework-api-key`
+  - Docs: https://florimondmanca.github.io/djangorestframework-api-key/
+- Django REST Framework (already installed)
+- Django built-in auth (already available)
 
 ## Priority
 

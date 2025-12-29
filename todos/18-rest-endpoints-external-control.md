@@ -28,7 +28,7 @@ Create REST endpoints for write-only control operations, starting with **buzzer 
 
 ### Initial Scope: Buzzer State Control
 
-Create a **write-only** endpoint to enable/disable buzzers for a game:
+Create a **write-only** endpoint to broadcast buzzer state commands:
 
 ```
 POST /api/game/{game_id}/buzzers/state
@@ -45,27 +45,27 @@ POST /api/game/{game_id}/buzzers/state
 ```json
 {
   "game_id": 123,
-  "buzzers_enabled": true,
-  "updated_at": "2025-12-29T10:30:00Z"
+  "enabled": true,
+  "broadcast": true
 }
 ```
 
 **Behavior:**
-- Updates game-level buzzer state (new `Game.buzzers_enabled` field)
-- Broadcasts state change to all WebSocket clients
-- Write-only (no GET endpoint in initial implementation)
+- **No database persistence** - pure command/broadcast endpoint
+- Broadcasts state change to all WebSocket clients connected to this game
+- WebSocket clients (including hardware) handle the state change
+- Write-only (no GET endpoint - state lives only in connected clients)
 - Requires authentication (account or API key)
 - Requires game access permission
 
-## Data Model Changes
+## Design Note: Stateless Commands
 
-```python
-# Add to existing Game model
-class Game(models.Model):
-    # ... existing fields ...
-    buzzers_enabled = models.BooleanField(default=False)
-    buzzers_state_version = models.IntegerField(default=0)  # For optimistic updates
-```
+This endpoint does NOT store buzzer state in the database. It's a pure command endpoint that:
+1. Validates the request
+2. Broadcasts to WebSocket clients
+3. Returns success
+
+Clients (web UI, hardware controllers) maintain their own state based on WebSocket messages. This matches the existing architecture where game control is primarily WebSocket-based.
 
 ## API Specification
 
@@ -88,9 +88,8 @@ class Game(models.Model):
 ```json
 {
   "game_id": integer,
-  "buzzers_enabled": boolean,
-  "version": integer,
-  "updated_at": "ISO 8601 timestamp"
+  "enabled": boolean,
+  "broadcast": true
 }
 ```
 
@@ -101,42 +100,37 @@ class Game(models.Model):
 - `400 Bad Request` - Invalid request body
 
 **Side Effects:**
-- Updates `Game.buzzers_enabled` field
-- Increments `Game.buzzers_state_version`
-- Broadcasts WebSocket message to all clients:
+- Broadcasts WebSocket message to all game clients (all boards in the game):
   ```json
   {
-    "type": "buzzer_state_changed",
+    "type": "buzzer_state_command",
     "game_id": 123,
-    "enabled": true,
-    "version": 1
+    "enabled": true
   }
   ```
+- No database changes
 
 ## Implementation Steps
 
 ### High Priority
-- [ ] Add `buzzers_enabled` and `buzzers_state_version` fields to Game model
-- [ ] Create migration for new Game fields
 - [ ] Create `BuzzerStateSerializer` for request validation
-- [ ] Implement `toggle_buzzer_state` service function with transaction
 - [ ] Create `POST /api/game/{game_id}/buzzers/state` view
 - [ ] Add authentication and game access checks to view
-- [ ] Implement WebSocket broadcast for buzzer state changes
-- [ ] Update `GameConsumer` to handle `buzzer_state_changed` messages
+- [ ] Implement WebSocket broadcast helper to send to all game boards
+- [ ] Update `GameConsumer` to relay `buzzer_state_command` messages to clients
 
 ### Testing
-- [ ] Unit tests for service function
 - [ ] Integration tests for API endpoint
 - [ ] Tests for authentication/authorization
-- [ ] Tests for WebSocket broadcast
-- [ ] Tests for concurrent updates (version conflicts)
+- [ ] Tests for WebSocket broadcast to all game boards
+- [ ] Tests that no database changes occur
 
 ### Documentation
 - [ ] API endpoint documentation
-- [ ] WebSocket message format for `buzzer_state_changed`
+- [ ] WebSocket message format for `buzzer_state_command`
 - [ ] Example usage for CLI clients
 - [ ] Example usage for hardware controllers
+- [ ] Document that no state is persisted (clients maintain state)
 
 ## Future Endpoints (Not in Initial Scope)
 
@@ -204,11 +198,12 @@ curl -X POST "http://localhost:8000/api/game/${GAME_ID}/buzzers/state" \
 
 ## Design Principles
 
-1. **Write-Only First**: Start with write operations; read can come later if needed
-2. **Broadcast Changes**: All state changes broadcast to WebSocket clients for real-time sync
-3. **Versioning**: Use version fields for optimistic concurrency control
-4. **Stateless**: REST endpoints should not maintain connection state
-5. **Idempotent**: Setting state to current value should succeed (no-op)
+1. **No Persistence**: REST endpoints are pure command/broadcast - no database state
+2. **Write-Only**: Commands only; no GET endpoints (state lives in connected clients)
+3. **Broadcast Changes**: All commands broadcast to WebSocket clients
+4. **Stateless**: REST endpoints don't maintain connection state or store data
+5. **Idempotent**: Sending same command multiple times is safe (broadcasts each time)
+6. **Client-Side State**: WebSocket clients maintain state based on received messages
 
 ## WebSocket vs REST Decision Matrix
 
