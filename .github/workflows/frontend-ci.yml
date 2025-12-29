@@ -108,10 +108,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('app/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('app/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
           cd app
           npx playwright install chromium
@@ -134,7 +135,7 @@ jobs:
       - name: Start frontend server
         run: |
           cd app
-          VITE_API_ENDPOINT=localhost:8000 npm run dev &
+          VITE_API_ENDPOINT=localhost:8000 bun run dev &
           # Wait for server to be ready
           for i in {1..30}; do
             curl -s http://localhost:5173 > /dev/null 2>&1 && break || true
@@ -144,7 +145,7 @@ jobs:
       - name: Run E2E tests
         run: |
           cd app
-          npm run test:e2e
+          bun run test:e2e
         env:
           CI: true
 
