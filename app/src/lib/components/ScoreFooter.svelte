@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { recordPlayerAnswer } from '$lib/api';
   import { gameState } from '$lib/game-state.svelte';
   import Icon from '@iconify/svelte';
   import { allQuestions, type Game, type Player, type Team, type UiMode } from '../state.svelte';
@@ -15,9 +16,10 @@
     pointsToAward = currentQuestion?.points ?? 0;
   });
 
-  function recordAnswer(playerId: number, correct: boolean) {
-    if (!currentQuestion) return;
-    gameState.websocket?.recordPlayerAnswer(
+  async function recordAnswer(playerId: number, correct: boolean) {
+    if (!currentQuestion || !gameState.currentBoard) return;
+    await recordPlayerAnswer(
+      gameState.currentBoard,
       playerId,
       currentQuestion.id,
       correct,
