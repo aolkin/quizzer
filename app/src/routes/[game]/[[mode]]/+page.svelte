@@ -9,6 +9,8 @@
   import { GameWebSocket } from '$lib/websocket';
   import { onDestroy, onMount } from 'svelte';
 
+  // Type assertions needed because page.params is typed generically as Record<string, string | undefined>
+  // even though route structure guarantees 'game' is always present
   const gameId = page.params.game as string;
   const mode = (page.params.mode as UiMode) || UiMode.Presentation;
 
