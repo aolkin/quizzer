@@ -13,7 +13,7 @@ import { getBoard as apiGetBoard } from './api';
 const CLIENT_ID = Math.random().toString(36);
 
 export class GameWebSocket {
-  private socket!: WebSocket;
+  private socket: WebSocket;
   private reconnectAttempts = 0;
   private maxReconnectTimeout = 1000;
   private reconnectTimeout = 100;
@@ -23,26 +23,32 @@ export class GameWebSocket {
     private readonly mode: UiMode,
     private readonly audio?: AudioClient,
   ) {
-    this.connect();
+    this.socket = this.createSocket();
   }
 
-  private connect() {
-    this.socket = new WebSocket(`ws://${ENDPOINT}/ws/game/${this.gameId}/`);
-    this.socket.onmessage = (event) => this.handleMessage(event);
+  private createSocket(): WebSocket {
+    const socket = new WebSocket(`ws://${ENDPOINT}/ws/game/${this.gameId}/`);
+    socket.onmessage = (event) => this.handleMessage(event);
 
-    this.socket.onclose = () => {
+    socket.onclose = () => {
       setTimeout(() => {
         this.reconnectAttempts++;
         this.reconnectTimeout = Math.min(this.reconnectTimeout * 2, this.maxReconnectTimeout);
-        this.connect();
+        this.reconnect();
       }, this.reconnectTimeout);
     };
 
-    this.socket.onopen = () => {
+    socket.onopen = () => {
       this.reconnectAttempts = 0;
       this.reconnectTimeout = 100;
       this.send({ type: 'join_game' });
     };
+
+    return socket;
+  }
+
+  private reconnect() {
+    this.socket = this.createSocket();
   }
 
   send(message: any) {
