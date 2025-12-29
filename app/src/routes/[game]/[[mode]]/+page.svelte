@@ -11,8 +11,8 @@
 
   let { params, data: game }: PageProps = $props();
 
-  const gameId = params.game;
-  const mode = (params.mode as UiMode) || UiMode.Presentation;
+  const gameId = $derived(params.game);
+  const mode = $derived((params.mode as UiMode) || UiMode.Presentation);
 
   let audioClient: AudioClient | undefined = $state(undefined);
 

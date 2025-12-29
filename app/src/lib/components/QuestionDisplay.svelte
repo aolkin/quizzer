@@ -7,7 +7,6 @@
     $props();
 
   let container: HTMLDivElement;
-  let questionText: HTMLElement | undefined;
 
   $effect(() => {
     if (!visible && container.parentElement) {
@@ -45,11 +44,7 @@
   <div class="mx-auto max-w-[60%] text-center">
     <div>
       {#if question.type === 'text'}
-        <h2
-          class="font-bold"
-          style="font-size: 3cqw; line-height: 3.5cqw;"
-          bind:this={questionText}
-        >
+        <h2 class="font-bold" style="font-size: 3cqw; line-height: 3.5cqw;">
           {question.text}
         </h2>
       {:else if question.type === 'image'}
@@ -59,9 +54,9 @@
           class="mx-auto max-w-full rounded-lg shadow-lg"
         />
       {:else if question.type === 'video'}
-        <video src={question.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg" />
+        <video src={question.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg"></video>
       {:else if question.type === 'audio'}
-        <audio src={question.media_url} controls class="w-full" />
+        <audio src={question.media_url} controls class="w-full"></audio>
       {/if}
     </div>
   </div>
