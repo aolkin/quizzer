@@ -4,8 +4,22 @@ Tests for game models.
 These tests verify model properties, constraints, and database behavior.
 """
 
-from ..models import PlayerAnswer
+from ..models import PlayerAnswer, Game
 from .test_fixtures import BaseGameTestCase
+
+
+class GameTestCase(BaseGameTestCase):
+    """Tests for Game model."""
+
+    def test_points_term_default(self):
+        """Test that points_term defaults to 'points'."""
+        game = Game.objects.create(name="Test Game", mode="jeopardy")
+        self.assertEqual(game.points_term, "points")
+
+    def test_points_term_custom(self):
+        """Test that points_term can be customized."""
+        game = Game.objects.create(name="Test Game", mode="jeopardy", points_term="eggs")
+        self.assertEqual(game.points_term, "eggs")
 
 
 class PlayerScoreTestCase(BaseGameTestCase):

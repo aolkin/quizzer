@@ -21,6 +21,7 @@ class GameSerializerTestCase(BaseGameTestCase):
         self.assertEqual(data["id"], self.game.id)
         self.assertEqual(data["name"], "Test Game")
         self.assertEqual(data["mode"], "jeopardy")
+        self.assertEqual(data["points_term"], "points")
 
         # Should have boards
         self.assertEqual(len(data["boards"]), 1)

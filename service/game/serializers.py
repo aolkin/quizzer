@@ -76,7 +76,7 @@ class GameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Game
-        fields = ["id", "name", "mode", "boards", "teams"]
+        fields = ["id", "name", "mode", "points_term", "boards", "teams"]
 
 
 # API request serializers for mutations
