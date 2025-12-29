@@ -12,8 +12,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     """
 
     async def connect(self):
-        self.board_id = self.scope["url_route"]["kwargs"]["board_id"]
-        self.room_group_name = f"board_{self.board_id}"
+        self.game_id = self.scope["url_route"]["kwargs"]["game_id"]
+        self.room_group_name = f"game_{self.game_id}"
 
         # Parse query params to identify client type and ID
         query_string = self.scope.get("query_string", b"").decode()

@@ -18,11 +18,11 @@ from .serializers import (
 from . import services
 
 
-def broadcast_to_board(board_id: int, message_type: str, data: Dict[str, Any]) -> None:
-    """Broadcast a message to all WebSocket clients connected to a board."""
+def broadcast_to_game(game_id: int, message_type: str, data: Dict[str, Any]) -> None:
+    """Broadcast a message to all WebSocket clients connected to a game."""
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        f"board_{board_id}",
+        f"game_{game_id}",
         {"type": "game_message", "message": {"type": message_type, **data}},
     )
 
@@ -92,7 +92,7 @@ def record_answer(request, board_id):
     )
 
     response_data = asdict(result)
-    broadcast_to_board(board_id, "update_score", response_data)
+    broadcast_to_game(board.game_id, "update_score", response_data)
     return Response(response_data)
 
 
@@ -111,11 +111,13 @@ def toggle_question(request, question_id):
 
     data = request_serializer.validated_data
 
-    question = get_object_or_404(Question.objects.select_related("category__board"), id=question_id)
-    board_id = question.category.board_id
+    question = get_object_or_404(
+        Question.objects.select_related("category__board__game"), id=question_id
+    )
+    game_id = question.category.board.game_id
 
     result = services.update_question_status(question_id=question_id, answered=data["answered"])
 
     response_data = asdict(result)
-    broadcast_to_board(board_id, "toggle_question", response_data)
+    broadcast_to_game(game_id, "toggle_question", response_data)
     return Response(response_data)

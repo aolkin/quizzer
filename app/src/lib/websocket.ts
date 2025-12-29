@@ -160,7 +160,10 @@ export class GameWebSocket {
     points?: number,
   ) {
     try {
-      const boardId = Number(this.gameId); // this.gameId is actually the board ID
+      const boardId = gameState.currentBoard;
+      if (!boardId) {
+        throw new Error('No board selected');
+      }
       await apiRecordPlayerAnswer(boardId, playerId, questionId, isCorrect, points);
       // Update will come via WebSocket broadcast
     } catch (error) {
