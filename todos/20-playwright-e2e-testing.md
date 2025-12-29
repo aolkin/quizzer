@@ -28,10 +28,10 @@ Implement end-to-end testing using Playwright that runs against a real Django ba
    - Verify state updates propagate correctly
    - Test buzzer competition between multiple clients
 
-3. **Cross-Browser Coverage**
-   - Chrome/Chromium (primary)
-   - Firefox (secondary)
-   - Safari/WebKit (if needed for production)
+3. **Chrome-Only Testing**
+   - Chromium browser only (cost optimization)
+   - Covers vast majority of real-world usage
+   - Can expand to Firefox/Safari later if needed
 
 4. **Test Scenarios Aligned with Testing Philosophy**
    - Focus on high-value integration tests
@@ -42,21 +42,13 @@ Implement end-to-end testing using Playwright that runs against a real Django ba
 
 ## Test Game Data Strategy
 
-Two options for loading test game data (choose one or support both):
+Use the **import/export API** (TODO #19) to load test game data:
 
-### Option A: Committed Test Database
-- Commit a minimal SQLite database file (`service/test_game.sqlite3`)
-- Contains 1-2 pre-configured games with boards, questions, teams
-- Fast to load, version-controlled, deterministic
-- Simple for CI/CD
-
-### Option B: Import/Export API
-- Use the game import/export APIs (TODO #19)
 - Commit JSON game export file (`service/fixtures/test_game.json`)
-- Load via import API before tests
-- More flexible, human-readable, easier to modify
-
-**Recommendation:** Start with Option A (committed DB) for speed, migrate to Option B when import/export is ready.
+- Contains 1-2 pre-configured games with boards, questions, teams
+- Load via import API in global setup before tests
+- Human-readable, version-controlled, easy to modify
+- Validates import/export functionality as bonus
 
 ## Implementation Steps
 
@@ -66,9 +58,10 @@ Two options for loading test game data (choose one or support both):
 - [ ] Create `app/playwright.config.ts` with:
   - Base URL pointing to `http://localhost:5173` (Vite dev server)
   - API URL pointing to `http://localhost:8000` (Django backend)
-  - Browser projects: chromium (required), firefox (optional), webkit (optional)
-  - Parallel workers for speed
+  - Browser projects: chromium only (cost optimization)
+  - Parallel workers for speed (2-4 workers)
   - Screenshot/video on failure
+  - Headless mode for CI
 - [ ] Add npm scripts to `app/package.json`:
   - `"test:e2e": "playwright test"`
   - `"test:e2e:ui": "playwright test --ui"`
@@ -84,17 +77,20 @@ Two options for loading test game data (choose one or support both):
   - Check if server is already running (avoid conflicts)
   - Wait for server health check before tests
 - [ ] Create **database manager** (`database-manager.ts`):
-  - Copy test SQLite database to temporary location
-  - Reset database between test files (fresh state)
-  - Or: Load game data via import API when available
+  - Load test game via import API (POST /api/import/)
+  - Use fixture file `service/fixtures/test_game.json`
+  - Reset database between test runs (Django migrations)
+  - Store game ID for test access
 - [ ] Create **test fixtures** (`fixtures.ts`):
   - Custom fixture for multi-client contexts (host + presenters)
   - Fixture for pre-authenticated pages
   - Fixture for game URL navigation
 - [ ] Create **global setup** (`playwright/global-setup.ts`):
-  - Start backend server
-  - Initialize test database
-  - Verify backend is healthy
+  - Start backend server in background
+  - Run Django migrations (fresh test DB)
+  - Load test game via import API
+  - Verify backend is healthy (health check endpoint)
+  - Store test game ID in environment variable
 - [ ] Create **global teardown** (`playwright/global-teardown.ts`):
   - Stop backend server
   - Clean up test database
@@ -191,16 +187,20 @@ Two options for loading test game data (choose one or support both):
     - Verify 404 or error page
 
 ### Phase 5: CI/CD Integration
-- [ ] Update `.github/workflows/frontend.yml`:
+- [ ] Update `.github/workflows/frontend-ci.yml` to add parallel `e2e` job:
+  - Create new job `e2e:` that runs in parallel with existing `test:` job
+  - Same pattern as backend (separate jobs for test/lint, both run concurrently)
   - Install Playwright browsers: `bunx playwright install --with-deps chromium`
-  - Start backend server in background before tests
-  - Run E2E tests: `bun run test:e2e`
-  - Upload test artifacts on failure (screenshots, videos, traces)
+  - Set up Python and Django backend dependencies
+  - Install backend requirements: `pip install -r service/requirements.lock`
+  - Run Django migrations to create test database
+  - Start backend server in background: `cd service && python manage.py runserver 8000 &`
+  - Wait for backend health check
+  - Load test game via import API using `service/fixtures/test_game.json`
+  - Run E2E tests: `cd app && bun run test:e2e`
+  - Upload test artifacts on failure (screenshots, videos, HTML report)
   - Ensure tests run in headless mode
-- [ ] Add test database to CI:
-  - Copy test SQLite file to service directory
-  - Or: seed database via Django management command
-- [ ] Configure timeouts for CI environment (may be slower)
+- [ ] Configure reasonable timeouts for CI (tests may be slower than local)
 
 ### Phase 6: Documentation & Developer Experience
 - [ ] Update `TESTING.md`:
@@ -221,7 +221,7 @@ Two options for loading test game data (choose one or support both):
 
 ```
 app/
-├── playwright.config.ts
+├── playwright.config.ts          # Chromium only, headless for CI
 ├── tests/
 │   └── e2e/
 │       ├── setup/
@@ -240,7 +240,23 @@ app/
 │       ├── error-handling.spec.ts
 │       └── README.md
 └── package.json (updated scripts)
+
+service/
+└── fixtures/
+    └── test_game.json            # Test game data for import API
 ```
+
+## CI/CD Parallel Execution
+
+Frontend CI will run 3 jobs in parallel (like backend's test/lint pattern):
+
+```yaml
+jobs:
+  test:           # Existing - lint, type-check, unit tests, build
+  e2e:            # NEW - E2E tests with real backend
+```
+
+This ensures E2E tests don't slow down the main test job, and failures are isolated.
 
 ## Example Test Structure
 
