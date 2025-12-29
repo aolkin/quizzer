@@ -95,6 +95,13 @@ When writing tests, follow our testing philosophy documented in [TESTING.md](TES
 - Test behavior, not implementation
 - Mock external dependencies (WebSocket, fetch, database)
 
+## Code Style
+
+- **Write self-explanatory code**: Code should be clear enough that it doesn't need comments
+- **Avoid unnecessary comments**: Only add comments when explaining complex algorithms, business logic, or non-obvious decisions
+- **Use docstrings sparingly**: Only for public APIs and complex functions where the purpose isn't obvious from the name
+- **Prefer meaningful names**: Use descriptive variable, function, and class names instead of comments
+
 ## More Information
 
 For complete development guidelines and workflow, see [README.md](README.md).

@@ -360,6 +360,29 @@ class ImportGameViewTestCase(BaseGameTestCase):
         self.assertEqual(image_question.type, "image")
         self.assertEqual(image_question.media_url, "https://example.com/image.jpg")
 
+    def test_import_auto_detects_mode(self):
+        """Test that import auto-detects mode from file structure."""
+        data = self._get_template_export_data()
+        del data["mode"]
+
+        response = self.client.post(self.url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        result = response.json()
+        self.assertEqual(result["import_mode"], "template")
+
+        data_with_teams = self._get_template_export_data()
+        del data_with_teams["mode"]
+        data_with_teams["game"]["teams"] = [
+            {"name": "Team Alpha", "color": "#FF0000", "players": [{"name": "Alice"}]}
+        ]
+
+        response = self.client.post(self.url, data_with_teams, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        result = response.json()
+        self.assertEqual(result["import_mode"], "full")
+
     def test_import_full_mode_with_teams(self):
         """Test importing full mode creates teams, players, and answers."""
         data = self._get_template_export_data()

@@ -118,19 +118,6 @@ def toggle_question(request, question_id):
 
 @api_view(["GET"])
 def export_game(request, game_id):
-    """
-    Export game data in JSON format.
-
-    GET /api/game/{game_id}/export?mode=template|full&pretty=true|false
-
-    Modes:
-    - template (default): Exports game structure only (boards, categories, questions)
-    - full: Exports complete game state including teams, players, and answer history
-
-    Query parameters:
-    - mode: template or full (default: template)
-    - pretty: true or false (default: false) - for human-readable JSON
-    """
     export_mode = request.GET.get("mode", "template")
     pretty = request.GET.get("pretty", "false").lower() == "true"
 
@@ -140,7 +127,6 @@ def export_game(request, game_id):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    # Fetch the game with all related data
     game = get_object_or_404(
         Game.objects.prefetch_related(
             "boards__categories__questions",
@@ -149,9 +135,7 @@ def export_game(request, game_id):
         id=game_id,
     )
 
-    # Prepare export data with question index mapping for full mode
     if export_mode == "full":
-        # Build a question index mapping (question_id -> index)
         question_index_map = {}
         question_index = 0
         for board in game.boards.all():
@@ -160,7 +144,6 @@ def export_game(request, game_id):
                     question_index_map[question.id] = question_index
                     question_index += 1
 
-        # Add answers with question indices to players
         for team in game.teams.all():
             for player in team.players.all():
                 answers_export = []
@@ -171,26 +154,14 @@ def export_game(request, game_id):
                             "is_correct": answer.is_correct,
                             "answered_at": answer.answered_at.isoformat(),
                         }
-                        # Only include points if not None
                         if answer.points is not None:
                             answer_data["points"] = answer.points
                         answers_export.append(answer_data)
-                # Only set answers_export if there are answers
                 if answers_export:
                     player.answers_export = answers_export
 
-    # Serialize the game
-    serializer = GameExportSerializer(
-        {
-            "export_version": "1.0",
-            "mode": export_mode,
-            "exported_at": timezone.now(),
-            **game.__dict__,
-        },
-        context={"export_mode": export_mode},
-    )
+    serializer = GameExportSerializer(game, context={"export_mode": export_mode})
 
-    # Manually build the export data to pass the game object properly
     export_data = {
         "export_version": "1.0",
         "mode": export_mode,
@@ -198,16 +169,14 @@ def export_game(request, game_id):
         "game": serializer.get_game(game),
     }
 
-    # Set Content-Disposition header for file download
     timestamp = timezone.now().strftime("%Y%m%d-%H%M%S")
-    filename = f"game-{game_id}-{timestamp}.json"
+    safe_game_name = "".join(c if c.isalnum() or c in ("-", "_") else "-" for c in game.name)
+    filename = f"{safe_game_name}-{timestamp}.json"
 
-    # Return JSON response with proper formatting
     if pretty:
         return JsonResponse(
             export_data,
             json_dumps_params={"indent": 2, "ensure_ascii": False},
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
     else:
         return JsonResponse(
@@ -218,14 +187,6 @@ def export_game(request, game_id):
 
 @api_view(["POST"])
 def import_game(request):
-    """
-    Import game data from JSON format.
-
-    POST /api/game/import
-    Body: JSON export file (same format as export response)
-
-    Creates a new game from the import data and returns a summary.
-    """
     serializer = GameImportSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
