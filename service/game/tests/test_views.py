@@ -160,7 +160,7 @@ class ExportGameViewTestCase(BaseGameTestCase):
             order=4,
         )
 
-        url = f"/api/game/{self.game.id}/export?mode=template"
+        url = f"/api/game/{self.game.id}/export/?mode=template"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -214,7 +214,7 @@ class ExportGameViewTestCase(BaseGameTestCase):
             player=self.player1, question=self.q1, is_correct=True, points=150
         )
 
-        url = f"/api/game/{self.game.id}/export?mode=full"
+        url = f"/api/game/{self.game.id}/export/?mode=full"
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -253,7 +253,7 @@ class ImportGameViewTestCase(BaseGameTestCase):
     def setUp(self):
         super().setUp()
         self.client = APIClient()
-        self.url = "/api/game/import"
+        self.url = "/api/game/import/"
 
     def _get_template_export_data(self):
         """Helper to get a valid template export data structure."""
@@ -445,7 +445,7 @@ class ImportGameViewTestCase(BaseGameTestCase):
     def test_round_trip_export_import(self):
         """Test that exporting and re-importing a game preserves structure."""
         # Export the test game
-        export_url = f"/api/game/{self.game.id}/export?mode=template"
+        export_url = f"/api/game/{self.game.id}/export/?mode=template"
         export_response = self.client.get(export_url)
         export_data = export_response.json()
 

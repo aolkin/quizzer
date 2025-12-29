@@ -146,17 +146,18 @@ def export_game(request, game_id):
 
         for team in game.teams.all():
             for player in team.players.all():
-                answers_export = []
-                for answer in player.answers.all():
-                    if answer.question_id in question_index_map:
-                        answer_data = {
+                answers_export = [
+                    {
+                        **{
                             "question_index": question_index_map[answer.question_id],
                             "is_correct": answer.is_correct,
                             "answered_at": answer.answered_at.isoformat(),
-                        }
-                        if answer.points is not None:
-                            answer_data["points"] = answer.points
-                        answers_export.append(answer_data)
+                        },
+                        **({"points": answer.points} if answer.points is not None else {}),
+                    }
+                    for answer in player.answers.all()
+                    if answer.question_id in question_index_map
+                ]
                 if answers_export:
                     player.answers_export = answers_export
 
@@ -171,6 +172,8 @@ def export_game(request, game_id):
 
     timestamp = timezone.now().strftime("%Y%m%d-%H%M%S")
     safe_game_name = "".join(c if c.isalnum() or c in ("-", "_") else "-" for c in game.name)
+    safe_game_name = "-".join(filter(None, safe_game_name.split("-")))
+    safe_game_name = safe_game_name.strip("-") or "game"
     filename = f"{safe_game_name}-{timestamp}.json"
 
     if pretty:
@@ -194,8 +197,13 @@ def import_game(request):
     try:
         result = serializer.save()
         return Response(result, status=status.HTTP_201_CREATED)
+    except models.IntegrityError as e:
+        return Response(
+            {"error": f"Data integrity error: {str(e)}"},
+            status=status.HTTP_409_CONFLICT,
+        )
     except Exception as e:
         return Response(
             {"error": f"Import failed: {str(e)}"},
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

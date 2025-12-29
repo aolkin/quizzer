@@ -1,7 +1,10 @@
+import logging
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 from .models import Game, Board, Category, Player, Question, Team, PlayerAnswer
+
+logger = logging.getLogger(__name__)
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -96,6 +99,7 @@ class QuestionExportSerializer(serializers.Serializer):
     type = serializers.CharField(required=False)
     media_url = serializers.URLField(required=False)
     special = serializers.BooleanField(required=False)
+    answered = serializers.BooleanField(required=False)
 
     def to_representation(self, instance):
         data = {
@@ -109,6 +113,11 @@ class QuestionExportSerializer(serializers.Serializer):
             data["media_url"] = instance.media_url
         if instance.special:
             data["special"] = instance.special
+
+        export_mode = self.context.get("export_mode", "template")
+        if export_mode == "full" and instance.answered:
+            data["answered"] = instance.answered
+
         return data
 
 
@@ -116,10 +125,26 @@ class CategoryExportSerializer(serializers.Serializer):
     name = serializers.CharField()
     questions = QuestionExportSerializer(many=True)
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        export_mode = self.context.get("export_mode", "template")
+        data["questions"] = QuestionExportSerializer(
+            instance.questions.all(), many=True, context={"export_mode": export_mode}
+        ).data
+        return data
+
 
 class BoardExportSerializer(serializers.Serializer):
     name = serializers.CharField()
     categories = CategoryExportSerializer(many=True)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        export_mode = self.context.get("export_mode", "template")
+        data["categories"] = CategoryExportSerializer(
+            instance.categories.all(), many=True, context={"export_mode": export_mode}
+        ).data
+        return data
 
 
 class PlayerAnswerExportSerializer(serializers.Serializer):
@@ -166,10 +191,14 @@ class GameExportSerializer(serializers.Serializer):
     game = serializers.SerializerMethodField()
 
     def get_game(self, obj):
+        export_mode = self.context.get("export_mode", "template")
+
         game_data = {
             "name": obj.name,
             "mode": obj.mode,
-            "boards": BoardExportSerializer(obj.boards.all(), many=True).data,
+            "boards": BoardExportSerializer(
+                obj.boards.all(), many=True, context={"export_mode": export_mode}
+            ).data,
         }
 
         game_data["metadata"] = {
@@ -177,7 +206,6 @@ class GameExportSerializer(serializers.Serializer):
             "created_at": obj.created_at.isoformat(),
         }
 
-        export_mode = self.context.get("export_mode", "template")
         if export_mode == "full" and hasattr(obj, "teams"):
             teams_data = TeamExportSerializer(obj.teams.all(), many=True).data
             if teams_data:
@@ -192,8 +220,9 @@ class QuestionImportSerializer(serializers.Serializer):
     answer = serializers.CharField()
     points = serializers.IntegerField()
     type = serializers.CharField(default="text", required=False)
-    media_url = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    media_url = serializers.URLField(required=False, allow_null=True, default=None)
     special = serializers.BooleanField(default=False, required=False)
+    answered = serializers.BooleanField(default=False, required=False)
 
 
 class CategoryImportSerializer(serializers.Serializer):
@@ -290,6 +319,7 @@ class GameImportSerializer(serializers.Serializer):
                         type=question_data.get("type", "text"),
                         media_url=question_data.get("media_url") or None,
                         special=question_data.get("special", False),
+                        answered=question_data.get("answered", False),
                         order=question_order,
                     )
                     question_id_map[question_index] = question
@@ -323,6 +353,12 @@ class GameImportSerializer(serializers.Serializer):
                                     points=answer_data.get("points"),
                                 )
                                 answers_imported += 1
+                            else:
+                                logger.warning(
+                                    f"Skipping answer for player '{player.name}': "
+                                    f"invalid question_index {question_idx} "
+                                    f"(valid range: 0-{len(question_id_map)-1})"
+                                )
 
         return {
             "game_id": game.id,

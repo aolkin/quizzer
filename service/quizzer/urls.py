@@ -29,8 +29,8 @@ from game.views import (
 
 urlpatterns = [
     path("api/game/<int:game_id>/", get_game),
-    path("api/game/<int:game_id>/export", export_game),
-    path("api/game/import", import_game),
+    path("api/game/<int:game_id>/export/", export_game),
+    path("api/game/import/", import_game),
     path("api/board/<int:board_id>/", get_board),
     path("api/board/<int:board_id>/answers/", record_answer),
     path("api/question/<int:question_id>/", toggle_question),
