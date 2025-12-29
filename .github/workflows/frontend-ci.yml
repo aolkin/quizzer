@@ -41,7 +41,7 @@ jobs:
       - name: Type check
         run: |
           cd app
-          npm run check
+          bun run check
 
       - name: Run tests
         run: |
