@@ -8,11 +8,7 @@ import {
   shouldUpdateQuestion,
 } from './state.svelte';
 import { gameState } from './game-state.svelte';
-import {
-  recordPlayerAnswer as apiRecordPlayerAnswer,
-  toggleQuestion as apiToggleQuestion,
-  getBoard as apiGetBoard,
-} from './api';
+import { getBoard as apiGetBoard } from './api';
 
 const CLIENT_ID = Math.random().toString(36);
 
@@ -141,32 +137,6 @@ export class GameWebSocket {
       type: 'select_question',
       question,
     });
-  }
-
-  async updateQuestionStatus(questionId: number, answered: boolean) {
-    try {
-      await apiToggleQuestion(questionId, answered);
-      // Update will come via WebSocket broadcast
-    } catch (error) {
-      console.error('Failed to toggle question:', error);
-      throw error;
-    }
-  }
-
-  async recordPlayerAnswer(
-    playerId: number,
-    questionId: number,
-    isCorrect: boolean,
-    points?: number,
-  ) {
-    try {
-      const boardId = Number(this.gameId); // this.gameId is actually the board ID
-      await apiRecordPlayerAnswer(boardId, playerId, questionId, isCorrect, points);
-      // Update will come via WebSocket broadcast
-    } catch (error) {
-      console.error('Failed to record answer:', error);
-      throw error;
-    }
   }
 
   toggleBuzzers(enabled: boolean) {

@@ -2,6 +2,7 @@
   import Icon from '@iconify/svelte';
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
+  import { toggleQuestion } from '$lib/api';
   import { allQuestions, type Board, type Question, UiMode } from '$lib/state.svelte';
   import type { AudioClient } from '../audio.svelte';
   import { gameState } from '../game-state.svelte';
@@ -107,14 +108,14 @@
           <button
             type="button"
             class="btn-variant-filled btn"
-            onclick={() => gameState.websocket?.updateQuestionStatus(sidebarQuestion.id, true)}
+            onclick={() => toggleQuestion(sidebarQuestion.id, true)}
           >
             Mark Answered
           </button>
           <button
             type="button"
             class="btn-variant-ringed btn"
-            onclick={() => gameState.websocket?.updateQuestionStatus(sidebarQuestion.id, false)}
+            onclick={() => toggleQuestion(sidebarQuestion.id, false)}
           >
             Skip
           </button>

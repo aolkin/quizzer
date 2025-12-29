@@ -31,7 +31,7 @@ class RecordAnswerViewTestCase(BaseGameTestCase):
             data["points"] = points
         return self.client.post(self.url, data, format="json")
 
-    @patch("game.views.broadcast_to_board")
+    @patch("game.views.broadcast_to_game")
     def test_record_answer_success(self, mock_broadcast):
         """Test recording an answer successfully broadcasts score update."""
         response = self._post_answer(self.player1.id, self.q1.id, True, 150)
@@ -41,10 +41,10 @@ class RecordAnswerViewTestCase(BaseGameTestCase):
         self.assertEqual(response.data["score"], 150)
         self.assertIn("version", response.data)
 
-        # Verify broadcast was called
+        # Verify broadcast was called with game_id
         mock_broadcast.assert_called_once()
         call_args = mock_broadcast.call_args
-        self.assertEqual(call_args.args[0], self.board.id)
+        self.assertEqual(call_args.args[0], self.game.id)
         self.assertEqual(call_args.args[1], "update_score")
 
     def test_record_answer_validation_errors(self):
@@ -86,7 +86,7 @@ class ToggleQuestionViewTestCase(BaseGameTestCase):
         self.client = APIClient()
         self.url = f"/api/question/{self.q1.id}/"
 
-    @patch("game.views.broadcast_to_board")
+    @patch("game.views.broadcast_to_game")
     def test_toggle_question_success(self, mock_broadcast):
         """Test toggling question status broadcasts update."""
         response = self.client.patch(self.url, {"answered": True}, format="json")
@@ -96,9 +96,10 @@ class ToggleQuestionViewTestCase(BaseGameTestCase):
         self.assertTrue(response.data["answered"])
         self.assertIn("version", response.data)
 
-        # Verify broadcast
+        # Verify broadcast was called with game_id
         mock_broadcast.assert_called_once()
         call_args = mock_broadcast.call_args
+        self.assertEqual(call_args.args[0], self.game.id)
         self.assertEqual(call_args.args[1], "toggle_question")
 
     def test_toggle_question_invalid_data(self):
