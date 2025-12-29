@@ -9,11 +9,9 @@
   import { onDestroy, onMount } from 'svelte';
   import type { PageProps } from './$types';
 
-  // Use SvelteKit's generated PageProps for proper type safety
-  // params.game is typed as string (required), params.mode is typed as string | undefined (optional)
   let { params, data: game }: PageProps = $props();
 
-  const gameId = params.game; // No type assertion needed - typed as string
+  const gameId = params.game;
   const mode = (params.mode as UiMode) || UiMode.Presentation;
 
   let audioClient: AudioClient | undefined = $state(undefined);
