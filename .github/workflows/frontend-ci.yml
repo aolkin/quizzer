@@ -32,11 +32,10 @@ jobs:
           cd app
           bun install
 
-      # Temporarily disabled due to existing linting issues
-      # - name: Run linter
-      #   run: |
-      #     cd app
-      #     bun run lint
+      - name: Run linter
+        run: |
+          cd app
+          bun run lint
 
       - name: Type check
         run: |

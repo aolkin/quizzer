@@ -1,6 +1,5 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
-  import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
   import { toggleQuestion } from '$lib/api';
   import { allQuestions, type Board, type Question, UiMode } from '$lib/state.svelte';
