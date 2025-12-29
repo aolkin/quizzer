@@ -131,39 +131,51 @@ Authorization: Bearer qz_dev_a8f4c2e9b3d1f6a2c8e4b9d3f1a6c2e8
 
 ## Authentication Flow
 
-The `djangorestframework-api-key` library provides `APIKeyAuthentication` class that handles:
-1. Extracting API key from `Authorization: Api-Key <key>` or custom header
+The `djangorestframework-api-key` library provides authentication classes that handle:
+1. Extracting API key from request headers
 2. Validating key format and checking hash
 3. Returning the APIKey object if valid
 
-We'll configure it to use `Authorization: Bearer <key>` for consistency with standard patterns.
+**Settings Configuration:**
 
 ```python
 # In settings.py
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',  # For users
-        'rest_framework_api_key.permissions.HasAPIKey',  # For API keys
+        'rest_framework_api_key.auth.APIKeyAuthentication',  # For API keys
     ],
 }
 ```
 
+**Note:** The library's `HasAPIKey` is a **permission class**, not an authentication class. It should be used in view-level permissions if needed, but authentication is handled by `APIKeyAuthentication`.
+
 ## Authorization Logic
 
-Same as user authentication, but checks `APIKeyGameAccess` instead of `GameAccess`:
+Authorization checks differ based on authentication method:
 
 ```python
+from rest_framework_api_key.models import APIKey
+
 def has_game_access(request, game):
-    if isinstance(request.auth, User):
+    # For session authentication: request.user is authenticated User, request.auth is None
+    if request.user and request.user.is_authenticated:
         return GameAccess.objects.filter(
-            user=request.auth, game=game
+            user=request.user, game=game
         ).exists()
-    elif isinstance(request.auth, APIKey):
+
+    # For API key authentication: request.auth is APIKey object
+    if request.auth and isinstance(request.auth, APIKey):
         return APIKeyGameAccess.objects.filter(
             api_key=request.auth, game=game
         ).exists()
+
     return False
 ```
+
+**Key differences:**
+- **SessionAuthentication**: User in `request.user`, `request.auth` is `None`
+- **APIKeyAuthentication**: APIKey in `request.auth`, `request.user` is `AnonymousUser`
 
 ## Security Considerations
 
