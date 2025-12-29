@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { page } from '$app/state';
   import { AudioClient } from '$lib/audio.svelte';
   import Board from '$lib/components/Board.svelte';
   import BoardSelector from '$lib/components/BoardSelector.svelte';
@@ -8,13 +7,14 @@
   import { gameState } from '$lib/game-state.svelte';
   import { GameWebSocket } from '$lib/websocket';
   import { onDestroy, onMount } from 'svelte';
+  import type { PageProps } from './$types';
 
-  // Type assertions needed because page.params is typed generically as Record<string, string | undefined>
-  // even though route structure guarantees 'game' is always present
-  const gameId = page.params.game as string;
-  const mode = (page.params.mode as UiMode) || UiMode.Presentation;
+  // Use SvelteKit's generated PageProps for proper type safety
+  // params.game is typed as string (required), params.mode is typed as string | undefined (optional)
+  let { params, data: game }: PageProps = $props();
 
-  let { data: game } = $props();
+  const gameId = params.game; // No type assertion needed - typed as string
+  const mode = (params.mode as UiMode) || UiMode.Presentation;
 
   let audioClient: AudioClient | undefined = $state(undefined);
 
