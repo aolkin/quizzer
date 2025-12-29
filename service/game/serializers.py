@@ -291,7 +291,7 @@ class GameImportSerializer(serializers.Serializer):
         game = Game.objects.create(
             name=game_data["name"],
             mode=game_data["mode"],
-            points_term=game_data.get("points_term", "points"),
+            points_term=game_data["points_term"],
         )
 
         # Track created objects for the response
