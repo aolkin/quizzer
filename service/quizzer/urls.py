@@ -18,10 +18,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from game.views import get_board, get_game, record_answer, toggle_question
+from game.views import (
+    get_board,
+    get_game,
+    record_answer,
+    toggle_question,
+    export_game,
+    import_game,
+)
 
 urlpatterns = [
     path("api/game/<int:game_id>/", get_game),
+    path("api/game/<int:game_id>/export", export_game),
+    path("api/game/import", import_game),
     path("api/board/<int:board_id>/", get_board),
     path("api/board/<int:board_id>/answers/", record_answer),
     path("api/question/<int:question_id>/", toggle_question),
