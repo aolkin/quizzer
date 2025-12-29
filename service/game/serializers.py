@@ -76,7 +76,7 @@ class GameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Game
-        fields = ["id", "name", "mode", "boards", "teams"]
+        fields = ["id", "name", "mode", "points_term", "boards", "teams"]
 
 
 # API request serializers for mutations
@@ -196,6 +196,7 @@ class GameExportSerializer(serializers.Serializer):
         game_data = {
             "name": obj.name,
             "mode": obj.mode,
+            "points_term": obj.points_term,
             "boards": BoardExportSerializer(
                 obj.boards.all(), many=True, context={"export_mode": export_mode}
             ).data,
@@ -257,6 +258,7 @@ class TeamImportSerializer(serializers.Serializer):
 class GameImportDataSerializer(serializers.Serializer):
     name = serializers.CharField()
     mode = serializers.CharField()
+    points_term = serializers.CharField(default="points", required=False)
     boards = BoardImportSerializer(many=True)
     teams = TeamImportSerializer(many=True, required=False)
     metadata = serializers.DictField(required=False)
@@ -286,7 +288,11 @@ class GameImportSerializer(serializers.Serializer):
         import_mode = validated_data["mode"]
 
         # Create the game
-        game = Game.objects.create(name=game_data["name"], mode=game_data["mode"])
+        game = Game.objects.create(
+            name=game_data["name"],
+            mode=game_data["mode"],
+            points_term=game_data["points_term"],
+        )
 
         # Track created objects for the response
         boards_created = 0

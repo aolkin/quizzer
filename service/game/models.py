@@ -28,6 +28,7 @@ class Game(models.Model):
     name = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     mode = models.CharField(max_length=20, choices=GAME_MODES, default="jeopardy")
+    points_term = models.CharField(max_length=50, default="points")
 
     def __str__(self):
         return self.name
