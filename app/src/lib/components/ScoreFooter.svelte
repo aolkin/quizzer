@@ -62,7 +62,9 @@
             ? 'bg-green-600'
             : 'bg-red-600'}"
           onclick={toggleBuzzerLogLevel}
-          title="Buzzer {gameState.buzzerConnected ? 'connected' : 'disconnected'} - Click to toggle log level ({buzzerLogLevel})"
+          title="Buzzer {gameState.buzzerConnected
+            ? 'connected'
+            : 'disconnected'} - Click to toggle log level ({buzzerLogLevel})"
         >
           <span class="text-xs font-bold">{buzzerLogLevel === 'DEBUG' ? 'D' : 'W'}</span>
         </button>
@@ -72,7 +74,8 @@
             : gameState.buzzersEnabled
               ? 'bg-red-600'
               : 'bg-green-600'}"
-          onclick={() => (gameState.activeBuzzerId !== null ? toggleBuzzers(true) : toggleBuzzers())}
+          onclick={() =>
+            gameState.activeBuzzerId !== null ? toggleBuzzers(true) : toggleBuzzers()}
         >
           {gameState.activeBuzzerId !== null
             ? 'Reset'

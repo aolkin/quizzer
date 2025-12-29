@@ -3,8 +3,11 @@
   import { type AudioClient, Sound } from '../audio.svelte';
   import type { Question } from '../state.svelte';
 
-  const { question, visible, audio }: { question: Question; visible: boolean; audio?: AudioClient } =
-    $props();
+  const {
+    question,
+    visible,
+    audio,
+  }: { question: Question; visible: boolean; audio?: AudioClient } = $props();
 
   let container: HTMLDivElement;
 
@@ -55,7 +58,8 @@
         />
       {:else if question.type === 'video'}
         <!-- svelte-ignore a11y_media_has_caption -->
-        <video src={question.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg"></video>
+        <video src={question.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg"
+        ></video>
       {:else if question.type === 'audio'}
         <audio src={question.media_url} controls class="w-full"></audio>
       {/if}
