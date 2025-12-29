@@ -6,7 +6,7 @@ export const load = async ({
   fetch,
 }: {
   params: { game: string };
-  fetch;
+  fetch: typeof globalThis.fetch;
 }): Promise<Game> => {
   const response = await fetch(`http://${ENDPOINT}/api/game/${params.game}/`);
   const game = await response.json();

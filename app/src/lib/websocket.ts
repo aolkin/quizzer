@@ -23,26 +23,32 @@ export class GameWebSocket {
     private readonly mode: UiMode,
     private readonly audio?: AudioClient,
   ) {
-    this.connect();
+    this.socket = this.createSocket();
   }
 
-  private connect() {
-    this.socket = new WebSocket(`ws://${ENDPOINT}/ws/game/${this.gameId}/`);
-    this.socket.onmessage = (event) => this.handleMessage(event);
+  private createSocket(): WebSocket {
+    const socket = new WebSocket(`ws://${ENDPOINT}/ws/game/${this.gameId}/`);
+    socket.onmessage = (event) => this.handleMessage(event);
 
-    this.socket.onclose = () => {
+    socket.onclose = () => {
       setTimeout(() => {
         this.reconnectAttempts++;
         this.reconnectTimeout = Math.min(this.reconnectTimeout * 2, this.maxReconnectTimeout);
-        this.connect();
+        this.reconnect();
       }, this.reconnectTimeout);
     };
 
-    this.socket.onopen = () => {
+    socket.onopen = () => {
       this.reconnectAttempts = 0;
       this.reconnectTimeout = 100;
       this.send({ type: 'join_game' });
     };
+
+    return socket;
+  }
+
+  private reconnect() {
+    this.socket = this.createSocket();
   }
 
   send(message: any) {
@@ -58,7 +64,7 @@ export class GameWebSocket {
     }
   }
 
-  handleMessage(event) {
+  handleMessage(event: MessageEvent) {
     const data = JSON.parse(event.data);
     if (data.type === 'join_game' && this.mode === UiMode.Host && data.clientId !== CLIENT_ID) {
       if (gameState.currentBoard) {
@@ -118,21 +124,25 @@ export class GameWebSocket {
     }
   }
 
-  revealCategory(categoryId) {
+  revealCategory(categoryId: number) {
     this.send({
       type: 'reveal_category',
       categoryId,
     });
   }
 
-  selectBoard(board) {
+  selectBoard(board: number) {
     this.send({
       type: 'select_board',
       board,
     });
   }
 
-  selectQuestion(question) {
+  /**
+   * Broadcast question selection to all connected clients.
+   * @param question - Question ID to display, or undefined to close the current question
+   */
+  selectQuestion(question: number | undefined) {
     this.send({
       type: 'select_question',
       question,
