@@ -9,7 +9,7 @@
   import { GameWebSocket } from '$lib/websocket';
   import { onDestroy, onMount } from 'svelte';
 
-  const gameId = page.params.game;
+  const gameId = page.params.game as string;
   const mode = (page.params.mode as UiMode) || UiMode.Presentation;
 
   let { data: game } = $props();

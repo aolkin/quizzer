@@ -11,7 +11,7 @@ export enum Sound {
 
 export class AudioClient {
   private sounds: Map<string, HTMLAudioElement>;
-  private websocket: WebSocket;
+  private websocket?: WebSocket;
 
   constructor() {
     this.sounds = new Map();
@@ -52,7 +52,7 @@ export class AudioClient {
   }
 
   public dispose() {
-    this.websocket.close();
+    this.websocket?.close();
     for (const sound of this.sounds.values()) {
       sound.remove();
     }

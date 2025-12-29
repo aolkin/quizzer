@@ -3,14 +3,14 @@
   import { type AudioClient, Sound } from '../audio.svelte';
   import type { Question } from '../state.svelte';
 
-  const { question, visible, audio }: { question: Question; visible: boolean; audio: AudioClient } =
+  const { question, visible, audio }: { question: Question; visible: boolean; audio?: AudioClient } =
     $props();
 
   let container: HTMLDivElement;
   let questionText: HTMLElement | undefined;
 
   $effect(() => {
-    if (!visible) {
+    if (!visible && container.parentElement) {
       const originRect = container.parentElement.getBoundingClientRect();
 
       // Initial position matching the original box
@@ -29,7 +29,7 @@
       container.style.zIndex = '50';
       if (question.special) {
         container.style.transform = 'rotate3d(1, 0, 0, 720deg)';
-        audio.play(Sound.Special);
+        audio?.play(Sound.Special);
       }
     }
   });

@@ -13,7 +13,7 @@ import { getBoard as apiGetBoard } from './api';
 const CLIENT_ID = Math.random().toString(36);
 
 export class GameWebSocket {
-  private socket: WebSocket;
+  private socket!: WebSocket;
   private reconnectAttempts = 0;
   private maxReconnectTimeout = 1000;
   private reconnectTimeout = 100;
@@ -58,7 +58,7 @@ export class GameWebSocket {
     }
   }
 
-  handleMessage(event) {
+  handleMessage(event: MessageEvent) {
     const data = JSON.parse(event.data);
     if (data.type === 'join_game' && this.mode === UiMode.Host && data.clientId !== CLIENT_ID) {
       if (gameState.currentBoard) {
@@ -118,21 +118,21 @@ export class GameWebSocket {
     }
   }
 
-  revealCategory(categoryId) {
+  revealCategory(categoryId: number) {
     this.send({
       type: 'reveal_category',
       categoryId,
     });
   }
 
-  selectBoard(board) {
+  selectBoard(board: number) {
     this.send({
       type: 'select_board',
       board,
     });
   }
 
-  selectQuestion(question) {
+  selectQuestion(question: number | undefined) {
     this.send({
       type: 'select_question',
       question,

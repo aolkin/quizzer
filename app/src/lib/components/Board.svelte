@@ -8,7 +8,7 @@
   import { gameState } from '../game-state.svelte';
   import QuestionDisplay from './QuestionDisplay.svelte';
 
-  let { mode, board, audio }: { board: Board; mode: UiMode; audio: AudioClient } = $props();
+  let { mode, board, audio }: { board: Board; mode: UiMode; audio?: AudioClient } = $props();
 
   let hoveredQuestion = $state<Question | undefined>(undefined);
   let selectedQuestion = $state<Question | undefined>(undefined);
@@ -64,7 +64,7 @@
             {#each category.questions as question}
               <button
                 class="flex aspect-video items-center justify-center rounded-md bg-primary-800 text-8xl font-bold transition-colors hover:bg-primary-700"
-                class:opacity-75={question.status === 'answered'}
+                class:opacity-75={question.answered}
                 onclick={() => handleQuestionClick(question)}
                 onmouseenter={() => mode === 'host' && (hoveredQuestion = question)}
                 onmouseleave={() => mode === 'host' && (hoveredQuestion = undefined)}

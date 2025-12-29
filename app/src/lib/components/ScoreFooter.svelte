@@ -38,7 +38,7 @@
 
   function getScore(entity: Team | Player) {
     if ('players' in entity) {
-      return entity.players.reduce((acc, player) => acc + gameState.scores[player.id] ?? 0, 0);
+      return entity.players.reduce((acc, player) => acc + (gameState.scores[player.id] ?? 0), 0);
     }
     return gameState.scores[entity.id] ?? 0;
   }
