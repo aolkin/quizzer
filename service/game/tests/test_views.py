@@ -31,7 +31,7 @@ class RecordAnswerViewTestCase(BaseGameTestCase):
             data["points"] = points
         return self.client.post(self.url, data, format="json")
 
-    @patch("game.channels.broadcast_to_game")
+    @patch("game.views.broadcast_to_game")
     def test_record_answer_success(self, mock_broadcast):
         """Test recording an answer successfully broadcasts score update."""
         response = self._post_answer(self.player1.id, self.q1.id, True, 150)
@@ -86,7 +86,7 @@ class ToggleQuestionViewTestCase(BaseGameTestCase):
         self.client = APIClient()
         self.url = f"/api/question/{self.q1.id}/"
 
-    @patch("game.channels.broadcast_to_game")
+    @patch("game.views.broadcast_to_game")
     def test_toggle_question_success(self, mock_broadcast):
         """Test toggling question status broadcasts update."""
         response = self.client.patch(self.url, {"answered": True}, format="json")

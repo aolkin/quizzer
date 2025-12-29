@@ -15,12 +15,12 @@ class GameConsumerTestCase(BaseGameTestCase):
 
     async def test_relay_coordination_message(self):
         """Test relay pattern: messages are broadcast to all clients in the group."""
-        # Create two communicators for the same board
-        communicator1 = WebsocketCommunicator(GameConsumer.as_asgi(), f"/ws/board/{self.board.id}/")
-        communicator1.scope["url_route"] = {"kwargs": {"board_id": self.board.id}}
+        # Create two communicators for the same game
+        communicator1 = WebsocketCommunicator(GameConsumer.as_asgi(), f"/ws/game/{self.game.id}/")
+        communicator1.scope["url_route"] = {"kwargs": {"game_id": self.game.id}}
 
-        communicator2 = WebsocketCommunicator(GameConsumer.as_asgi(), f"/ws/board/{self.board.id}/")
-        communicator2.scope["url_route"] = {"kwargs": {"board_id": self.board.id}}
+        communicator2 = WebsocketCommunicator(GameConsumer.as_asgi(), f"/ws/game/{self.game.id}/")
+        communicator2.scope["url_route"] = {"kwargs": {"game_id": self.game.id}}
 
         # Connect both (implicitly tests connection)
         await communicator1.connect()
@@ -44,8 +44,8 @@ class GameConsumerTestCase(BaseGameTestCase):
 
     async def test_reject_invalid_messages(self):
         """Test that malformed messages (non-dict or missing 'type') are rejected."""
-        communicator = WebsocketCommunicator(GameConsumer.as_asgi(), f"/ws/board/{self.board.id}/")
-        communicator.scope["url_route"] = {"kwargs": {"board_id": self.board.id}}
+        communicator = WebsocketCommunicator(GameConsumer.as_asgi(), f"/ws/game/{self.game.id}/")
+        communicator.scope["url_route"] = {"kwargs": {"game_id": self.game.id}}
 
         await communicator.connect()
 
