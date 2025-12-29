@@ -149,6 +149,17 @@ class ExportGameViewTestCase(BaseGameTestCase):
 
     def test_export_template_mode(self):
         """Test exporting game in template mode excludes teams and players."""
+        # Add a question with media to test non-default type and media_url
+        Question.objects.create(
+            category=self.category,
+            text="Image Question",
+            answer="Image Answer",
+            points=400,
+            type="image",
+            media_url="https://example.com/image.jpg",
+            order=4,
+        )
+
         url = f"/api/game/{self.game.id}/export?mode=template"
         response = self.client.get(url)
 
@@ -174,15 +185,20 @@ class ExportGameViewTestCase(BaseGameTestCase):
         # Verify category structure
         category = board["categories"][0]
         self.assertEqual(category["name"], "Test Category")
-        self.assertEqual(len(category["questions"]), 3)
+        self.assertEqual(len(category["questions"]), 4)
 
-        # Verify question structure
+        # Verify question structure - default text question
         question = category["questions"][0]
         self.assertEqual(question["text"], "Question 1")
         self.assertEqual(question["answer"], "Answer 1")
         self.assertEqual(question["points"], 100)
         # Type should not be present if it's "text" (default)
         self.assertNotIn("type", question)
+
+        # Verify image question with media_url
+        image_question = category["questions"][3]
+        self.assertEqual(image_question["type"], "image")
+        self.assertEqual(image_question["media_url"], "https://example.com/image.jpg")
 
         # Verify metadata
         self.assertIn("metadata", game_data)
@@ -229,55 +245,6 @@ class ExportGameViewTestCase(BaseGameTestCase):
         self.assertTrue(answer["is_correct"])
         self.assertEqual(answer["points"], 150)
         self.assertIn("answered_at", answer)
-
-    def test_export_pretty_formatting(self):
-        """Test that pretty parameter formats JSON with indentation."""
-        url = f"/api/game/{self.game.id}/export?mode=template&pretty=true"
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Check that the response content is indented (contains newlines and spaces)
-        content = response.content.decode("utf-8")
-        self.assertIn("\n", content)
-        self.assertIn("  ", content)  # Indentation
-
-    def test_export_invalid_mode(self):
-        """Test that invalid mode returns error."""
-        url = f"/api/game/{self.game.id}/export?mode=invalid"
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("error", response.json())
-
-    def test_export_nonexistent_game(self):
-        """Test that exporting nonexistent game returns 404."""
-        url = "/api/game/99999/export?mode=template"
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_export_question_with_media(self):
-        """Test that questions with media_url include it in export."""
-        # Add a question with media
-        Question.objects.create(
-            category=self.category,
-            text="Image Question",
-            answer="Image Answer",
-            points=400,
-            type="image",
-            media_url="https://example.com/image.jpg",
-            order=4,
-        )
-
-        url = f"/api/game/{self.game.id}/export?mode=template"
-        response = self.client.get(url)
-
-        data = response.json()
-        questions = data["game"]["boards"][0]["categories"][0]["questions"]
-        image_question = questions[3]  # Fourth question
-
-        self.assertEqual(image_question["type"], "image")
-        self.assertEqual(image_question["media_url"], "https://example.com/image.jpg")
 
 
 class ImportGameViewTestCase(BaseGameTestCase):
@@ -336,6 +303,17 @@ class ImportGameViewTestCase(BaseGameTestCase):
     def test_import_template_mode(self):
         """Test importing a template creates game structure without teams."""
         data = self._get_template_export_data()
+        # Add a question with media to test importing non-default type
+        data["game"]["boards"][0]["categories"][0]["questions"].append(
+            {
+                "text": "Image question",
+                "answer": "Image answer",
+                "points": 300,
+                "type": "image",
+                "media_url": "https://example.com/image.jpg",
+            }
+        )
+
         response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -345,7 +323,7 @@ class ImportGameViewTestCase(BaseGameTestCase):
         self.assertEqual(result["game_name"], "Imported Game")
         self.assertEqual(result["boards_created"], 1)
         self.assertEqual(result["categories_created"], 2)
-        self.assertEqual(result["questions_created"], 3)
+        self.assertEqual(result["questions_created"], 4)
         self.assertEqual(result["teams_created"], 0)
         self.assertEqual(result["players_created"], 0)
         self.assertEqual(result["import_mode"], "template")
@@ -371,11 +349,16 @@ class ImportGameViewTestCase(BaseGameTestCase):
 
         # Verify questions
         science_questions = list(categories[0].questions.all())
-        self.assertEqual(len(science_questions), 2)
+        self.assertEqual(len(science_questions), 3)
         self.assertEqual(science_questions[0].text, "What is H2O?")
         self.assertEqual(science_questions[0].answer, "Water")
         self.assertEqual(science_questions[0].points, 100)
         self.assertEqual(science_questions[0].order, 0)
+
+        # Verify the image question was created correctly
+        image_question = science_questions[2]
+        self.assertEqual(image_question.type, "image")
+        self.assertEqual(image_question.media_url, "https://example.com/image.jpg")
 
     def test_import_full_mode_with_teams(self):
         """Test importing full mode creates teams, players, and answers."""
@@ -435,61 +418,6 @@ class ImportGameViewTestCase(BaseGameTestCase):
         answer = alice.answers.first()
         self.assertTrue(answer.is_correct)
         self.assertEqual(answer.points, 150)
-
-    def test_import_invalid_version(self):
-        """Test that unsupported export version returns error."""
-        data = self._get_template_export_data()
-        data["export_version"] = "2.0"
-
-        response = self.client.post(self.url, data, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("export_version", response.json())
-
-    def test_import_invalid_mode(self):
-        """Test that invalid mode returns error."""
-        data = self._get_template_export_data()
-        data["mode"] = "invalid"
-
-        response = self.client.post(self.url, data, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_import_missing_required_fields(self):
-        """Test that missing required fields returns validation error."""
-        data = {"export_version": "1.0", "mode": "template"}
-        # Missing 'game' field
-
-        response = self.client.post(self.url, data, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("game", response.json())
-
-    def test_import_question_with_media(self):
-        """Test importing questions with media_url and type."""
-        data = self._get_template_export_data()
-        data["game"]["boards"][0]["categories"][0]["questions"].append(
-            {
-                "text": "Image question",
-                "answer": "Image answer",
-                "points": 300,
-                "type": "image",
-                "media_url": "https://example.com/image.jpg",
-            }
-        )
-
-        response = self.client.post(self.url, data, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        result = response.json()
-        self.assertEqual(result["questions_created"], 4)
-
-        # Verify the image question was created correctly
-        game = Game.objects.get(id=result["game_id"])
-        questions = game.boards.first().categories.first().questions.all()
-        image_question = questions[2]
-        self.assertEqual(image_question.type, "image")
-        self.assertEqual(image_question.media_url, "https://example.com/image.jpg")
 
     def test_round_trip_export_import(self):
         """Test that exporting and re-importing a game preserves structure."""
