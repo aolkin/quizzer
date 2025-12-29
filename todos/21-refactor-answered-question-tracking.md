@@ -5,7 +5,7 @@
 The frontend currently has two sources of truth for tracking which questions have been answered:
 
 1. **`question.answered`** - Boolean property on each Question object from the initial API response
-2. **`gameState.answeredQuestions`** - A reactive Set that gets updated via WebSocket broadcasts
+2. **`gameState.answeredQuestions`** - A reactive SvelteSet that gets updated via WebSocket broadcasts
 
 This creates several issues:
 
@@ -21,8 +21,8 @@ This creates several issues:
 
 ## Proposed Solution
 
-### Option A: Single Source of Truth in gameState
-- Keep only `gameState.answeredQuestions` Set
+### Option A: Single Source of Truth in gameState (Recommended)
+- Keep only `gameState.answeredQuestions` SvelteSet
 - Remove reliance on `question.answered` property entirely
 - Populate the Set when board data is loaded
 - All components read from the Set
@@ -30,31 +30,29 @@ This creates several issues:
 **Pros**: Clean separation, clear single source of truth
 **Cons**: Slight indirection when checking if a question is answered
 
-### Option B: Update question.answered Directly
-- When receiving `toggle_question` WebSocket message, find and update the actual Question object
-- Remove `answeredQuestions` Set entirely
-
-**Pros**: Simpler data model, question objects are always current
-**Cons**: Requires finding question in nested board/category structure, may have reactivity issues with nested object mutations
-
-### Option C: Hybrid with Computed State
-- Keep the Set for efficient lookups
-- Create a helper function/computed that checks both sources
-- Ensure consistency when loading boards
-
-## Recommendation
-
-**Option A** is likely the cleanest approach and aligns with the pattern already established:
-- `gameState.scores` tracks player scores separately from Player objects
-- `gameState.answeredQuestions` follows the same pattern
-
-## Implementation Steps
+### Implementation Plan
 
 1. [ ] Audit all usages of `question.answered` in components
-2. [ ] Replace all with `gameState.answeredQuestions.has(question.id)`
-3. [ ] Consider adding a helper method: `gameState.isQuestionAnswered(questionId)`
-4. [ ] Update TypeScript types to make `question.answered` optional or remove it
-5. [ ] Update tests to verify the new approach
+2. [ ] Replace all with `gameState.answeredQuestions.has(question.id)` 
+3. [ ] Add a helper method: `gameState.isQuestionAnswered(questionId): boolean`
+4. [ ] Update TypeScript types to make `question.answered` optional or internal-only
+5. [ ] Update API response handling to only use `answered` for initial population
+6. [ ] Document the convention: "WebSocket state (gameState.*) is the source of truth for UI"
+
+## Where State is Used
+
+Currently `question.answered` is used:
+- **On initial load**: Extract from API response to populate `gameState.answeredQuestions`
+- **During sync**: WebSocket `toggle_question` messages update `gameState.answeredQuestions` directly
+
+The convention going forward should be:
+- API responses provide initial state
+- WebSocket messages provide real-time updates to reactive state
+- UI always reads from reactive state (gameState.*)
+
+## Related Pattern: gameState.scores
+
+Note: `gameState.scores` follows the same pattern - player scores are tracked separately from Player objects. This is intentional and allows real-time score updates without mutating nested objects. The same approach works well for answered questions.
 
 ## Related Files
 

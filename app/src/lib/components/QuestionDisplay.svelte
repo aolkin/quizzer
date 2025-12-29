@@ -41,9 +41,9 @@
   class="flex items-center justify-center overflow-hidden transition-all {question.special
     ? 'bg-warning-800 duration-[2000ms]'
     : 'bg-primary-900 duration-500'} fixed"
+  class:question-presented={visible}
   style="container-type: inline-size"
   data-testid="question-display"
-  data-visible={visible}
 >
   <div class="mx-auto max-w-[60%] text-center">
     <div>

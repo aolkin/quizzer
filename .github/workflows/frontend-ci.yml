@@ -103,10 +103,23 @@ jobs:
           cd app
           bun install
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('app/package-lock.json') }}
+
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
           cd app
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
+
+      - name: Install Playwright system dependencies
+        run: |
+          cd app
+          npx playwright install-deps chromium
 
       - name: Start backend server
         run: |
@@ -144,3 +157,4 @@ jobs:
             app/playwright-report/
             app/test-results/
           retention-days: 7
+          # To download: Go to the workflow run page, scroll to "Artifacts" section at the bottom

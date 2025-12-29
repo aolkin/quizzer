@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Multi-Client Synchronization', () => {
-  test('host selects board, presenter sees it', async ({ browser }) => {
+  test('host and presenter load game, host selects board and both see categories', async ({
+    browser,
+  }) => {
     const hostContext = await browser.newContext();
     const presenterContext = await browser.newContext();
 
@@ -20,9 +22,16 @@ test.describe('Multi-Client Synchronization', () => {
       presenterPage.waitForLoadState('networkidle'),
     ]);
 
+    // Verify both clients load the game
+    await expect(hostPage.locator('text=E2E Test Game')).toBeVisible();
+    await expect(hostPage.locator('[data-testid="score-footer"]')).toBeVisible();
+    await expect(presenterPage.locator('[data-testid="score-footer"]')).toBeVisible();
+
+    // Host selects a board
     const boardSelector = hostPage.locator('[data-testid^="board-selector-"]').first();
     await boardSelector.click();
 
+    // Both should see categories
     await expect(hostPage.locator('[data-testid^="category-"]').first()).toBeVisible({
       timeout: 5000,
     });
@@ -34,7 +43,9 @@ test.describe('Multi-Client Synchronization', () => {
     await presenterContext.close();
   });
 
-  test('host reveals category, presenter sees it', async ({ browser }) => {
+  test('host reveals category and selects question, presenter sees updates', async ({
+    browser,
+  }) => {
     const hostContext = await browser.newContext();
     const presenterContext = await browser.newContext();
 
@@ -70,11 +81,21 @@ test.describe('Multi-Client Synchronization', () => {
       timeout: 10000,
     });
 
+    // Host selects a question
+    const question = hostPage.locator('[data-testid^="question-"]').first();
+    await question.click();
+
+    // Host should see question controls
+    await expect(hostPage.locator('[data-testid="present-question"]')).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(hostPage.locator('[data-testid="mark-answered"]')).toBeVisible();
+
     await hostContext.close();
     await presenterContext.close();
   });
 
-  test('host presents question, presenter sees full-screen', async ({ browser }) => {
+  test('host presents question, presenter sees full-screen display', async ({ browser }) => {
     const hostContext = await browser.newContext();
     const presenterContext = await browser.newContext();
 
@@ -95,18 +116,29 @@ test.describe('Multi-Client Synchronization', () => {
 
     const boardSelector = hostPage.locator('[data-testid^="board-selector-"]').first();
     await boardSelector.click();
-    await hostPage.waitForTimeout(500);
+
+    await expect(hostPage.locator('[data-testid^="question-"]').first()).toBeVisible({
+      timeout: 10000,
+    });
 
     const question = hostPage.locator('[data-testid^="question-"]').first();
     await question.click();
-    await hostPage.waitForTimeout(300);
 
     const presentButton = hostPage.locator('[data-testid="present-question"]');
+    await expect(presentButton).toBeVisible({ timeout: 5000 });
     await presentButton.click();
 
+    // Presenter should see the question display in full-screen mode
     await expect(
-      presenterPage.locator('[data-testid="question-display"][data-visible="true"]'),
-    ).toBeVisible({ timeout: 5000 });
+      presenterPage.locator('[data-testid="question-display"].question-presented'),
+    ).toBeVisible({
+      timeout: 5000,
+    });
+
+    // Host buzzer toggle should show question is active
+    await expect(hostPage.locator('[data-testid="buzzer-toggle"]')).toContainText(/Reset|Disable/, {
+      timeout: 5000,
+    });
 
     await hostContext.close();
     await presenterContext.close();

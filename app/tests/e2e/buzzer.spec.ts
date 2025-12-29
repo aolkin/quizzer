@@ -49,11 +49,15 @@ test.describe('Buzzer System', () => {
     await hostPage.waitForTimeout(300);
 
     const presentButton = hostPage.locator('[data-testid="present-question"]');
+    await expect(presentButton).toBeVisible({ timeout: 5000 });
     await presentButton.click();
 
+    // Presenter should see the question display in full-screen mode
     await expect(
-      presenterPage.locator('[data-testid="question-display"][data-visible="true"]'),
-    ).toBeVisible({ timeout: 5000 });
+      presenterPage.locator('[data-testid="question-display"].question-presented'),
+    ).toBeVisible({
+      timeout: 5000,
+    });
 
     await hostContext.close();
     await presenterContext.close();

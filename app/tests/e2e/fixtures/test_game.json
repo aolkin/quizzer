@@ -14,40 +14,40 @@
             "order": 0,
             "questions": [
               {
-                "text": "What year did World War II end?",
-                "answer": "1945",
+                "text": "World War II ended in this year.",
+                "answer": "What is 1945?",
                 "points": 100,
                 "type": "text",
                 "special": false,
                 "order": 0
               },
               {
-                "text": "Who was the first President of the United States?",
-                "answer": "George Washington",
+                "text": "This man was the first President of the United States.",
+                "answer": "Who is George Washington?",
                 "points": 200,
                 "type": "text",
                 "special": false,
                 "order": 1
               },
               {
-                "text": "In what year did the Berlin Wall fall?",
-                "answer": "1989",
+                "text": "The Berlin Wall fell in this year.",
+                "answer": "What is 1989?",
                 "points": 300,
                 "type": "text",
                 "special": false,
                 "order": 2
               },
               {
-                "text": "What ancient wonder was located in Alexandria?",
-                "answer": "The Lighthouse (Pharos)",
+                "text": "This ancient wonder was located in Alexandria.",
+                "answer": "What is the Lighthouse (Pharos)?",
                 "points": 400,
                 "type": "text",
                 "special": false,
                 "order": 3
               },
               {
-                "text": "Who was the Emperor of France who was exiled to Elba?",
-                "answer": "Napoleon Bonaparte",
+                "text": "This Emperor of France was exiled to Elba.",
+                "answer": "Who is Napoleon Bonaparte?",
                 "points": 500,
                 "type": "text",
                 "special": true,
@@ -60,40 +60,40 @@
             "order": 1,
             "questions": [
               {
-                "text": "What planet is known as the Red Planet?",
-                "answer": "Mars",
+                "text": "This planet is known as the Red Planet.",
+                "answer": "What is Mars?",
                 "points": 100,
                 "type": "text",
                 "special": false,
                 "order": 0
               },
               {
-                "text": "What is the chemical symbol for gold?",
-                "answer": "Au",
+                "text": "This is the chemical symbol for gold.",
+                "answer": "What is Au?",
                 "points": 200,
                 "type": "text",
                 "special": false,
                 "order": 1
               },
               {
-                "text": "What is the speed of light in vacuum (approx)?",
-                "answer": "300,000 km/s (or 186,000 miles/s)",
+                "text": "Light travels at approximately this speed in a vacuum.",
+                "answer": "What is 300,000 km/s?",
                 "points": 300,
                 "type": "text",
                 "special": false,
                 "order": 2
               },
               {
-                "text": "What is the powerhouse of the cell?",
-                "answer": "Mitochondria",
+                "text": "This organelle is known as the powerhouse of the cell.",
+                "answer": "What is the mitochondria?",
                 "points": 400,
                 "type": "text",
                 "special": false,
                 "order": 3
               },
               {
-                "text": "What is the most abundant gas in Earth's atmosphere?",
-                "answer": "Nitrogen",
+                "text": "This is the most abundant gas in Earth's atmosphere.",
+                "answer": "What is nitrogen?",
                 "points": 500,
                 "type": "text",
                 "special": false,
@@ -106,40 +106,40 @@
             "order": 2,
             "questions": [
               {
-                "text": "What is the capital of France?",
-                "answer": "Paris",
+                "text": "This city is the capital of France.",
+                "answer": "What is Paris?",
                 "points": 100,
                 "type": "text",
                 "special": false,
                 "order": 0
               },
               {
-                "text": "What is the longest river in the world?",
-                "answer": "The Nile",
+                "text": "This river is the longest in the world.",
+                "answer": "What is the Nile?",
                 "points": 200,
                 "type": "text",
                 "special": false,
                 "order": 1
               },
               {
-                "text": "What country has the most time zones?",
-                "answer": "France (12 time zones)",
+                "text": "This country has the most time zones.",
+                "answer": "What is France?",
                 "points": 300,
                 "type": "text",
                 "special": false,
                 "order": 2
               },
               {
-                "text": "What is the smallest country in the world?",
-                "answer": "Vatican City",
+                "text": "This is the smallest country in the world.",
+                "answer": "What is Vatican City?",
                 "points": 400,
                 "type": "text",
                 "special": false,
                 "order": 3
               },
               {
-                "text": "What is the driest place on Earth?",
-                "answer": "Atacama Desert (Chile)",
+                "text": "This desert in Chile is the driest place on Earth.",
+                "answer": "What is the Atacama Desert?",
                 "points": 500,
                 "type": "text",
                 "special": false,
@@ -158,24 +158,24 @@
             "order": 0,
             "questions": [
               {
-                "text": "Who wrote Romeo and Juliet?",
-                "answer": "William Shakespeare",
+                "text": "This playwright wrote Romeo and Juliet.",
+                "answer": "Who is William Shakespeare?",
                 "points": 200,
                 "type": "text",
                 "special": false,
                 "order": 0
               },
               {
-                "text": "What is the first book of the Bible?",
-                "answer": "Genesis",
+                "text": "This is the first book of the Bible.",
+                "answer": "What is Genesis?",
                 "points": 400,
                 "type": "text",
                 "special": false,
                 "order": 1
               },
               {
-                "text": "Who wrote '1984'?",
-                "answer": "George Orwell",
+                "text": "This author wrote the dystopian novel '1984'.",
+                "answer": "Who is George Orwell?",
                 "points": 600,
                 "type": "text",
                 "special": false,
@@ -188,24 +188,24 @@
             "order": 1,
             "questions": [
               {
-                "text": "How many players are on a soccer team?",
-                "answer": "11",
+                "text": "A soccer team has this many players on the field.",
+                "answer": "What is 11?",
                 "points": 200,
                 "type": "text",
                 "special": false,
                 "order": 0
               },
               {
-                "text": "In what sport would you perform a slam dunk?",
-                "answer": "Basketball",
+                "text": "You would perform a slam dunk in this sport.",
+                "answer": "What is basketball?",
                 "points": 400,
                 "type": "text",
                 "special": false,
                 "order": 1
               },
               {
-                "text": "What country has won the most FIFA World Cups?",
-                "answer": "Brazil (5)",
+                "text": "This country has won the most FIFA World Cups with 5 titles.",
+                "answer": "What is Brazil?",
                 "points": 600,
                 "type": "text",
                 "special": true,

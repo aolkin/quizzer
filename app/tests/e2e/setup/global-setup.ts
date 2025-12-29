@@ -25,7 +25,7 @@ async function waitForBackend(maxRetries = 30, delayMs = 1000): Promise<void> {
 }
 
 async function loadTestGame(): Promise<number> {
-  const fixturePath = path.resolve(__dirname, '../../../../service/fixtures/test_game.json');
+  const fixturePath = path.resolve(__dirname, '../fixtures/test_game.json');
 
   if (!fs.existsSync(fixturePath)) {
     throw new Error(`Test fixture not found: ${fixturePath}`);
