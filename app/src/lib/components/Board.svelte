@@ -53,6 +53,7 @@
           <button
             class="h-24 rounded-md bg-primary-700 p-2 text-center text-2xl font-bold uppercase transition-colors hover:bg-primary-600"
             onclick={() => mode === 'host' && gameState.websocket?.revealCategory(category.id)}
+            data-testid="category-{category.id}"
           >
             {#if mode === UiMode.Host || isColumnVisible(category.id)}
               <div transition:fly={{ x: 100 }}>{category.name}</div>
@@ -60,13 +61,14 @@
           </button>
 
           <div class="flex flex-col gap-2">
-            {#each category.questions as question}
+            {#each category.questions as question, questionIndex}
               <button
                 class="flex aspect-video items-center justify-center rounded-md bg-primary-800 text-8xl font-bold transition-colors hover:bg-primary-700"
-                class:opacity-75={question.answered}
+                class:opacity-75={gameState.answeredQuestions.has(question.id)}
                 onclick={() => handleQuestionClick(question)}
                 onmouseenter={() => mode === 'host' && (hoveredQuestion = question)}
                 onmouseleave={() => mode === 'host' && (hoveredQuestion = undefined)}
+                data-testid="question-{category.order}-{questionIndex}"
               >
                 <QuestionDisplay
                   {question}
@@ -95,12 +97,13 @@
           {/if}
           {sidebarQuestion.points} - {sidebarQuestion.text}
         </h3>
-        <p class="mb-4 text-primary-400">{sidebarQuestion.answer}</p>
+        <p class="mb-4 text-primary-400" data-testid="question-answer">{sidebarQuestion.answer}</p>
         <div class="flex gap-2">
           <button
             type="button"
             class="btn-variant-filled btn"
             onclick={() => presentQuestion(sidebarQuestion)}
+            data-testid="present-question"
           >
             Present
           </button>
@@ -108,6 +111,7 @@
             type="button"
             class="btn-variant-filled btn"
             onclick={() => toggleQuestion(sidebarQuestion.id, true)}
+            data-testid="mark-answered"
           >
             Mark Answered
           </button>
@@ -115,6 +119,7 @@
             type="button"
             class="btn-variant-ringed btn"
             onclick={() => toggleQuestion(sidebarQuestion.id, false)}
+            data-testid="skip-question"
           >
             Skip
           </button>
@@ -122,6 +127,7 @@
             type="button"
             class="btn-variant-filled btn"
             onclick={() => gameState.websocket?.selectQuestion(undefined)}
+            data-testid="complete-question"
           >
             Complete
           </button>

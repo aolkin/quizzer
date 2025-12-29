@@ -17,6 +17,7 @@
             ? 'variant-filled'
             : 'variant-soft'} text-surface-50"
           onclick={() => gameState.websocket?.selectBoard(board.id)}
+          data-testid="board-selector-{board.id}"
         >
           {#if gameState.currentBoard === board.id}<Icon icon="mdi:check" class="mr-1" />{/if}
           <span>{board.name}</span>

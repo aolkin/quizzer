@@ -30,7 +30,7 @@ class GameStateManager {
   }
 
   revealCategory(categoryId: number) {
-    this.visibleCategories.add(categoryId);
+    this.visibleCategories = new Set([...this.visibleCategories, categoryId]);
   }
 
   selectBoard(boardId: number) {
@@ -51,9 +51,11 @@ class GameStateManager {
 
   markQuestionAnswered(questionId: number, answered: boolean) {
     if (answered) {
-      this.answeredQuestions.add(questionId);
+      this.answeredQuestions = new Set([...this.answeredQuestions, questionId]);
     } else {
-      this.answeredQuestions.delete(questionId);
+      const newSet = new Set(this.answeredQuestions);
+      newSet.delete(questionId);
+      this.answeredQuestions = newSet;
     }
   }
 

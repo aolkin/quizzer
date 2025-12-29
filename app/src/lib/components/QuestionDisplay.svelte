@@ -42,11 +42,17 @@
     ? 'bg-warning-800 duration-[2000ms]'
     : 'bg-primary-900 duration-500'} fixed"
   style="container-type: inline-size"
+  data-testid="question-display"
+  data-visible={visible}
 >
   <div class="mx-auto max-w-[60%] text-center">
     <div>
       {#if question.type === 'text'}
-        <h2 class="font-bold" style="font-size: 3cqw; line-height: 3.5cqw;">
+        <h2
+          class="font-bold"
+          style="font-size: 3cqw; line-height: 3.5cqw;"
+          data-testid="question-text"
+        >
           {question.text}
         </h2>
       {:else if question.type === 'image'}

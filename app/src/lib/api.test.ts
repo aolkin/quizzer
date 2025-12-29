@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { recordPlayerAnswer, toggleQuestion } from './api';
+import { ENDPOINT } from './state.svelte';
 
 describe('API', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -19,7 +20,7 @@ describe('API', () => {
 
     const result = await recordPlayerAnswer(1, 2, 3, true, 100);
 
-    expect(fetchMock).toHaveBeenCalledWith('http://quasar.local:8000/api/board/1/answers/', {
+    expect(fetchMock).toHaveBeenCalledWith(`http://${ENDPOINT}/api/board/1/answers/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

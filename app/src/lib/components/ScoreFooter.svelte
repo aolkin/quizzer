@@ -76,6 +76,7 @@
               : 'bg-green-600'}"
           onclick={() =>
             gameState.activeBuzzerId !== null ? toggleBuzzers(true) : toggleBuzzers()}
+          data-testid="buzzer-toggle"
         >
           {gameState.activeBuzzerId !== null
             ? 'Reset'
@@ -87,12 +88,16 @@
     </div>
   {/if}
 
-  <div class="grid grid-cols-{game.teams.length} gap-4">
+  <div class="grid grid-cols-{game.teams.length} gap-4" data-testid="score-footer">
     {#each game.teams as team}
-      <div class="rounded-lg bg-surface-700 p-4" style="background-color: {team.color}">
+      <div
+        class="rounded-lg bg-surface-700 p-4"
+        style="background-color: {team.color}"
+        data-testid="team-{team.id}"
+      >
         <div class="flex items-center justify-between">
           <h4 class="text-lg font-bold">{team.name}</h4>
-          <span class="text-2xl">{getScore(team)} eggs</span>
+          <span class="text-2xl" data-testid="team-score-{team.id}">{getScore(team)} eggs</span>
         </div>
 
         {#if mode === 'host'}
@@ -101,13 +106,15 @@
               <div
                 class="flex items-center justify-between rounded p-2"
                 class:bg-primary-600={gameState.activeBuzzerId === player.buzzer}
+                data-testid="player-{player.id}"
               >
                 <span>{player.name}</span>
                 <div class="flex gap-2">
-                  <span>{getScore(player)} eggs</span>
+                  <span data-testid="player-score-{player.id}">{getScore(player)} eggs</span>
                   {#if currentQuestion}
                     <button
                       class="variant-filled-success btn-icon text-2xl"
+                      data-testid="award-points-{player.id}"
                       onclick={() => recordAnswer(player.id, true)}
                     >
                       <Icon icon="mdi:plus" />
@@ -115,6 +122,7 @@
                     <button
                       class="variant-filled-error btn-icon text-2xl"
                       onclick={() => recordAnswer(player.id, false)}
+                      data-testid="deduct-points-{player.id}"
                     >
                       <Icon icon="mdi:minus" />
                     </button>
