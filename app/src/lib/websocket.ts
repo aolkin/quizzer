@@ -138,6 +138,10 @@ export class GameWebSocket {
     });
   }
 
+  /**
+   * Broadcast question selection to all connected clients.
+   * @param question - Question ID to display, or undefined to close the current question
+   */
   selectQuestion(question: number | undefined) {
     this.send({
       type: 'select_question',
