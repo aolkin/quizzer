@@ -55,17 +55,17 @@ test.describe('Multi-Client Synchronization', () => {
 
     const boardSelector = hostPage.locator('[data-testid^="board-selector-"]').first();
     await boardSelector.click();
-    await hostPage.waitForTimeout(1000);
+
+    // Wait for board to load on host
+    await expect(hostPage.locator('[data-testid^="category-"]').first()).toBeVisible({
+      timeout: 10000,
+    });
 
     // Click the category to reveal it
     const category = hostPage.locator('[data-testid^="category-"]').first();
     await category.click();
 
-    // Wait longer for WebSocket sync
-    await hostPage.waitForTimeout(1000);
-
-    // The presenter should now see the category name visible
-    // Wait for any category to have text content
+    // The presenter should now see the category visible
     await expect(presenterPage.locator('[data-testid^="category-"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -133,17 +133,19 @@ test.describe('Multi-Client Synchronization', () => {
 
     const boardSelector = hostPage.locator('[data-testid^="board-selector-"]').first();
     await boardSelector.click();
-    await hostPage.waitForTimeout(1000);
+
+    // Wait for board to load
+    await expect(hostPage.locator('[data-testid^="question-"]').first()).toBeVisible({
+      timeout: 10000,
+    });
 
     const question = hostPage.locator('[data-testid^="question-"]').first();
     await question.click();
-    await hostPage.waitForTimeout(500);
 
+    // Wait for question details to appear
     const markAnsweredButton = hostPage.locator('[data-testid="mark-answered"]');
+    await expect(markAnsweredButton).toBeVisible({ timeout: 5000 });
     await markAnsweredButton.click();
-
-    // Wait longer for the API call and WebSocket broadcast
-    await hostPage.waitForTimeout(1000);
 
     // Check that the question is marked as answered (opacity-75 class)
     await expect(question).toHaveClass(/opacity-75/, { timeout: 10000 });

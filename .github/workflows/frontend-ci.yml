@@ -108,6 +108,26 @@ jobs:
           cd app
           npx playwright install --with-deps chromium
 
+      - name: Start backend server
+        run: |
+          cd service
+          python manage.py runserver 8000 &
+          # Wait for server to be ready
+          for i in {1..30}; do
+            curl -s http://localhost:8000/api/game/1/ > /dev/null 2>&1 && break || true
+            sleep 1
+          done
+
+      - name: Start frontend server
+        run: |
+          cd app
+          VITE_API_ENDPOINT=localhost:8000 npm run dev &
+          # Wait for server to be ready
+          for i in {1..30}; do
+            curl -s http://localhost:5173 > /dev/null 2>&1 && break || true
+            sleep 1
+          done
+
       - name: Run E2E tests
         run: |
           cd app

@@ -37,17 +37,6 @@ export const test = base.extend<{
 
 export { expect };
 
-export async function waitForWebSocketConnection(page: Page, timeout = 5000): Promise<void> {
-  await page.waitForFunction(
-    () => {
-      const ws = (window as unknown as { __gameWebSocket?: { readyState: number } })
-        .__gameWebSocket;
-      return ws && ws.readyState === WebSocket.OPEN;
-    },
-    { timeout },
-  );
-}
-
 export async function selectBoard(hostPage: Page, boardId: number): Promise<void> {
   await hostPage.click(`[data-testid="board-selector-${boardId}"]`);
 }
