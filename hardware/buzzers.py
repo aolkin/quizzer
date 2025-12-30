@@ -118,6 +118,10 @@ class BuzzerClient(HardwareWebSocketClient):
             asyncio.run_coroutine_threadsafe(
                 self.handle_buzzer_press(buzzer_id), self.loop
             )
+        else:
+            logger.warning(
+                f"Buzzer {buzzer_id} pressed but WebSocket not connected yet"
+            )
 
 
 def cleanup_gpio(signum=None, frame=None):
