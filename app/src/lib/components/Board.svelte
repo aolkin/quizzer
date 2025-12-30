@@ -92,7 +92,7 @@
         transition:fly={{ x: 100 }}
       >
         <h3 class="mb-4 text-xl">
-          {#if sidebarQuestion.special}
+          {#if sidebarQuestion.flags.includes('dino')}
             <Icon icon="mdi:star" class="inline text-warning-400" />
           {/if}
           {sidebarQuestion.points} - {sidebarQuestion.text}

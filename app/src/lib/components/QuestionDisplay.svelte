@@ -10,6 +10,8 @@
 
   let container: HTMLDivElement;
 
+  const hasDinoFlag = $derived(question.flags.includes('dino'));
+
   $effect(() => {
     if (!visible && container.parentElement) {
       const originRect = container.parentElement.getBoundingClientRect();
@@ -28,9 +30,9 @@
       container.style.width = '100vw';
       container.style.height = '100vh';
       container.style.zIndex = '50';
-      if (question.special) {
+      if (hasDinoFlag) {
         container.style.transform = 'rotate3d(1, 0, 0, 720deg)';
-        audio?.play(Sound.Special);
+        audio?.play(Sound.Dino);
       }
     }
   });
@@ -38,7 +40,7 @@
 
 <div
   bind:this={container}
-  class="flex items-center justify-center overflow-hidden transition-all {question.special
+  class="flex items-center justify-center overflow-hidden transition-all {hasDinoFlag
     ? 'bg-warning-800 duration-[2000ms]'
     : 'bg-primary-900 duration-500'} fixed"
   style="container-type: inline-size"

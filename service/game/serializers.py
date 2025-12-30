@@ -16,7 +16,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             "text",
             "answer",
             "points",
-            "special",
+            "flags",
             "order",
             "media_url",
             "answered",
@@ -98,7 +98,7 @@ class QuestionExportSerializer(serializers.Serializer):
     points = serializers.IntegerField()
     type = serializers.CharField(required=False)
     media_url = serializers.URLField(required=False)
-    special = serializers.BooleanField(required=False)
+    flags = serializers.ListField(child=serializers.CharField(), required=False)
     answered = serializers.BooleanField(required=False)
 
     def to_representation(self, instance):
@@ -111,8 +111,8 @@ class QuestionExportSerializer(serializers.Serializer):
             data["type"] = instance.type
         if instance.media_url:
             data["media_url"] = instance.media_url
-        if instance.special:
-            data["special"] = instance.special
+        if instance.flags:
+            data["flags"] = instance.flags
 
         export_mode = self.context.get("export_mode", "template")
         if export_mode == "full" and instance.answered:
@@ -222,7 +222,7 @@ class QuestionImportSerializer(serializers.Serializer):
     points = serializers.IntegerField()
     type = serializers.CharField(default="text", required=False)
     media_url = serializers.URLField(required=False, allow_null=True, default=None)
-    special = serializers.BooleanField(default=False, required=False)
+    flags = serializers.ListField(child=serializers.CharField(), default=list, required=False)
     answered = serializers.BooleanField(default=False, required=False)
 
 
@@ -324,7 +324,7 @@ class GameImportSerializer(serializers.Serializer):
                         points=question_data["points"],
                         type=question_data.get("type", "text"),
                         media_url=question_data.get("media_url") or None,
-                        special=question_data.get("special", False),
+                        flags=question_data.get("flags", []),
                         answered=question_data.get("answered", False),
                         order=question_order,
                     )

@@ -70,7 +70,7 @@ class Question(models.Model):
     ]
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="questions")
-    special = models.BooleanField(default=False)
+    flags = models.JSONField(default=list)
     type = models.CharField(max_length=5, choices=QUESTION_TYPES, default="text")
     text = models.TextField()
     answer = models.TextField()
