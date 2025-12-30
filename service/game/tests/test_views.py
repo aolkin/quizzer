@@ -118,9 +118,7 @@ class BuzzerStateViewTestCase(BaseGameTestCase):
         self.assertTrue(response.data["enabled"])
         self.assertTrue(response.data["broadcast"])
 
-        mock_broadcast.assert_called_once_with(
-            self.game.id, "buzzer_state_command", {"game_id": self.game.id, "enabled": True}
-        )
+        mock_broadcast.assert_called_once_with(self.game.id, "toggle_buzzers", {"enabled": True})
 
 
 class GetEndpointsTestCase(BaseGameTestCase):

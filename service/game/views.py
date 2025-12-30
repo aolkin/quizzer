@@ -238,8 +238,8 @@ def set_buzzer_state(request, game_id):
 
     broadcast_to_game(
         game_id,
-        "buzzer_state_command",
-        {"game_id": game_id, "enabled": enabled},
+        "toggle_buzzers",
+        {"enabled": enabled},
     )
 
     return Response(
