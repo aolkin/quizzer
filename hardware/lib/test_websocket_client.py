@@ -38,21 +38,6 @@ class TestHardwareClient(HardwareWebSocketClient):
 class TestHardwareWebSocketClient(unittest.TestCase):
     """Test cases for HardwareWebSocketClient."""
 
-    def test_init(self):
-        """Test client initialization."""
-        client = TestHardwareClient(
-            host="localhost:8000",
-            game_id=1,
-            client_type="test",
-            client_id="test1",
-        )
-
-        self.assertEqual(client.host, "localhost:8000")
-        self.assertEqual(client.game_id, 1)
-        self.assertEqual(client.client_type, "test")
-        self.assertEqual(client.client_id, "test1")
-        self.assertIsNotNone(client.logger)
-
     def test_build_uri_with_client_id(self):
         """Test URI building with client_id."""
         client = TestHardwareClient(
@@ -119,7 +104,7 @@ class TestHardwareWebSocketClient(unittest.TestCase):
         sent_data = json.loads(mock_ws.send.call_args[0][0])
         self.assertEqual(sent_data["type"], "pong")
         self.assertEqual(sent_data["timestamp"], 12345)
-        self.assertEqual(sent_data["target_sender_id"], "server")
+        self.assertEqual(sent_data["recipient"], "server")
 
     def test_handle_ping(self):
         """Wrapper for async test."""

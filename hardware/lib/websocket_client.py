@@ -83,7 +83,7 @@ class HardwareWebSocketClient:
         await self.send_message(
             "pong",
             timestamp=message.get("timestamp"),
-            target_sender_id=message.get("sender_id"),
+            recipient=message.get("sender_id"),
         )
 
     async def _message_loop(self):
@@ -93,12 +93,10 @@ class HardwareWebSocketClient:
                 try:
                     data = json.loads(message)
 
-                    # Automatic ping/pong handling
                     if data.get("type") == "ping":
                         await self._handle_ping(data)
                         continue
 
-                    # Dispatch to subclass
                     await self.handle_message(data)
 
                 except json.JSONDecodeError as e:
