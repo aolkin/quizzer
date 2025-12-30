@@ -98,6 +98,14 @@ class ToggleQuestionViewTestCase(BaseGameTestCase):
 
         # Verify broadcast was called with game_id
         mock_broadcast.assert_called_once()
+        call_args = mock_broadcast.call_args
+        self.assertEqual(call_args.args[0], self.game.id)
+        self.assertEqual(call_args.args[1], "toggle_question")
+
+    def test_toggle_question_invalid_data(self):
+        """Test that invalid data returns validation errors."""
+        response = self.client.patch(self.url, {"answered": "not_a_boolean"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class BuzzerStateViewTestCase(BaseGameTestCase):
