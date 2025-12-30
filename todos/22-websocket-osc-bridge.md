@@ -181,12 +181,7 @@ incoming:
 ## Implementation Steps
 
 ### Phase 1: Core Bridge
-- [ ] Research Python OSC libraries (`python-osc` vs `pythonosc`)
-- [ ] Choose library based on:
-  - Active maintenance
-  - Support for OSC 1.0 and 1.1
-  - UDP reliability
-  - Bundle support
+- [ ] Install `python-osc` library: `pip install python-osc`
 - [ ] Create `/hardware/osc_bridge.py` skeleton
 - [ ] Implement WebSocket client component (reuse pattern from `/hardware/buzzers.py`)
   - Include both `client_type=osc` and `client_id` parameter
@@ -230,19 +225,42 @@ incoming:
   - Troubleshooting guide
 - [ ] Add systemd service file for auto-start (optional)
 
-## OSC Library Research
+## OSC Library: python-osc (pythonosc)
 
-### python-osc
-- **Pros**: Lightweight, pure Python, no dependencies
-- **Cons**: Less active development
-- **Link**: https://pypi.org/project/python-osc/
+**Decision: Use `python-osc`** ✅
 
-### pythonosc
-- **Pros**: Well-maintained, used in production, good documentation
-- **Cons**: Slightly heavier
-- **Link**: https://pypi.org/project/pythonosc/
+### Key Details
 
-**Decision needed**: Test both and choose based on reliability and API ergonomics.
+**Note:** `python-osc` and `pythonosc` are **the same library**:
+- **Install:** `pip install python-osc` (PyPI package name)
+- **Import:** `from pythonosc import ...` (module name)
+
+### Why python-osc?
+
+**Active Maintenance:**
+- Latest release: **Dec 23, 2024** (v1.9.3)
+- GitHub: [attwad/python-osc](https://github.com/attwad/python-osc)
+- Rated "Sustainable" by [Snyk](https://snyk.io/advisor/python/python-osc)
+- 550+ stars, 8,000+ weekly downloads
+
+**Perfect for This Use Case:**
+- **Asyncio support** - Critical for integration with async WebSocket client
+- Pure Python, **zero dependencies**
+- Requires Python >=3.10 (matches project requirements)
+- OSC 1.0 spec compliant
+- UDP and TCP support (UDP for OSC)
+
+**Production Ready:**
+- Status: 5 - Production/Stable
+- Comprehensive unit tests
+- Good [documentation](https://python-osc.readthedocs.io/)
+
+### Alternative Considered
+
+**oscpy** (by Kivy team) - Not chosen because:
+- Last updated June 2021 (4+ years old)
+- Still in beta status
+- Only relevant for Python 2.7 support (not needed)
 
 ## Example Use Cases
 
@@ -289,9 +307,10 @@ outgoing:
 ## Dependencies
 
 - **TODO #24** (Hardware WebSocket Client Library) - Should be implemented first for reusable WebSocket connection logic
-- Python OSC library (TBD: `python-osc` or `pythonosc`)
-- PyYAML (for configuration parsing)
-- `websockets` library (already used by `/hardware/buzzers.py`)
+- **python-osc** (v1.9.3+) - `pip install python-osc`
+- **PyYAML** - `pip install pyyaml` (for configuration parsing)
+- **websockets** library (already used by `/hardware/buzzers.py`)
+- Python >=3.10
 - No backend changes required
 
 ## Priority
