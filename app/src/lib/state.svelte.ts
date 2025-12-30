@@ -40,6 +40,7 @@ export interface Game {
   id: number;
   name: string;
   mode: string;
+  points_term: string;
   boards: Array<Pick<Board, 'id' | 'name' | 'order'>>;
   teams: Array<Team>;
 }
