@@ -21,7 +21,7 @@ test.describe('Buzzer System', () => {
     await expect(buzzerButton).toContainText(/Enable|Disable|Reset/, { timeout: 5000 });
   });
 
-  test('host enables buzzers, presenter client receives state', async ({ browser }) => {
+  test('host presents question, presenter shows full-screen question display', async ({ browser }) => {
     const hostContext = await browser.newContext();
     const presenterContext = await browser.newContext();
 
