@@ -71,7 +71,9 @@ describe('formatInlineMarkdown', () => {
       );
     });
 
-    it('processes bold before italic (nested not supported)', () => {
+    it('handles ambiguous ***text*** (creates improperly nested but browser-renderable HTML)', () => {
+      // Note: ***text*** is ambiguous and creates improperly nested HTML
+      // Browsers still render this correctly, but proper nesting would require more complex parsing
       expect(formatInlineMarkdown('***text***')).toBe('<strong><em>text</strong></em>');
     });
   });
