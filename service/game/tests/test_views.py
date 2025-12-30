@@ -108,6 +108,27 @@ class ToggleQuestionViewTestCase(BaseGameTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+class BuzzerStateViewTestCase(BaseGameTestCase):
+    """Tests for the set_buzzer_state API endpoint."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+        self.url = f"/api/game/{self.game.id}/buzzers/state/"
+
+    @patch("game.views.broadcast_to_game")
+    def test_set_buzzer_state(self, mock_broadcast):
+        """Test buzzer state endpoint broadcasts command without database changes."""
+        response = self.client.post(self.url, {"enabled": True}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["game_id"], self.game.id)
+        self.assertTrue(response.data["enabled"])
+        self.assertTrue(response.data["broadcast"])
+
+        mock_broadcast.assert_called_once_with(self.game.id, "toggle_buzzers", {"enabled": True})
+
+
 class GetEndpointsTestCase(BaseGameTestCase):
     """Tests for GET endpoints (board and game)."""
 

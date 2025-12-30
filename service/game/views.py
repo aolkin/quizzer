@@ -14,6 +14,7 @@ from .serializers import (
     GameSerializer,
     RecordAnswerRequestSerializer,
     ToggleQuestionRequestSerializer,
+    BuzzerStateSerializer,
     GameExportSerializer,
     GameImportSerializer,
 )
@@ -213,3 +214,35 @@ def import_game(request):
             {"error": f"Import failed: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@api_view(["POST"])
+def set_buzzer_state(request, game_id):
+    """
+    Toggle buzzer state and broadcast to all game clients.
+
+    POST /api/game/{game_id}/buzzers/state
+    Body: {enabled: boolean}
+    Returns: {game_id, enabled, broadcast: true}
+
+    This is a write-only command endpoint with no database persistence.
+    Broadcasts toggle_buzzers to all WebSocket clients connected to this game.
+    """
+    get_object_or_404(Game, id=game_id)
+
+    request_serializer = BuzzerStateSerializer(data=request.data)
+    if not request_serializer.is_valid():
+        return Response(request_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    enabled = request_serializer.validated_data["enabled"]
+
+    broadcast_to_game(
+        game_id,
+        "toggle_buzzers",
+        {"enabled": enabled},
+    )
+
+    return Response(
+        {"game_id": game_id, "enabled": enabled, "broadcast": True},
+        status=status.HTTP_200_OK,
+    )

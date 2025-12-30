@@ -91,6 +91,10 @@ class ToggleQuestionRequestSerializer(serializers.Serializer):
     answered = serializers.BooleanField()
 
 
+class BuzzerStateSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField()
+
+
 # Export serializers
 class QuestionExportSerializer(serializers.Serializer):
     text = serializers.CharField()

@@ -26,12 +26,14 @@ from game.views import (
     toggle_question,
     export_game,
     import_game,
+    set_buzzer_state,
 )
 
 urlpatterns = [
     path("api/health/", health_check),
     path("api/game/<int:game_id>/", get_game),
     path("api/game/<int:game_id>/export/", export_game),
+    path("api/game/<int:game_id>/buzzers/state/", set_buzzer_state),
     path("api/game/import/", import_game),
     path("api/board/<int:board_id>/", get_board),
     path("api/board/<int:board_id>/answers/", record_answer),
