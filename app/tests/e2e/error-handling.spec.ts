@@ -12,7 +12,7 @@ test.describe('Error Handling', () => {
     expect(hasError || page.url().includes('error') || page.url() === '/').toBeTruthy();
   });
 
-  test('gracefully handles missing game data', async ({ page }) => {
+  test('loads host view for configured game', async ({ page }) => {
     const gameId = process.env.TEST_GAME_ID || '1';
     await page.goto(`/${gameId}/host`);
     await page.waitForLoadState('networkidle');
