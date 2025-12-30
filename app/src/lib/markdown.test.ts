@@ -38,6 +38,26 @@ describe('formatInlineMarkdown', () => {
     });
   });
 
+  describe('inline code formatting', () => {
+    it('converts `code` to <code>code</code>', () => {
+      expect(formatInlineMarkdown('Use the `console.log` function')).toBe(
+        'Use the <code>console.log</code> function',
+      );
+    });
+
+    it('handles multiple inline code sections', () => {
+      expect(formatInlineMarkdown('`first` and `second`')).toBe(
+        '<code>first</code> and <code>second</code>',
+      );
+    });
+
+    it('escapes HTML inside code blocks', () => {
+      expect(formatInlineMarkdown('Use `<div>` element')).toBe(
+        'Use <code>&lt;div&gt;</code> element',
+      );
+    });
+  });
+
   describe('combined formatting', () => {
     it('handles bold and italic together', () => {
       expect(formatInlineMarkdown('This is **bold** and *italic*')).toBe(
@@ -45,8 +65,14 @@ describe('formatInlineMarkdown', () => {
       );
     });
 
+    it('handles bold, italic, and code together', () => {
+      expect(formatInlineMarkdown('**bold** *italic* `code`')).toBe(
+        '<strong>bold</strong> <em>italic</em> <code>code</code>',
+      );
+    });
+
     it('processes bold before italic (nested not supported)', () => {
-      expect(formatInlineMarkdown('***text***')).toBe('<em><strong>text</strong></em>');
+      expect(formatInlineMarkdown('***text***')).toBe('<strong><em>text</strong></em>');
     });
   });
 

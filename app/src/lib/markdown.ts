@@ -11,17 +11,21 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Process basic inline markdown for bold and italics.
+ * Process basic inline markdown for bold, italics, and code.
  * Supports:
  * - **bold** or __bold__ -> <strong>bold</strong>
  * - *italics* or _italics_ -> <em>italics</em>
+ * - `code` -> <code>code</code>
  *
  * The input is HTML-escaped before markdown processing to prevent XSS.
  */
 export function formatInlineMarkdown(text: string): string {
   let result = escapeHtml(text);
 
-  // Process bold first (**text** or __text__)
+  // Process inline code first (`code`)
+  result = result.replace(/`(.+?)`/g, '<code>$1</code>');
+
+  // Process bold (**text** or __text__)
   result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   result = result.replace(/__(.+?)__/g, '<strong>$1</strong>');
 
