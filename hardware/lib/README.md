@@ -15,23 +15,24 @@ class MyHardwareClient(HardwareWebSocketClient):
         if message["type"] == "command":
             await self.send_message("response", status="ok")
 
-    async def setup(self):
-        # Initialize hardware on connection
-        pass
+    async def run(self):
+        self.loop = asyncio.get_running_loop()
+        # Initialize your hardware here
+        await self.connect()
+        asyncio.create_task(self.listen_for_messages())
 
-asyncio.run(MyHardwareClient("localhost:8000", 1).run())
+asyncio.get_event_loop().run_until_complete(MyHardwareClient("localhost:8000", 1).run())
+asyncio.get_event_loop().run_forever()
 ```
 
 ## Key Features
 
-- **Auto-reconnection**: Exponential backoff (100ms → 5s)
+- **Auto-reconnection**: Reconnects automatically with 1s delay
 - **Ping/pong**: Automatic handling for latency monitoring
-- **Hooks**: Override `setup()` and `teardown()` for hardware init/cleanup
 
 ## Methods to Override
 
 - `handle_message(message)` - **Required.** Process incoming messages
-- `setup()` - **Optional.** Initialize hardware on connection
-- `teardown()` - **Optional.** Cleanup hardware on disconnection
+- `on_disconnect()` - **Optional.** Called when connection is lost
 
 See `/hardware/buzzers.py` for a complete example.

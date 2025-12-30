@@ -20,8 +20,6 @@ class HardwareWebSocketClient:
 
     Subclasses implement:
     - handle_message(message) - Process incoming messages
-    - setup() - Initialize hardware (optional)
-    - teardown() - Cleanup hardware (optional)
     """
 
     def __init__(
@@ -50,7 +48,6 @@ class HardwareWebSocketClient:
             f"hardware.{client_type}.{client_id or 'default'}"
         )
         self.websocket = None
-        self.running = False
         self.loop = None
 
     def _build_uri(self) -> str:
@@ -86,71 +83,50 @@ class HardwareWebSocketClient:
             recipient=message.get("sender_id"),
         )
 
-    async def _message_loop(self):
-        """Listen for messages and dispatch to handlers."""
-        try:
-            async for message in self.websocket:
-                try:
-                    data = json.loads(message)
-
-                    if data.get("type") == "ping":
-                        await self._handle_ping(data)
-                        continue
-
-                    await self.handle_message(data)
-
-                except json.JSONDecodeError as e:
-                    self.logger.error(f"Invalid JSON received: {e}")
-                except Exception as e:
-                    self.logger.error(f"Error handling message: {e}")
-
-        except websockets.ConnectionClosed:
-            self.logger.warning("WebSocket connection closed")
-            raise
-
     async def connect(self):
-        """Connect to WebSocket server with auto-reconnect."""
-        backoff = 0.1
-        max_backoff = 5.0
+        """Connect to WebSocket server."""
+        uri = self._build_uri()
+        self.websocket = await websockets.connect(
+            uri, ping_interval=15, ping_timeout=5
+        )
+        self.logger.info(f"Connected to {uri}")
 
-        while self.running:
+    async def listen_for_messages(self):
+        """Listen for messages with auto-reconnect."""
+        while True:
             try:
-                uri = self._build_uri()
-                async with websockets.connect(
-                    uri, ping_interval=15, ping_timeout=5
-                ) as ws:
-                    self.websocket = ws
-                    self.logger.info(f"Connected to {uri}")
+                message = await self.websocket.recv()
+                data = json.loads(message)
 
-                    await self.setup()
-                    backoff = 0.1
-                    await self._message_loop()
+                if data.get("type") == "ping":
+                    await self._handle_ping(data)
+                    continue
+
+                await self.handle_message(data)
 
             except websockets.ConnectionClosed:
                 self.logger.warning("Connection closed, attempting to reconnect...")
+                await self.on_disconnect()
+                await asyncio.sleep(1)
+                await self.connect()
             except Exception as e:
-                self.logger.error(f"Connection error: {e}")
-            finally:
-                await self.teardown()
-                self.websocket = None
+                self.logger.error(f"Error in listen_for_messages: {e}")
+                await self.on_disconnect()
+                await asyncio.sleep(1)
+                try:
+                    await self.connect()
+                except Exception as reconnect_error:
+                    self.logger.error(f"Reconnection failed: {reconnect_error}")
 
-            if self.running:
-                self.logger.info(f"Reconnecting in {backoff:.1f}s...")
-                await asyncio.sleep(backoff)
-                backoff = min(backoff * 2, max_backoff)
+    async def on_disconnect(self):
+        """Override to handle disconnection events."""
+        pass
 
     async def run(self):
-        """Main entry point: connect and run forever."""
-        self.running = True
+        """Main entry point: connect and listen for messages."""
         self.loop = asyncio.get_running_loop()
-        try:
-            await self.connect()
-        finally:
-            self.running = False
-
-    def stop(self):
-        """Stop the client."""
-        self.running = False
+        await self.connect()
+        asyncio.create_task(self.listen_for_messages())
 
     async def handle_message(self, message: dict):
         """
@@ -163,10 +139,3 @@ class HardwareWebSocketClient:
             f"Unhandled message type '{message.get('type')}': {message}"
         )
 
-    async def setup(self):
-        """Override to initialize hardware on connection."""
-        pass
-
-    async def teardown(self):
-        """Override to cleanup hardware on disconnection."""
-        pass

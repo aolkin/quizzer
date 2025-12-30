@@ -19,20 +19,10 @@ class TestHardwareClient(HardwareWebSocketClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.messages_received = []
-        self.setup_called = False
-        self.teardown_called = False
 
     async def handle_message(self, message: dict):
         """Track received messages."""
         self.messages_received.append(message)
-
-    async def setup(self):
-        """Track setup calls."""
-        self.setup_called = True
-
-    async def teardown(self):
-        """Track teardown calls."""
-        self.teardown_called = True
 
 
 class TestHardwareWebSocketClient(unittest.TestCase):

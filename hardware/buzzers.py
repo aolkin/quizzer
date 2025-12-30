@@ -96,18 +96,6 @@ class BuzzerClient(HardwareWebSocketClient):
                 logging.getLogger().setLevel(numeric_level)
                 self.logger.info(f"Log level changed to {level}")
 
-    async def setup(self):
-        """Initialize hardware when connection is established."""
-        # Start the buzzer thread if not already running
-        if not self.buzzers.is_alive():
-            self.buzzers.callback = self.schedule_buzzer_press
-            self.buzzers.start()
-
-    async def teardown(self):
-        """Cleanup when connection is lost."""
-        # Disable buzzers when connection is lost
-        self.buzzers.enabled = False
-
     async def handle_buzzer_press(self, buzzer_id: int):
         """Called by hardware when a buzzer is pressed."""
         await self.send_message("buzzer_pressed", buzzerId=buzzer_id)
@@ -122,6 +110,18 @@ class BuzzerClient(HardwareWebSocketClient):
             logger.warning(
                 f"Buzzer {buzzer_id} pressed but WebSocket not connected yet"
             )
+
+    async def run(self):
+        """Start the buzzer client."""
+        self.loop = asyncio.get_running_loop()
+        self.buzzers.callback = self.schedule_buzzer_press
+        self.buzzers.start()
+        await self.connect()
+        asyncio.create_task(self.listen_for_messages())
+
+    async def on_disconnect(self):
+        """Disable buzzers when connection is lost."""
+        self.buzzers.enabled = False
 
 
 def cleanup_gpio(signum=None, frame=None):
@@ -181,7 +181,8 @@ if __name__ == "__main__":
     thread = BuzzerThread()
     client = BuzzerClient(args.game_id, thread, args.server)
     try:
-        asyncio.run(client.run())
+        asyncio.get_event_loop().run_until_complete(client.run())
+        asyncio.get_event_loop().run_forever()
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         gpio.cleanup()
