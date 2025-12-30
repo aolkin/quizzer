@@ -2,7 +2,7 @@ import { assets } from '$app/paths';
 
 export enum Sound {
   Buzzer = 'buzzer',
-  Special = 'special',
+  Dino = 'dino',
   DailyDouble = 'dailydouble',
   Timesup = 'timesup',
   RightAnswer = 'rightanswer',
@@ -21,7 +21,7 @@ export class AudioClient {
     // Preload common game sounds
     const soundFiles: Record<Sound, string> = {
       buzzer: `${assets}/sounds/rightanswer.mp3`,
-      special: `${assets}/sounds/dinosaurgrowl.mp3`,
+      dino: `${assets}/sounds/dinosaurgrowl.mp3`,
       dailydouble: `${assets}/sounds/dailydouble.mp3`,
       timesup: `${assets}/sounds/timesup.mp3`,
       rightanswer: `${assets}/sounds/rightanswer.mp3`,

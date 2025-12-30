@@ -2,7 +2,7 @@ export interface Question {
   id: number;
   text: string;
   type: string;
-  special: boolean;
+  flags: string[];
   answer: string;
   media_url?: string;
   order?: number;

@@ -19,7 +19,7 @@ class QuestionInline(admin.TabularInline):
     model = Question
     extra = 5
     max_num = 5
-    fields = ("text", "answer", "points", "special", "order")
+    fields = ("text", "answer", "points", "flags", "order")
 
 
 class TeamInline(admin.TabularInline):
