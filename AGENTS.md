@@ -42,10 +42,17 @@ cd app
 bun run check
 ```
 
-**Testing:**
+**Unit Testing:**
 ```bash
 cd app
 bun run test
+```
+
+**E2E Testing (Playwright):**
+```bash
+cd app
+npm run test:e2e      # Run E2E tests (starts backend automatically)
+npm run test:e2e:ui   # Run with interactive UI
 ```
 
 **Build Verification:**
@@ -58,6 +65,7 @@ bun run build
 ```bash
 cd app
 bun install
+npx playwright install chromium  # For E2E tests
 ```
 
 ## Why This Matters
@@ -75,8 +83,11 @@ All checks in one place:
 # Backend
 cd service && black --check . && flake8 . && python manage.py test && cd ..
 
-# Frontend
+# Frontend (unit tests + build)
 cd app && bun run lint && bun run check && bun run test && bun run build && cd ..
+
+# Frontend E2E tests (optional, runs in CI)
+cd app && npm run test:e2e && cd ..
 ```
 
 ## Pre-commit Hooks (Optional but Recommended)
@@ -93,7 +104,8 @@ When writing tests, follow our testing philosophy documented in [TESTING.md](TES
 - Focus on **high-value tests** that verify complex logic and prevent regressions
 - Avoid trivial tests for simple setters/getters or framework behavior
 - Test behavior, not implementation
-- Mock external dependencies (WebSocket, fetch, database)
+- Mock external dependencies (WebSocket, fetch, database) in unit tests
+- Use E2E tests (Playwright) for multi-client synchronization and integration testing
 
 ## Code Style
 

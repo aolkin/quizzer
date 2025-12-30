@@ -21,6 +21,12 @@ from . import services
 
 
 @api_view(["GET"])
+def health_check(request):
+    """Simple health check endpoint for server readiness."""
+    return Response({"status": "ok"})
+
+
+@api_view(["GET"])
 def get_board(request, board_id):
     board = get_object_or_404(
         Board.objects.select_related("game").prefetch_related(

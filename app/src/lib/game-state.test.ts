@@ -8,8 +8,6 @@ describe('GameStateManager', () => {
     gameState.currentBoard = undefined;
     gameState.board = undefined;
     gameState.scores = {};
-    gameState.visibleCategories = new Set();
-    gameState.answeredQuestions = new Set();
     gameState.selectedQuestion = undefined;
   });
 

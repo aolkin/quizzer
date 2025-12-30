@@ -49,7 +49,10 @@ export function allQuestions(board?: Board): Question[] {
   return board?.categories.flatMap((c) => c.questions) ?? [];
 }
 
-export const ENDPOINT = 'quasar.local:8000';
+export const ENDPOINT =
+  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_ENDPOINT
+    ? import.meta.env.VITE_API_ENDPOINT
+    : 'quasar.local:8000';
 
 export enum UiMode {
   Host = 'host',

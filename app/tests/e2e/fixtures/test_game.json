@@ -1,0 +1,250 @@
+{
+  "export_version": "1.0",
+  "mode": "full",
+  "game": {
+    "name": "E2E Test Game",
+    "mode": "jeopardy",
+    "boards": [
+      {
+        "name": "Round 1",
+        "order": 0,
+        "categories": [
+          {
+            "name": "History",
+            "order": 0,
+            "questions": [
+              {
+                "text": "World War II ended in this year.",
+                "answer": "What is 1945?",
+                "points": 100,
+                "type": "text",
+                "special": false,
+                "order": 0
+              },
+              {
+                "text": "This man was the first President of the United States.",
+                "answer": "Who is George Washington?",
+                "points": 200,
+                "type": "text",
+                "special": false,
+                "order": 1
+              },
+              {
+                "text": "The Berlin Wall fell in this year.",
+                "answer": "What is 1989?",
+                "points": 300,
+                "type": "text",
+                "special": false,
+                "order": 2
+              },
+              {
+                "text": "This ancient wonder was located in Alexandria.",
+                "answer": "What is the Lighthouse (Pharos)?",
+                "points": 400,
+                "type": "text",
+                "special": false,
+                "order": 3
+              },
+              {
+                "text": "This Emperor of France was exiled to Elba.",
+                "answer": "Who is Napoleon Bonaparte?",
+                "points": 500,
+                "type": "text",
+                "special": true,
+                "order": 4
+              }
+            ]
+          },
+          {
+            "name": "Science",
+            "order": 1,
+            "questions": [
+              {
+                "text": "This planet is known as the Red Planet.",
+                "answer": "What is Mars?",
+                "points": 100,
+                "type": "text",
+                "special": false,
+                "order": 0
+              },
+              {
+                "text": "This is the chemical symbol for gold.",
+                "answer": "What is Au?",
+                "points": 200,
+                "type": "text",
+                "special": false,
+                "order": 1
+              },
+              {
+                "text": "Light travels at approximately this speed in a vacuum.",
+                "answer": "What is 300,000 km/s?",
+                "points": 300,
+                "type": "text",
+                "special": false,
+                "order": 2
+              },
+              {
+                "text": "This organelle is known as the powerhouse of the cell.",
+                "answer": "What is the mitochondria?",
+                "points": 400,
+                "type": "text",
+                "special": false,
+                "order": 3
+              },
+              {
+                "text": "This is the most abundant gas in Earth's atmosphere.",
+                "answer": "What is nitrogen?",
+                "points": 500,
+                "type": "text",
+                "special": false,
+                "order": 4
+              }
+            ]
+          },
+          {
+            "name": "Geography",
+            "order": 2,
+            "questions": [
+              {
+                "text": "This city is the capital of France.",
+                "answer": "What is Paris?",
+                "points": 100,
+                "type": "text",
+                "special": false,
+                "order": 0
+              },
+              {
+                "text": "This river is the longest in the world.",
+                "answer": "What is the Nile?",
+                "points": 200,
+                "type": "text",
+                "special": false,
+                "order": 1
+              },
+              {
+                "text": "This country has the most time zones.",
+                "answer": "What is France?",
+                "points": 300,
+                "type": "text",
+                "special": false,
+                "order": 2
+              },
+              {
+                "text": "This is the smallest country in the world.",
+                "answer": "What is Vatican City?",
+                "points": 400,
+                "type": "text",
+                "special": false,
+                "order": 3
+              },
+              {
+                "text": "This desert in Chile is the driest place on Earth.",
+                "answer": "What is the Atacama Desert?",
+                "points": 500,
+                "type": "text",
+                "special": false,
+                "order": 4
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Round 2",
+        "order": 1,
+        "categories": [
+          {
+            "name": "Literature",
+            "order": 0,
+            "questions": [
+              {
+                "text": "This playwright wrote Romeo and Juliet.",
+                "answer": "Who is William Shakespeare?",
+                "points": 200,
+                "type": "text",
+                "special": false,
+                "order": 0
+              },
+              {
+                "text": "This is the first book of the Bible.",
+                "answer": "What is Genesis?",
+                "points": 400,
+                "type": "text",
+                "special": false,
+                "order": 1
+              },
+              {
+                "text": "This author wrote the dystopian novel '1984'.",
+                "answer": "Who is George Orwell?",
+                "points": 600,
+                "type": "text",
+                "special": false,
+                "order": 2
+              }
+            ]
+          },
+          {
+            "name": "Sports",
+            "order": 1,
+            "questions": [
+              {
+                "text": "A soccer team has this many players on the field.",
+                "answer": "What is 11?",
+                "points": 200,
+                "type": "text",
+                "special": false,
+                "order": 0
+              },
+              {
+                "text": "You would perform a slam dunk in this sport.",
+                "answer": "What is basketball?",
+                "points": 400,
+                "type": "text",
+                "special": false,
+                "order": 1
+              },
+              {
+                "text": "This country has won the most FIFA World Cups with 5 titles.",
+                "answer": "What is Brazil?",
+                "points": 600,
+                "type": "text",
+                "special": true,
+                "order": 2
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "teams": [
+      {
+        "name": "Team Red",
+        "color": "#FF0000",
+        "players": [
+          {
+            "name": "Alice",
+            "buzzer": 0
+          },
+          {
+            "name": "Bob",
+            "buzzer": 1
+          }
+        ]
+      },
+      {
+        "name": "Team Blue",
+        "color": "#0000FF",
+        "players": [
+          {
+            "name": "Charlie",
+            "buzzer": 2
+          },
+          {
+            "name": "Diana",
+            "buzzer": 4
+          }
+        ]
+      }
+    ]
+  }
+}

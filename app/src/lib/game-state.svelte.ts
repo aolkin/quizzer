@@ -1,3 +1,4 @@
+import { SvelteSet } from 'svelte/reactivity';
 import type { Board } from './state.svelte';
 import type { GameWebSocket } from './websocket';
 
@@ -6,8 +7,8 @@ class GameStateManager {
   currentBoard = $state<number | undefined>(undefined);
   board = $state<Board | undefined>(undefined);
   scores = $state<Record<number, number>>({});
-  visibleCategories = $state<Set<number>>(new Set());
-  answeredQuestions = $state<Set<number>>(new Set());
+  visibleCategories = new SvelteSet<number>();
+  answeredQuestions = new SvelteSet<number>();
   selectedQuestion = $state<number | undefined>(undefined);
   buzzersEnabled = $state(false);
   activeBuzzerId = $state<number | undefined>(undefined);
@@ -36,13 +37,14 @@ class GameStateManager {
   selectBoard(boardId: number) {
     this.currentBoard = boardId;
     // Reset state when selecting a new board
-    this.visibleCategories = new Set();
+    this.visibleCategories.clear();
     this.selectedQuestion = undefined;
   }
 
   setBoard(board: Board, answeredQuestionIds: number[]) {
     this.board = board;
-    this.answeredQuestions = new Set(answeredQuestionIds);
+    this.answeredQuestions.clear();
+    answeredQuestionIds.forEach((id) => this.answeredQuestions.add(id));
   }
 
   selectQuestion(questionId?: number) {
@@ -70,8 +72,8 @@ class GameStateManager {
   }
 
   reset() {
-    this.visibleCategories = new Set();
-    this.answeredQuestions = new Set();
+    this.visibleCategories.clear();
+    this.answeredQuestions.clear();
     this.selectedQuestion = undefined;
     this.buzzersEnabled = false;
     this.activeBuzzerId = undefined;
