@@ -4,7 +4,9 @@ Playwright E2E tests for the Quizzer application, testing the full stack includi
 
 ## Running Tests
 
-**Prerequisites:** Start the Django backend and Vite dev server before running tests:
+### Local Development
+
+Start the Django backend and Vite dev server before running tests:
 
 ```bash
 # Terminal 1: Start backend
@@ -31,7 +33,9 @@ bun run test:e2e:ui
 bun run test:e2e:debug
 ```
 
-In CI, the workflow starts both servers automatically before running tests.
+### CI
+
+In CI (`CI=true`), Playwright automatically starts both servers using the `webServer` config. No manual server startup is needed.
 
 ## Writing Tests
 
