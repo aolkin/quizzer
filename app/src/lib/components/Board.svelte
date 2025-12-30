@@ -5,6 +5,7 @@
   import { allQuestions, type Board, type Question, UiMode } from '$lib/state.svelte';
   import type { AudioClient } from '../audio.svelte';
   import { gameState } from '../game-state.svelte';
+  import { formatInlineMarkdown } from '../markdown';
   import QuestionDisplay from './QuestionDisplay.svelte';
 
   let { mode, board, audio }: { board: Board; mode: UiMode; audio?: AudioClient } = $props();
@@ -95,7 +96,8 @@
           {#if sidebarQuestion.flags.includes('dino')}
             <Icon icon="mdi:star" class="inline text-warning-400" />
           {/if}
-          {sidebarQuestion.points} - {sidebarQuestion.text}
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -- HTML is escaped in formatInlineMarkdown -->
+          {sidebarQuestion.points} - {@html formatInlineMarkdown(sidebarQuestion.text)}
         </h3>
         <p class="mb-4 text-primary-400" data-testid="question-answer">{sidebarQuestion.answer}</p>
         <div class="flex gap-2">

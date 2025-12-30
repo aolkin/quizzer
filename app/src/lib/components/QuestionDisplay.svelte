@@ -1,5 +1,6 @@
 <script lang="ts">
   import { type AudioClient, Sound } from '../audio.svelte';
+  import { formatInlineMarkdown } from '../markdown';
   import type { Question } from '../state.svelte';
 
   const {
@@ -54,7 +55,8 @@
           style="font-size: 3cqw; line-height: 3.5cqw;"
           data-testid="question-text"
         >
-          {question.text}
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -- HTML is escaped in formatInlineMarkdown -->
+          {@html formatInlineMarkdown(question.text)}
         </h2>
       {:else if question.type === 'image'}
         <img
