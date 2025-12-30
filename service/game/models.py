@@ -112,8 +112,6 @@ class Question(models.Model):
         return f"{self.category.name} - {self.points}"
 
     def save(self, *args, **kwargs):
-        from django.core.exceptions import ValidationError
-
         errors = {}
         try:
             validate_slides(self.slides)
