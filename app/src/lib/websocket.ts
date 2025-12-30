@@ -96,8 +96,12 @@ export class GameWebSocket {
       }
     } else if (data.type === 'select_question') {
       gameState.selectQuestion(data.question);
-    } else if (data.type === 'show_answer') {
-      gameState.setShowingAnswer(true);
+    } else if (data.type === 'next_slide') {
+      gameState.nextSlide();
+    } else if (data.type === 'previous_slide') {
+      gameState.previousSlide();
+    } else if (data.type === 'set_slide') {
+      gameState.setCurrentSlide(data.slideIndex);
     } else if (data.type === 'toggle_question') {
       if (shouldUpdateQuestion(data.question_id, data.version)) {
         gameState.markQuestionAnswered(data.question_id, data.answered);
@@ -110,10 +114,8 @@ export class GameWebSocket {
       }
       gameState.setActiveBuzzer(data.buzzerId);
     } else if (data.type === 'client_connection_status') {
-      // Handle generic client connection status
       if (data.client_type === 'buzzer') {
         gameState.setBuzzerConnected(data.connected);
-        // When buzzer client connects, send current buzzer state
         if (data.connected && this.mode === UiMode.Host) {
           this.toggleBuzzers(gameState.buzzersEnabled);
         }
@@ -139,10 +141,6 @@ export class GameWebSocket {
     });
   }
 
-  /**
-   * Broadcast question selection to all connected clients.
-   * @param question - Question ID to display, or undefined to close the current question
-   */
   selectQuestion(question: number | undefined) {
     this.send({
       type: 'select_question',
@@ -150,12 +148,15 @@ export class GameWebSocket {
     });
   }
 
-  /**
-   * Broadcast show answer command to display media answer on presentation screen.
-   */
-  showAnswer() {
+  nextSlide() {
     this.send({
-      type: 'show_answer',
+      type: 'next_slide',
+    });
+  }
+
+  previousSlide() {
+    this.send({
+      type: 'previous_slide',
     });
   }
 

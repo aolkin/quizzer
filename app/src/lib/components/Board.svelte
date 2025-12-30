@@ -2,7 +2,7 @@
   import Icon from '@iconify/svelte';
   import { fly } from 'svelte/transition';
   import { toggleQuestion } from '$lib/api';
-  import { allQuestions, type Board, type Question, UiMode } from '$lib/state.svelte';
+  import { allQuestions, type Board, type Question, UiMode, type Slide } from '$lib/state.svelte';
   import type { AudioClient } from '../audio.svelte';
   import { gameState } from '../game-state.svelte';
   import { formatInlineMarkdown } from '../markdown';
@@ -17,6 +17,14 @@
       selectedQuestion ||
       allQuestions(board).find((q) => q.id === gameState.selectedQuestion),
   );
+
+  const currentSlide = $derived<Slide | null>(
+    sidebarQuestion?.type === 'slides' && sidebarQuestion.slides[gameState.currentSlideIndex]
+      ? sidebarQuestion.slides[gameState.currentSlideIndex]
+      : null,
+  );
+
+  const totalSlides = $derived(sidebarQuestion?.slides?.length || 0);
 
   function isColumnVisible(categoryId: number): boolean {
     return gameState.visibleCategories.has(categoryId);
@@ -38,8 +46,12 @@
     gameState.websocket?.selectQuestion(question.id);
   }
 
-  function showAnswer() {
-    gameState.websocket?.showAnswer();
+  function nextSlide() {
+    gameState.websocket?.nextSlide();
+  }
+
+  function previousSlide() {
+    gameState.websocket?.previousSlide();
   }
 </script>
 
@@ -79,7 +91,7 @@
                   {question}
                   {audio}
                   visible={gameState.selectedQuestion === question.id && mode === 'presentation'}
-                  showingAnswer={gameState.showingAnswer}
+                  slideIndex={gameState.currentSlideIndex}
                 />
                 {#if (mode === UiMode.Host || isColumnVisible(category.id)) && !gameState.answeredQuestions.has(question.id)}
                   <div transition:fly={{ x: 100 }}>{question.points}</div>
@@ -101,11 +113,50 @@
           {#if sidebarQuestion.flags.includes('dino')}
             <Icon icon="mdi:star" class="inline text-warning-400" />
           {/if}
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -- HTML is escaped in formatInlineMarkdown -->
-          {sidebarQuestion.points} - {@html formatInlineMarkdown(sidebarQuestion.text)}
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html formatInlineMarkdown(sidebarQuestion.text)}
+          <span class="text-sm text-primary-300">{sidebarQuestion.points} points</span>
         </h3>
-        <p class="mb-4 text-primary-400" data-testid="question-answer">{sidebarQuestion.answer}</p>
-        <div class="flex gap-2">
+
+        {#if sidebarQuestion.type === 'text'}
+          <p class="mb-4 text-primary-400" data-testid="question-answer">
+            {sidebarQuestion.answer}
+          </p>
+        {:else if sidebarQuestion.type === 'slides'}
+          <div class="mb-4">
+            <p class="mb-2 text-sm text-primary-300">
+              Slide {gameState.currentSlideIndex + 1} of {totalSlides}
+            </p>
+            {#if currentSlide}
+              {#if currentSlide.text}
+                <p class="mb-2 text-primary-200">{currentSlide.text}</p>
+              {/if}
+              {#if currentSlide.media_type && currentSlide.media_url}
+                {#if currentSlide.media_type === 'image'}
+                  <img
+                    src={currentSlide.media_url}
+                    alt="Slide preview"
+                    class="mb-2 max-h-40 rounded"
+                  />
+                {:else}
+                  <p class="mb-2 text-sm italic text-primary-400">
+                    {currentSlide.media_type}: {currentSlide.media_url}
+                  </p>
+                {/if}
+              {/if}
+              {#if currentSlide.answer}
+                <p class="text-primary-400" data-testid="slide-answer">
+                  Answer: {currentSlide.answer}
+                </p>
+              {/if}
+            {/if}
+            <p class="mt-2 text-primary-400" data-testid="question-answer">
+              Overall: {sidebarQuestion.answer}
+            </p>
+          </div>
+        {/if}
+
+        <div class="flex flex-wrap gap-2">
           <button
             type="button"
             class="btn-variant-filled btn"
@@ -114,16 +165,28 @@
           >
             Present
           </button>
-          {#if sidebarQuestion.media_answer_url}
+
+          {#if sidebarQuestion.type === 'slides' && totalSlides > 1}
             <button
               type="button"
               class="btn-variant-filled btn"
-              onclick={() => showAnswer()}
-              data-testid="show-answer"
+              onclick={() => previousSlide()}
+              disabled={gameState.currentSlideIndex === 0}
+              data-testid="previous-slide"
             >
-              Show Answer
+              ← Previous
+            </button>
+            <button
+              type="button"
+              class="btn-variant-filled btn"
+              onclick={() => nextSlide()}
+              disabled={gameState.currentSlideIndex >= totalSlides - 1}
+              data-testid="next-slide"
+            >
+              Next →
             </button>
           {/if}
+
           <button
             type="button"
             class="btn-variant-filled btn"

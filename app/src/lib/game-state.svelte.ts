@@ -10,7 +10,7 @@ class GameStateManager {
   visibleCategories = new SvelteSet<number>();
   answeredQuestions = new SvelteSet<number>();
   selectedQuestion = $state<number | undefined>(undefined);
-  showingAnswer = $state(false);
+  currentSlideIndex = $state(0);
   buzzersEnabled = $state(false);
   activeBuzzerId = $state<number | undefined>(undefined);
   buzzerConnected = $state(false);
@@ -50,11 +50,21 @@ class GameStateManager {
 
   selectQuestion(questionId?: number) {
     this.selectedQuestion = questionId;
-    this.showingAnswer = false;
+    this.currentSlideIndex = 0;
   }
 
-  setShowingAnswer(showing: boolean) {
-    this.showingAnswer = showing;
+  setCurrentSlide(index: number) {
+    this.currentSlideIndex = index;
+  }
+
+  nextSlide() {
+    this.currentSlideIndex++;
+  }
+
+  previousSlide() {
+    if (this.currentSlideIndex > 0) {
+      this.currentSlideIndex--;
+    }
   }
 
   markQuestionAnswered(questionId: number, answered: boolean) {
@@ -81,7 +91,7 @@ class GameStateManager {
     this.visibleCategories.clear();
     this.answeredQuestions.clear();
     this.selectedQuestion = undefined;
-    this.showingAnswer = false;
+    this.currentSlideIndex = 0;
     this.buzzersEnabled = false;
     this.activeBuzzerId = undefined;
     this.buzzerConnected = false;

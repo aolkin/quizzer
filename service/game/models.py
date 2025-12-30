@@ -6,10 +6,6 @@ from colorfield.fields import ColorField
 
 
 def validate_slides(value):
-    """
-    Validates the structure of the slides JSON field.
-    Each slide should be a dict with optional fields: text, media_type, media_url, answer
-    """
     if not isinstance(value, list):
         raise ValidationError("Slides must be a list")
 
@@ -17,7 +13,6 @@ def validate_slides(value):
         if not isinstance(slide, dict):
             raise ValidationError(f"Slide {i} must be a dictionary")
 
-        # Validate allowed fields
         allowed_fields = {"text", "media_type", "media_url", "answer"}
         for key in slide.keys():
             if key not in allowed_fields:
@@ -26,7 +21,6 @@ def validate_slides(value):
                     f"Allowed fields: {', '.join(allowed_fields)}"
                 )
 
-        # Validate media_type if present
         if "media_type" in slide:
             valid_media_types = {"image", "video", "audio"}
             if slide["media_type"] not in valid_media_types:
@@ -35,30 +29,20 @@ def validate_slides(value):
                     f"Must be one of: {', '.join(valid_media_types)}"
                 )
 
-            # If media_type is set, media_url should also be present
             if "media_url" not in slide:
                 raise ValidationError(f"Slide {i} has media_type but no media_url")
 
-        # Validate media_url if present
         if "media_url" in slide and not isinstance(slide["media_url"], str):
             raise ValidationError(f"Slide {i} media_url must be a string")
 
-        # Validate text if present
         if "text" in slide and not isinstance(slide["text"], str):
             raise ValidationError(f"Slide {i} text must be a string")
 
-        # Validate answer if present
         if "answer" in slide and not isinstance(slide["answer"], str):
             raise ValidationError(f"Slide {i} answer must be a string")
 
 
 def get_score_annotation():
-    """
-    Returns the annotation expression for computing player scores on a Player queryset.
-
-    This can be used in Player querysets to annotate scores efficiently.
-    For each answer, uses answer.points if not null, otherwise question.points.
-    """
     return Sum(
         Case(
             When(answers__points__isnull=False, then="answers__points"),
@@ -128,8 +112,6 @@ class Question(models.Model):
         return f"{self.category.name} - {self.points}"
 
     def save(self, *args, **kwargs):
-        """Override save to ensure slides field validation is always run."""
-        # Only validate the slides field to avoid issues with JSONField defaults
         from django.core.exceptions import ValidationError
 
         errors = {}
@@ -145,10 +127,6 @@ class Question(models.Model):
 
     @property
     def type(self):
-        """
-        Automatically determine question type based on slides field.
-        Returns 'slides' if slides exist, otherwise 'text'.
-        """
         return "slides" if self.slides else "text"
 
 

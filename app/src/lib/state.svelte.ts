@@ -1,11 +1,17 @@
+export interface Slide {
+  text?: string;
+  media_type?: 'image' | 'video' | 'audio';
+  media_url?: string;
+  answer?: string;
+}
+
 export interface Question {
   id: number;
   text: string;
   type: string;
   flags: string[];
   answer: string;
-  media_url?: string;
-  media_answer_url?: string;
+  slides: Slide[];
   order?: number;
   points: number;
   answered: boolean;
