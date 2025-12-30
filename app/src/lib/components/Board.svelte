@@ -37,6 +37,10 @@
     gameState.websocket?.toggleBuzzers(true);
     gameState.websocket?.selectQuestion(question.id);
   }
+
+  function showAnswer() {
+    gameState.websocket?.showAnswer();
+  }
 </script>
 
 <div
@@ -75,6 +79,7 @@
                   {question}
                   {audio}
                   visible={gameState.selectedQuestion === question.id && mode === 'presentation'}
+                  showingAnswer={gameState.showingAnswer}
                 />
                 {#if (mode === UiMode.Host || isColumnVisible(category.id)) && !gameState.answeredQuestions.has(question.id)}
                   <div transition:fly={{ x: 100 }}>{question.points}</div>
@@ -100,36 +105,6 @@
           {sidebarQuestion.points} - {@html formatInlineMarkdown(sidebarQuestion.text)}
         </h3>
         <p class="mb-4 text-primary-400" data-testid="question-answer">{sidebarQuestion.answer}</p>
-        {#if sidebarQuestion.media_answer_url}
-          <div class="mb-4">
-            <p class="mb-2 text-sm font-semibold text-primary-300">Media Answer:</p>
-            {#if sidebarQuestion.type === 'image'}
-              <img
-                src={sidebarQuestion.media_answer_url}
-                alt="Answer media"
-                class="max-w-full rounded-lg shadow-lg"
-              />
-            {:else if sidebarQuestion.type === 'video'}
-              <!-- svelte-ignore a11y_media_has_caption -->
-              <video
-                src={sidebarQuestion.media_answer_url}
-                controls
-                class="max-w-full rounded-lg shadow-lg"
-              ></video>
-            {:else if sidebarQuestion.type === 'audio'}
-              <audio src={sidebarQuestion.media_answer_url} controls class="w-full"></audio>
-            {:else}
-              <a
-                href={sidebarQuestion.media_answer_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-primary-400 underline"
-              >
-                View Answer Media
-              </a>
-            {/if}
-          </div>
-        {/if}
         <div class="flex gap-2">
           <button
             type="button"
@@ -139,6 +114,16 @@
           >
             Present
           </button>
+          {#if sidebarQuestion.media_answer_url}
+            <button
+              type="button"
+              class="btn-variant-filled btn"
+              onclick={() => showAnswer()}
+              data-testid="show-answer"
+            >
+              Show Answer
+            </button>
+          {/if}
           <button
             type="button"
             class="btn-variant-filled btn"

@@ -96,6 +96,8 @@ export class GameWebSocket {
       }
     } else if (data.type === 'select_question') {
       gameState.selectQuestion(data.question);
+    } else if (data.type === 'show_answer') {
+      gameState.setShowingAnswer(true);
     } else if (data.type === 'toggle_question') {
       if (shouldUpdateQuestion(data.question_id, data.version)) {
         gameState.markQuestionAnswered(data.question_id, data.answered);
@@ -145,6 +147,15 @@ export class GameWebSocket {
     this.send({
       type: 'select_question',
       question,
+    });
+  }
+
+  /**
+   * Broadcast show answer command to display media answer on presentation screen.
+   */
+  showAnswer() {
+    this.send({
+      type: 'show_answer',
     });
   }
 

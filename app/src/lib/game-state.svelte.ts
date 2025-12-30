@@ -10,6 +10,7 @@ class GameStateManager {
   visibleCategories = new SvelteSet<number>();
   answeredQuestions = new SvelteSet<number>();
   selectedQuestion = $state<number | undefined>(undefined);
+  showingAnswer = $state(false);
   buzzersEnabled = $state(false);
   activeBuzzerId = $state<number | undefined>(undefined);
   buzzerConnected = $state(false);
@@ -49,6 +50,11 @@ class GameStateManager {
 
   selectQuestion(questionId?: number) {
     this.selectedQuestion = questionId;
+    this.showingAnswer = false;
+  }
+
+  setShowingAnswer(showing: boolean) {
+    this.showingAnswer = showing;
   }
 
   markQuestionAnswered(questionId: number, answered: boolean) {
@@ -75,6 +81,7 @@ class GameStateManager {
     this.visibleCategories.clear();
     this.answeredQuestions.clear();
     this.selectedQuestion = undefined;
+    this.showingAnswer = false;
     this.buzzersEnabled = false;
     this.activeBuzzerId = undefined;
     this.buzzerConnected = false;

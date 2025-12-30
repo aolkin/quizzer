@@ -7,11 +7,22 @@
     question,
     visible,
     audio,
-  }: { question: Question; visible: boolean; audio?: AudioClient } = $props();
+    showingAnswer = false,
+  }: {
+    question: Question;
+    visible: boolean;
+    audio?: AudioClient;
+    showingAnswer?: boolean;
+  } = $props();
 
   let container: HTMLDivElement;
 
   const hasDinoFlag = $derived(question.flags.includes('dino'));
+
+  // Determine which media URL to use - answer if showing answer and available, otherwise question
+  const mediaUrl = $derived(
+    showingAnswer && question.media_answer_url ? question.media_answer_url : question.media_url,
+  );
 
   $effect(() => {
     if (!visible && container.parentElement) {
@@ -59,17 +70,12 @@
           {@html formatInlineMarkdown(question.text)}
         </h2>
       {:else if question.type === 'image'}
-        <img
-          src={question.media_url}
-          alt="Question media"
-          class="mx-auto max-w-full rounded-lg shadow-lg"
-        />
+        <img src={mediaUrl} alt="Question media" class="mx-auto max-w-full rounded-lg shadow-lg" />
       {:else if question.type === 'video'}
         <!-- svelte-ignore a11y_media_has_caption -->
-        <video src={question.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg"
-        ></video>
+        <video src={mediaUrl} controls class="mx-auto max-w-full rounded-lg shadow-lg"></video>
       {:else if question.type === 'audio'}
-        <audio src={question.media_url} controls class="w-full"></audio>
+        <audio src={mediaUrl} controls class="w-full"></audio>
       {/if}
     </div>
   </div>
