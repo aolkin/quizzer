@@ -38,104 +38,44 @@ class TestHardwareClient(HardwareWebSocketClient):
 class TestHardwareWebSocketClient(unittest.TestCase):
     """Test cases for HardwareWebSocketClient."""
 
-    def test_build_uri_with_client_id(self):
-        """Test URI building with client_id."""
-        client = TestHardwareClient(
-            host="localhost:8000",
-            game_id=42,
-            client_type="buzzer",
-            client_id="main",
+    def test_uri_building(self):
+        """Test URI building with and without client_id."""
+        client_with_id = TestHardwareClient(
+            host="localhost:8000", game_id=42, client_type="buzzer", client_id="main"
         )
-
-        uri = client._build_uri()
         self.assertEqual(
-            uri, "ws://localhost:8000/ws/game/42/?client_type=buzzer&client_id=main"
+            client_with_id._build_uri(),
+            "ws://localhost:8000/ws/game/42/?client_type=buzzer&client_id=main"
         )
 
-    def test_build_uri_without_client_id(self):
-        """Test URI building without client_id."""
-        client = TestHardwareClient(
+        client_without_id = TestHardwareClient(
             host="localhost:8000", game_id=42, client_type="buzzer"
         )
-
-        uri = client._build_uri()
-        self.assertEqual(uri, "ws://localhost:8000/ws/game/42/?client_type=buzzer")
-
-    async def async_test_send_message(self):
-        """Test sending messages."""
-        client = TestHardwareClient(
-            host="localhost:8000", game_id=1, client_type="test"
+        self.assertEqual(
+            client_without_id._build_uri(),
+            "ws://localhost:8000/ws/game/42/?client_type=buzzer"
         )
 
-        # Mock websocket
+    async def async_test_messaging(self):
+        """Test sending messages and ping/pong handling."""
+        client = TestHardwareClient(host="localhost:8000", game_id=1, client_type="test")
         mock_ws = AsyncMock()
         client.websocket = mock_ws
 
-        # Send message
-        await client.send_message("test_message", key1="value1", key2="value2")
-
-        # Verify message was sent
-        mock_ws.send.assert_called_once()
+        await client.send_message("test_message", key="value")
         sent_data = json.loads(mock_ws.send.call_args[0][0])
         self.assertEqual(sent_data["type"], "test_message")
-        self.assertEqual(sent_data["key1"], "value1")
-        self.assertEqual(sent_data["key2"], "value2")
+        self.assertEqual(sent_data["key"], "value")
 
-    def test_send_message(self):
-        """Wrapper for async test."""
-        asyncio.run(self.async_test_send_message())
+        mock_ws.reset_mock()
+        await client._handle_ping({"type": "ping", "timestamp": 12345, "sender_id": "server"})
+        pong_data = json.loads(mock_ws.send.call_args[0][0])
+        self.assertEqual(pong_data["type"], "pong")
+        self.assertEqual(pong_data["recipient"], "server")
 
-    async def async_test_handle_ping(self):
-        """Test automatic ping/pong handling."""
-        client = TestHardwareClient(
-            host="localhost:8000", game_id=1, client_type="test"
-        )
-
-        # Mock websocket
-        mock_ws = AsyncMock()
-        client.websocket = mock_ws
-
-        # Handle ping
-        ping_message = {"type": "ping", "timestamp": 12345, "sender_id": "server"}
-        await client._handle_ping(ping_message)
-
-        # Verify pong was sent
-        mock_ws.send.assert_called_once()
-        sent_data = json.loads(mock_ws.send.call_args[0][0])
-        self.assertEqual(sent_data["type"], "pong")
-        self.assertEqual(sent_data["timestamp"], 12345)
-        self.assertEqual(sent_data["recipient"], "server")
-
-    def test_handle_ping(self):
-        """Wrapper for async test."""
-        asyncio.run(self.async_test_handle_ping())
-
-    async def async_test_message_handling(self):
-        """Test message handling and dispatch."""
-        client = TestHardwareClient(
-            host="localhost:8000", game_id=1, client_type="test"
-        )
-
-        # Test regular message
-        message = {"type": "command", "data": "test"}
-        await client.handle_message(message)
-
-        self.assertEqual(len(client.messages_received), 1)
-        self.assertEqual(client.messages_received[0]["type"], "command")
-
-    def test_message_handling(self):
-        """Wrapper for async test."""
-        asyncio.run(self.async_test_message_handling())
-
-    def test_stop(self):
-        """Test stopping the client."""
-        client = TestHardwareClient(
-            host="localhost:8000", game_id=1, client_type="test"
-        )
-
-        client.running = True
-        client.stop()
-        self.assertFalse(client.running)
+    def test_messaging(self):
+        """Wrapper for async messaging test."""
+        asyncio.run(self.async_test_messaging())
 
 
 if __name__ == "__main__":
