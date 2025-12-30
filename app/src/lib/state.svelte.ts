@@ -5,6 +5,7 @@ export interface Question {
   flags: string[];
   answer: string;
   media_url?: string;
+  media_answer_url?: string;
   order?: number;
   points: number;
   answered: boolean;

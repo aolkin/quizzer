@@ -78,6 +78,7 @@ class Question(models.Model):
     answered = models.BooleanField(default=False)
     order = models.PositiveIntegerField(blank=True, null=True)
     media_url = models.URLField(blank=True, null=True)
+    media_answer_url = models.URLField(blank=True, null=True)
     state_version = models.IntegerField(default=0)
 
     class Meta:

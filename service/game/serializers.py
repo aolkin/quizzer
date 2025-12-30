@@ -19,6 +19,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             "flags",
             "order",
             "media_url",
+            "media_answer_url",
             "answered",
         ]
 
@@ -102,6 +103,7 @@ class QuestionExportSerializer(serializers.Serializer):
     points = serializers.IntegerField()
     type = serializers.CharField(required=False)
     media_url = serializers.URLField(required=False)
+    media_answer_url = serializers.URLField(required=False)
     flags = serializers.ListField(child=serializers.CharField(), required=False)
     answered = serializers.BooleanField(required=False)
 
@@ -115,6 +117,8 @@ class QuestionExportSerializer(serializers.Serializer):
             data["type"] = instance.type
         if instance.media_url:
             data["media_url"] = instance.media_url
+        if instance.media_answer_url:
+            data["media_answer_url"] = instance.media_answer_url
         if instance.flags:
             data["flags"] = instance.flags
 
@@ -226,6 +230,7 @@ class QuestionImportSerializer(serializers.Serializer):
     points = serializers.IntegerField()
     type = serializers.CharField(default="text", required=False)
     media_url = serializers.URLField(required=False, allow_null=True, default=None)
+    media_answer_url = serializers.URLField(required=False, allow_null=True, default=None)
     flags = serializers.ListField(child=serializers.CharField(), default=list, required=False)
     answered = serializers.BooleanField(default=False, required=False)
 
@@ -328,6 +333,7 @@ class GameImportSerializer(serializers.Serializer):
                         points=question_data["points"],
                         type=question_data.get("type", "text"),
                         media_url=question_data.get("media_url") or None,
+                        media_answer_url=question_data.get("media_answer_url") or None,
                         flags=question_data.get("flags", []),
                         answered=question_data.get("answered", False),
                         order=question_order,
