@@ -170,14 +170,13 @@ class ExportGameViewTestCase(BaseGameTestCase):
 
     def test_export_template_mode(self):
         """Test exporting game in template mode excludes teams and players."""
-        # Add a question with media to test non-default type and media_url
+        # Add a question with slides to test slides functionality
         Question.objects.create(
             category=self.category,
             text="Image Question",
             answer="Image Answer",
             points=400,
-            type="image",
-            media_url="https://example.com/image.jpg",
+            slides=[{"media_type": "image", "media_url": "https://example.com/image.jpg"}],
             order=4,
         )
 
@@ -216,10 +215,12 @@ class ExportGameViewTestCase(BaseGameTestCase):
         # Type should not be present if it's "text" (default)
         self.assertNotIn("type", question)
 
-        # Verify image question with media_url
-        image_question = category["questions"][3]
-        self.assertEqual(image_question["type"], "image")
-        self.assertEqual(image_question["media_url"], "https://example.com/image.jpg")
+        # Verify slides question
+        slides_question = category["questions"][3]
+        self.assertEqual(slides_question["type"], "slides")
+        self.assertEqual(len(slides_question["slides"]), 1)
+        self.assertEqual(slides_question["slides"][0]["media_type"], "image")
+        self.assertEqual(slides_question["slides"][0]["media_url"], "https://example.com/image.jpg")
 
         # Verify metadata
         self.assertIn("metadata", game_data)
@@ -324,14 +325,13 @@ class ImportGameViewTestCase(BaseGameTestCase):
     def test_import_template_mode(self):
         """Test importing a template creates game structure without teams."""
         data = self._get_template_export_data()
-        # Add a question with media to test importing non-default type
+        # Add a question with slides to test importing slides type
         data["game"]["boards"][0]["categories"][0]["questions"].append(
             {
                 "text": "Image question",
                 "answer": "Image answer",
                 "points": 300,
-                "type": "image",
-                "media_url": "https://example.com/image.jpg",
+                "slides": [{"media_type": "image", "media_url": "https://example.com/image.jpg"}],
             }
         )
 
@@ -376,10 +376,12 @@ class ImportGameViewTestCase(BaseGameTestCase):
         self.assertEqual(science_questions[0].points, 100)
         self.assertEqual(science_questions[0].order, 0)
 
-        # Verify the image question was created correctly
-        image_question = science_questions[2]
-        self.assertEqual(image_question.type, "image")
-        self.assertEqual(image_question.media_url, "https://example.com/image.jpg")
+        # Verify the slides question was created correctly
+        slides_question = science_questions[2]
+        self.assertEqual(slides_question.type, "slides")
+        self.assertEqual(len(slides_question.slides), 1)
+        self.assertEqual(slides_question.slides[0]["media_type"], "image")
+        self.assertEqual(slides_question.slides[0]["media_url"], "https://example.com/image.jpg")
 
     def test_import_auto_detects_mode(self):
         """Test that import auto-detects mode from file structure."""

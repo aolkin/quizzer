@@ -53,8 +53,8 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ("category", "type", "points", "order", "text")
-    list_filter = ("category__board__game", "category__board", "category", "type")
+    list_display = ("category", "points", "order", "text")
+    list_filter = ("category__board__game", "category__board", "category")
     search_fields = ("text", "answer")
 
 

@@ -1,7 +1,55 @@
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum, Case, When, Value, IntegerField
 from colorfield.fields import ColorField
+
+
+def validate_slides(value):
+    """
+    Validates the structure of the slides JSON field.
+    Each slide should be a dict with optional fields: text, media_type, media_url, answer
+    """
+    if not isinstance(value, list):
+        raise ValidationError("Slides must be a list")
+
+    for i, slide in enumerate(value):
+        if not isinstance(slide, dict):
+            raise ValidationError(f"Slide {i} must be a dictionary")
+
+        # Validate allowed fields
+        allowed_fields = {"text", "media_type", "media_url", "answer"}
+        for key in slide.keys():
+            if key not in allowed_fields:
+                raise ValidationError(
+                    f"Slide {i} has invalid field '{key}'. "
+                    f"Allowed fields: {', '.join(allowed_fields)}"
+                )
+
+        # Validate media_type if present
+        if "media_type" in slide:
+            valid_media_types = {"image", "video", "audio"}
+            if slide["media_type"] not in valid_media_types:
+                raise ValidationError(
+                    f"Slide {i} has invalid media_type '{slide['media_type']}'. "
+                    f"Must be one of: {', '.join(valid_media_types)}"
+                )
+
+            # If media_type is set, media_url should also be present
+            if "media_url" not in slide:
+                raise ValidationError(f"Slide {i} has media_type but no media_url")
+
+        # Validate media_url if present
+        if "media_url" in slide and not isinstance(slide["media_url"], str):
+            raise ValidationError(f"Slide {i} media_url must be a string")
+
+        # Validate text if present
+        if "text" in slide and not isinstance(slide["text"], str):
+            raise ValidationError(f"Slide {i} text must be a string")
+
+        # Validate answer if present
+        if "answer" in slide and not isinstance(slide["answer"], str):
+            raise ValidationError(f"Slide {i} answer must be a string")
 
 
 def get_score_annotation():
@@ -62,23 +110,14 @@ class Category(models.Model):
 
 
 class Question(models.Model):
-    QUESTION_TYPES = [
-        ("text", "Text Only"),
-        ("image", "Image"),
-        ("video", "Video"),
-        ("audio", "Audio"),
-    ]
-
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="questions")
     flags = models.JSONField(default=list)
-    type = models.CharField(max_length=5, choices=QUESTION_TYPES, default="text")
     text = models.TextField()
     answer = models.TextField()
     points = models.IntegerField(validators=[MinValueValidator(0)])
     answered = models.BooleanField(default=False)
     order = models.PositiveIntegerField(blank=True, null=True)
-    media_url = models.URLField(blank=True, null=True)
-    media_answer_url = models.URLField(blank=True, null=True)
+    slides = models.JSONField(default=list, blank=True, validators=[validate_slides])
     state_version = models.IntegerField(default=0)
 
     class Meta:
@@ -87,6 +126,30 @@ class Question(models.Model):
 
     def __str__(self):
         return f"{self.category.name} - {self.points}"
+
+    def save(self, *args, **kwargs):
+        """Override save to ensure slides field validation is always run."""
+        # Only validate the slides field to avoid issues with JSONField defaults
+        from django.core.exceptions import ValidationError
+
+        errors = {}
+        try:
+            validate_slides(self.slides)
+        except ValidationError as e:
+            errors["slides"] = e.messages
+
+        if errors:
+            raise ValidationError(errors)
+
+        super().save(*args, **kwargs)
+
+    @property
+    def type(self):
+        """
+        Automatically determine question type based on slides field.
+        Returns 'slides' if slides exist, otherwise 'text'.
+        """
+        return "slides" if self.slides else "text"
 
 
 class Team(models.Model):
