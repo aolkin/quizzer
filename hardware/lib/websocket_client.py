@@ -14,7 +14,7 @@ class HardwareWebSocketClient:
 
     Handles:
     - WebSocket connection management
-    - Auto-reconnection with exponential backoff
+    - Auto-reconnection with fixed delay
     - Ping/pong for latency monitoring
     - Message routing
 
@@ -96,7 +96,11 @@ class HardwareWebSocketClient:
         while True:
             try:
                 message = await self.websocket.recv()
-                data = json.loads(message)
+                try:
+                    data = json.loads(message)
+                except json.JSONDecodeError as e:
+                    self.logger.error(f"Invalid JSON received: {e}")
+                    continue
 
                 if data.get("type") == "ping":
                     await self._handle_ping(data)
