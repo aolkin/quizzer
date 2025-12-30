@@ -618,15 +618,21 @@ Add host's own latency to the overlay:
 
 - No new packages required
 - No backend changes required for Phase 1 & 2
-- Backend changes required only for Phase 3 (latency monitoring)
+- Backend changes required only for Phase 3 (latency monitoring):
+  - Sender ID injection in backend
+  - Targeted pong delivery
+  - **TODO #24** (Hardware WebSocket Client Library) should be updated to support ping/pong
 
 ## Priority
 
 **Medium-High** - Improves host visibility and debugging, especially as more client types are added (OSC bridge, future integrations).
 
+Phase 1 & 2 can be implemented independently. Phase 3 (latency) should be implemented **after TODO #24** so hardware clients get ping/pong support.
+
 ## Related TODOs
 
-- Related to TODO #22 (WebSocket ↔ OSC Bridge) - will benefit from multi-client tracking
+- **TODO #24** (Hardware WebSocket Client Library) - Should implement ping/pong handling for Phase 3
+- **TODO #22** (WebSocket ↔ OSC Bridge) - Will benefit from multi-client tracking
 - Complements existing buzzer connection indicator in ScoreFooter
 - No dependencies on authentication TODOs (uses existing WebSocket patterns)
 

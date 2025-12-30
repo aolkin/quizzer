@@ -288,6 +288,7 @@ outgoing:
 
 ## Dependencies
 
+- **TODO #24** (Hardware WebSocket Client Library) - Should be implemented first for reusable WebSocket connection logic
 - Python OSC library (TBD: `python-osc` or `pythonosc`)
 - PyYAML (for configuration parsing)
 - `websockets` library (already used by `/hardware/buzzers.py`)
@@ -297,8 +298,12 @@ outgoing:
 
 **Medium** - Enables professional A/V integration, expands hardware options beyond GPIO.
 
+Should be implemented **after TODO #24** (Hardware WebSocket Client Library) for code reuse.
+
 ## Related TODOs
 
+- **TODO #24** (Hardware WebSocket Client Library) - Prerequisite: provides base class for WebSocket clients
+- **TODO #23** (Connection Status Overlay) - Will benefit from this bridge's connection tracking
 - References `/hardware/buzzers.py` as implementation pattern
 - Could integrate with TODO #18 (REST Endpoints) for hybrid control
 - Independent of authentication TODOs (uses same WebSocket pattern as existing hardware)
