@@ -110,7 +110,7 @@ class HardwareWebSocketClient:
 
     async def connect(self):
         """Connect to WebSocket server with auto-reconnect."""
-        backoff = 0.1  # Start at 100ms
+        backoff = 0.1
         max_backoff = 5.0
 
         while self.running:
@@ -122,13 +122,8 @@ class HardwareWebSocketClient:
                     self.websocket = ws
                     self.logger.info(f"Connected to {uri}")
 
-                    # Call setup hook
                     await self.setup()
-
-                    # Reset backoff on successful connection
                     backoff = 0.1
-
-                    # Listen for messages
                     await self._message_loop()
 
             except websockets.ConnectionClosed:
@@ -136,11 +131,9 @@ class HardwareWebSocketClient:
             except Exception as e:
                 self.logger.error(f"Connection error: {e}")
             finally:
-                # Call teardown hook
                 await self.teardown()
                 self.websocket = None
 
-            # Wait before reconnecting
             if self.running:
                 self.logger.info(f"Reconnecting in {backoff:.1f}s...")
                 await asyncio.sleep(backoff)
@@ -158,8 +151,6 @@ class HardwareWebSocketClient:
     def stop(self):
         """Stop the client."""
         self.running = False
-
-    # Abstract methods for subclasses
 
     async def handle_message(self, message: dict):
         """
