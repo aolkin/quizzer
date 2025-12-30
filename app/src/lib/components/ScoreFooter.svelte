@@ -97,7 +97,9 @@
       >
         <div class="flex items-center justify-between">
           <h4 class="text-lg font-bold">{team.name}</h4>
-          <span class="text-2xl" data-testid="team-score-{team.id}">{getScore(team)} {game.points_term}</span>
+          <span class="text-2xl" data-testid="team-score-{team.id}"
+            >{getScore(team)} {game.points_term}</span
+          >
         </div>
 
         {#if mode === 'host'}
@@ -110,7 +112,9 @@
               >
                 <span>{player.name}</span>
                 <div class="flex gap-2">
-                  <span data-testid="player-score-{player.id}">{getScore(player)} {game.points_term}</span>
+                  <span data-testid="player-score-{player.id}"
+                    >{getScore(player)} {game.points_term}</span
+                  >
                   {#if currentQuestion}
                     <button
                       class="variant-filled-success btn-icon text-2xl"

@@ -126,21 +126,47 @@ jobs:
         run: |
           cd service
           python manage.py runserver 8000 &
+          BACKEND_PID=$!
           # Wait for server to be ready
           for i in {1..30}; do
-            curl -s http://localhost:8000/api/game/1/ > /dev/null 2>&1 && break || true
+            if curl -s http://localhost:8000/api/game/1/ > /dev/null 2>&1; then
+              echo "Backend server is ready"
+              break
+            fi
+            if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+              echo "Backend server process exited unexpectedly"
+              exit 1
+            fi
             sleep 1
           done
+          # Final check
+          if ! curl -s http://localhost:8000/api/game/1/ > /dev/null 2>&1; then
+            echo "Backend server failed to become ready within timeout"
+            exit 1
+          fi
 
       - name: Start frontend server
         run: |
           cd app
           VITE_API_ENDPOINT=localhost:8000 bun run dev &
+          FRONTEND_PID=$!
           # Wait for server to be ready
           for i in {1..30}; do
-            curl -s http://localhost:5173 > /dev/null 2>&1 && break || true
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "Frontend server is ready"
+              break
+            fi
+            if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+              echo "Frontend server process exited unexpectedly"
+              exit 1
+            fi
             sleep 1
           done
+          # Final check
+          if ! curl -s http://localhost:5173 > /dev/null 2>&1; then
+            echo "Frontend server failed to become ready within timeout"
+            exit 1
+          fi
 
       - name: Run E2E tests
         run: |

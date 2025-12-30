@@ -4,20 +4,34 @@ Playwright E2E tests for the Quizzer application, testing the full stack includi
 
 ## Running Tests
 
+**Prerequisites:** Start the Django backend and Vite dev server before running tests:
+
+```bash
+# Terminal 1: Start backend
+cd service
+python manage.py runserver 8000
+
+# Terminal 2: Start frontend
+cd app
+VITE_API_ENDPOINT=localhost:8000 bun run dev
+```
+
+Then run tests:
+
 ```bash
 cd app
 
 # Run all E2E tests
-npm run test:e2e
+bun run test:e2e
 
 # Run with UI mode (interactive debugging)
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # Run in debug mode
-npm run test:e2e:debug
+bun run test:e2e:debug
 ```
 
-The test runner automatically starts the Django backend and Vite dev server.
+In CI, the workflow starts both servers automatically before running tests.
 
 ## Writing Tests
 
@@ -55,6 +69,6 @@ Test data is loaded from `fixtures/test_game.json` via the import API during glo
 
 ## Debugging
 
-- **HTML Report**: `npx playwright show-report`
+- **HTML Report**: `bunx playwright show-report`
 - **Screenshots**: Failed tests save screenshots to `test-results/`
-- **Traces**: `npx playwright show-trace test-results/path-to-trace.zip`
+- **Traces**: `bunx playwright show-trace test-results/path-to-trace.zip`

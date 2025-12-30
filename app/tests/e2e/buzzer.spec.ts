@@ -12,16 +12,17 @@ test.describe('Buzzer System', () => {
     // Check that buzzer button has one of the expected states
     await expect(buzzerButton).toContainText(/Enable|Disable|Reset/, { timeout: 5000 });
 
-    // Click to toggle state
+    // Click to toggle state - button should remain functional
     await buzzerButton.click();
-    await page.waitForTimeout(500);
 
-    // Verify the button is still visible after clicking
-    await expect(buzzerButton).toBeVisible();
+    // Verify the button is still visible and in a valid state after clicking
+    await expect(buzzerButton).toBeVisible({ timeout: 5000 });
     await expect(buzzerButton).toContainText(/Enable|Disable|Reset/, { timeout: 5000 });
   });
 
-  test('host presents question, presenter shows full-screen question display', async ({ browser }) => {
+  test('host presents question, presenter shows full-screen question display', async ({
+    browser,
+  }) => {
     const hostContext = await browser.newContext();
     const presenterContext = await browser.newContext();
 
@@ -40,13 +41,16 @@ test.describe('Buzzer System', () => {
       presenterPage.waitForLoadState('networkidle'),
     ]);
 
+    // Select a board and wait for categories to appear
     const boardSelector = hostPage.locator('[data-testid^="board-selector-"]').first();
     await boardSelector.click();
-    await hostPage.waitForTimeout(500);
+    await expect(hostPage.locator('[data-testid^="category-"]').first()).toBeVisible({
+      timeout: 5000,
+    });
 
+    // Select a question and wait for present button to appear
     const question = hostPage.locator('[data-testid^="question-"]').first();
     await question.click();
-    await hostPage.waitForTimeout(300);
 
     const presentButton = hostPage.locator('[data-testid="present-question"]');
     await expect(presentButton).toBeVisible({ timeout: 5000 });
