@@ -45,7 +45,7 @@ export default defineConfig({
       },
       {
         command: 'VITE_API_ENDPOINT=localhost:8000 bun run dev',
-        url: 'http://localhost:5173',
+        url: 'http://localhost:5173/health',
         reuseExistingServer: !process.env.CI,
         timeout: 30 * 1000,
       },
