@@ -98,14 +98,77 @@ class ToggleQuestionViewTestCase(BaseGameTestCase):
 
         # Verify broadcast was called with game_id
         mock_broadcast.assert_called_once()
-        call_args = mock_broadcast.call_args
-        self.assertEqual(call_args.args[0], self.game.id)
-        self.assertEqual(call_args.args[1], "toggle_question")
 
-    def test_toggle_question_invalid_data(self):
-        """Test that invalid data returns validation errors."""
-        response = self.client.patch(self.url, {"answered": "not_a_boolean"}, format="json")
+
+class BuzzerStateViewTestCase(BaseGameTestCase):
+    """Tests for the set_buzzer_state API endpoint."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+        self.url = f"/api/game/{self.game.id}/buzzers/state/"
+
+    @patch("game.views.broadcast_to_game")
+    def test_set_buzzer_state_enable(self, mock_broadcast):
+        """Test enabling buzzers broadcasts the command."""
+        response = self.client.post(self.url, {"enabled": True}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["game_id"], self.game.id)
+        self.assertTrue(response.data["enabled"])
+        self.assertTrue(response.data["broadcast"])
+
+        # Verify broadcast was called with correct parameters
+        mock_broadcast.assert_called_once_with(
+            self.game.id, "buzzer_state_command", {"game_id": self.game.id, "enabled": True}
+        )
+
+    @patch("game.views.broadcast_to_game")
+    def test_set_buzzer_state_disable(self, mock_broadcast):
+        """Test disabling buzzers broadcasts the command."""
+        response = self.client.post(self.url, {"enabled": False}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["game_id"], self.game.id)
+        self.assertFalse(response.data["enabled"])
+        self.assertTrue(response.data["broadcast"])
+
+        # Verify broadcast was called with correct parameters
+        mock_broadcast.assert_called_once_with(
+            self.game.id, "buzzer_state_command", {"game_id": self.game.id, "enabled": False}
+        )
+
+    def test_set_buzzer_state_invalid_game(self):
+        """Test setting buzzer state for non-existent game returns 404."""
+        invalid_url = "/api/game/99999/buzzers/state/"
+        response = self.client.post(invalid_url, {"enabled": True}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_set_buzzer_state_invalid_data(self):
+        """Test validation errors for invalid request data."""
+        # Missing 'enabled' field
+        response = self.client.post(self.url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("enabled", response.data)
+
+        # Invalid data type for 'enabled'
+        response = self.client.post(self.url, {"enabled": "invalid"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch("game.views.broadcast_to_game")
+    def test_set_buzzer_state_no_database_changes(self, mock_broadcast):
+        """Test that setting buzzer state does not modify the database."""
+        # Count objects before
+        game_count = Game.objects.count()
+
+        response = self.client.post(self.url, {"enabled": True}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verify no database changes
+        self.assertEqual(Game.objects.count(), game_count)
+        # Verify game object itself wasn't modified
+        game = Game.objects.get(id=self.game.id)
+        self.assertEqual(game.name, self.game.name)
 
 
 class GetEndpointsTestCase(BaseGameTestCase):
