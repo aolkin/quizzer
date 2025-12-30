@@ -226,7 +226,7 @@ def set_buzzer_state(request, game_id):
     Returns: {game_id, enabled, broadcast: true}
 
     This is a write-only command endpoint with no database persistence.
-    Broadcasts buzzer_state_command to all WebSocket clients connected to this game.
+    Broadcasts toggle_buzzers to all WebSocket clients connected to this game.
     """
     get_object_or_404(Game, id=game_id)
 
