@@ -21,6 +21,7 @@ from django.urls import path
 from game.views import (
     get_board,
     get_game,
+    health_check,
     record_answer,
     toggle_question,
     export_game,
@@ -28,6 +29,7 @@ from game.views import (
 )
 
 urlpatterns = [
+    path("api/health/", health_check),
     path("api/game/<int:game_id>/", get_game),
     path("api/game/<int:game_id>/export/", export_game),
     path("api/game/import/", import_game),

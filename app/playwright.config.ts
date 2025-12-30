@@ -39,7 +39,7 @@ export default defineConfig({
     webServer: [
       {
         command: 'cd ../service && python manage.py runserver 8000',
-        url: 'http://localhost:8000/api/game/1/',
+        url: 'http://localhost:8000/api/health/',
         reuseExistingServer: !process.env.CI,
         timeout: 30 * 1000,
       },
