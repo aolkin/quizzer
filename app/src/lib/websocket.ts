@@ -11,6 +11,12 @@ import { getBoard as apiGetBoard } from './api';
 
 const CLIENT_ID = Math.random().toString(36);
 
+export interface MessageRecipient {
+  channel_id?: string;
+  client_id?: string;
+  client_type?: string;
+}
+
 export class GameWebSocket {
   private socket: WebSocket;
   private reconnectAttempts = 0;
@@ -61,6 +67,13 @@ export class GameWebSocket {
     } else {
       throw new Error('WebSocket is closed');
     }
+  }
+
+  sendTo(recipient: MessageRecipient, message: Record<string, unknown>) {
+    this.send({
+      ...message,
+      recipient,
+    });
   }
 
   handleMessage(event: MessageEvent) {
