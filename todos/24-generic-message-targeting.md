@@ -127,6 +127,10 @@ async def game_message(self, event):
 
 2. **Implement recipient-based routing:**
 
+**Design Note:** The filtering approach is generic - instead of using separate `filter_client_id` and `filter_client_type` event fields, we pass the entire `recipient` dict. This makes the code cleaner and more extensible for future recipient types.
+
+**Code Style Note:** The code examples below include explanatory comments for documentation purposes. In the actual implementation, omit obvious comments (like `# Don't send - client_id doesn't match`) - the code should be self-explanatory. Only include comments for non-obvious business logic or complex algorithms.
+
 ```python
 async def receive_json(self, content):
     """
@@ -165,54 +169,39 @@ async def receive_json(self, content):
             {"type": "game_message", "message": content}
         )
 
-    elif "client_id" in recipient:
-        # Broadcast with client_id filter
-        # Note: This requires storing client metadata or accepting some broadcast overhead
-        # For now, use group_send with filtering in game_message
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "game_message",
-                "message": content,
-                "filter_client_id": recipient["client_id"]
-            }
-        )
-
-    elif "client_type" in recipient:
-        # Broadcast with client_type filter
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "game_message",
-                "message": content,
-                "filter_client_type": recipient["client_type"]
-            }
-        )
-
     else:
-        # Unknown recipient type - reject
-        return
+        # Filtered broadcast (client_id or client_type)
+        # Pass recipient dict for generic filtering
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "game_message",
+                "message": content,
+                "recipient": recipient  # Pass entire recipient for filtering
+            }
+        )
 
 
 async def game_message(self, event):
     """
-    Send message to WebSocket client with optional filtering.
+    Send message to WebSocket client with optional recipient filtering.
+
+    Filters messages based on recipient criteria if present.
     """
     message = event["message"]
+    recipient = event.get("recipient")
 
-    # Check filters
-    filter_client_id = event.get("filter_client_id")
-    filter_client_type = event.get("filter_client_type")
+    # Apply recipient filter if present
+    if recipient:
+        # Generic filter: check if this connection matches the recipient criteria
+        if "client_id" in recipient and self.client_id != recipient["client_id"]:
+            return  # Don't send - client_id doesn't match
 
-    # Apply filters if present
-    if filter_client_id and self.client_id != filter_client_id:
-        return  # Don't send to this client
+        if "client_type" in recipient and self.client_type != recipient["client_type"]:
+            return  # Don't send - client_type doesn't match
 
-    if filter_client_type and self.client_type != filter_client_type:
-        return  # Don't send to this client
-
-    # Inject sender_id
-    message["sender_id"] = self.channel_name
+    # Inject channel_id
+    message["channel_id"] = self.channel_name
 
     await self.send_json(message)
 ```
