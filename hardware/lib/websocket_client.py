@@ -113,7 +113,7 @@ class HardwareWebSocketClient:
                 await self.on_disconnect()
                 await asyncio.sleep(1)
                 await self.connect()
-            except OSError as e:
+            except (OSError, websockets.WebSocketException) as e:
                 self.logger.error(f"Network error: {e}")
                 await self.on_disconnect()
                 await asyncio.sleep(1)
