@@ -1,21 +1,14 @@
 #!/usr/bin/env python3
 
-import sys
 import os
-import signal
 import argparse
 import logging
-import time
 import threading
-import gc
 import asyncio
-import websockets
-import json
-from typing import Dict, Set
 
 import RPi.GPIO as gpio
 
-# gc.disable()
+from lib.websocket_client import HardwareWebSocketClient
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -26,6 +19,7 @@ EN = 16
 IN = 18
 
 LOOP_MAX = 5000
+
 
 class BuzzerThread(threading.Thread):
     def __init__(self):
@@ -72,90 +66,53 @@ class BuzzerThread(threading.Thread):
                             self.callback(c)
                         break
 
-class BuzzerClient:
-    def __init__(self, game_id: int, buzzers: BuzzerThread, server_url: str):
-        self.game_id = game_id
-        self.buzzers = buzzers
-        self.server_url = server_url
-        self.websocket = None
-    
-    async def connect(self):
-        uri = f"ws://{self.server_url}/ws/game/{self.game_id}/?client_type=buzzer"
-        self.websocket = await websockets.connect(
-            uri,
-            ping_interval=15,
-            ping_timeout=5
+class BuzzerClient(HardwareWebSocketClient):
+    def __init__(
+        self, game_id: int, buzzers: BuzzerThread, server_url: str, client_id: str = "main"
+    ):
+        super().__init__(
+            host=server_url,
+            game_id=game_id,
+            client_type="buzzer",
+            client_id=client_id,
+            logger=logger,
         )
-        logger.info(f"Connected to {uri}")
+        self.buzzers = buzzers
 
-    async def listen_for_messages(self):
-        while True:
-            try:
-                message = await self.websocket.recv()
-                data = json.loads(message)
+    async def handle_message(self, message: dict):
+        """Handle buzzer-specific messages."""
+        if message["type"] == "toggle_buzzers":
+            self.buzzers.enabled = message["enabled"]
+            if message["enabled"]:
+                self.buzzers.selected = None
+                await self.send_message("buzzer_pressed", buzzerId=None)
 
-                if data['type'] == 'toggle_buzzers':
-                    self.buzzers.enabled = data['enabled']
-                    if data['enabled']:
-                        self.buzzers.selected = None
-                        await self.websocket.send(json.dumps({
-                            'type': 'buzzer_pressed',
-                            'buzzerId': None
-                        }))
-                elif data['type'] == 'buzzer_set_log_level':
-                    level = data.get('level', 'INFO')
-                    numeric_level = getattr(logging, level.upper(), None)
-                    if isinstance(numeric_level, int):
-                        logging.getLogger().setLevel(numeric_level)
-                        logger.info(f"Log level changed to {level}")
-
-            except websockets.ConnectionClosed:
-                logger.warning("Disconnected, attempting to reconnect...")
-                # Disable buzzers when connection is lost
-                self.buzzers.enabled = False
-                await asyncio.sleep(1)
-                await self.connect()
-                # Continue the loop with the new connection
-            except Exception as e:
-                logger.error(f"Error in listen_for_messages: {e}")
-                # Disable buzzers on error
-                self.buzzers.enabled = False
-                await asyncio.sleep(1)
-                # Attempt to reconnect in case of persistent errors
-                try:
-                    await self.connect()
-                except Exception as reconnect_error:
-                    logger.error(f"Reconnection failed: {reconnect_error}")
+        elif message["type"] == "buzzer_set_log_level":
+            level = message.get("level", "INFO")
+            numeric_level = getattr(logging, level.upper(), None)
+            if isinstance(numeric_level, int):
+                logging.getLogger().setLevel(numeric_level)
+                self.logger.info(f"Log level changed to {level}")
 
     async def handle_buzzer_press(self, buzzer_id: int):
-        """
-        Called by hardware when a buzzer is pressed
-        """
-        try:
-            await self.websocket.send(json.dumps({
-                'type': 'buzzer_pressed',
-                'buzzerId': buzzer_id
-            }))
-        except Exception as e:
-            logger.error(f"Failed to send buzzer press: {e}")
+        """Called by hardware when a buzzer is pressed."""
+        await self.send_message("buzzer_pressed", buzzerId=buzzer_id)
 
     def schedule_buzzer_press(self, buzzer_id: int):
-        asyncio.run_coroutine_threadsafe(
-            self.handle_buzzer_press(buzzer_id), self.loop)
+        """Schedule buzzer press message from hardware thread."""
+        try:
+            loop = asyncio.get_running_loop()
+            asyncio.run_coroutine_threadsafe(
+                self.handle_buzzer_press(buzzer_id), loop
+            )
+        except RuntimeError:
+            logger.warning(
+                f"Buzzer {buzzer_id} pressed but event loop not running"
+            )
 
-    async def run_async(self):
-        self.loop = asyncio.get_running_loop()
-        self.buzzers.callback = self.schedule_buzzer_press
-        self.buzzers.start()
-        await self.connect()
-        asyncio.create_task(self.listen_for_messages())
-
-
-def cleanup_gpio(signum=None, frame=None):
-    """Cleanup GPIO pins on shutdown"""
-    logger.info("Cleaning up GPIO...")
-    gpio.cleanup()
-    sys.exit(0)
+    async def on_disconnect(self):
+        """Disable buzzers when connection is lost."""
+        self.buzzers.enabled = False
 
 
 def setup_logging(log_level: str):
@@ -163,7 +120,7 @@ def setup_logging(log_level: str):
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f'Invalid log level: {log_level}')
-    
+
     logging.basicConfig(
         level=numeric_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -184,8 +141,8 @@ def parse_args():
     parser.add_argument(
         '--server',
         type=str,
-        default=os.getenv('QUIZZER_SERVER', 'quasar.local:8000'),
-        help='Server URL (default: quasar.local:8000, or QUIZZER_SERVER env var)'
+        default=os.getenv('QUIZZER_SERVER', 'quasar.local'),
+        help='Server URL (default: quasar.local, or QUIZZER_SERVER env var)'
     )
     parser.add_argument(
         '--log-level',
@@ -197,20 +154,23 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+async def main():
+    """Main async entry point."""
     args = parse_args()
     setup_logging(args.log_level)
-    
-    # Set up signal handlers for graceful shutdown
-    signal.signal(signal.SIGTERM, cleanup_gpio)
-    signal.signal(signal.SIGINT, cleanup_gpio)
-    
+
     thread = BuzzerThread()
     client = BuzzerClient(args.game_id, thread, args.server)
+
+    thread.callback = client.schedule_buzzer_press
+    thread.start()
+
     try:
-        asyncio.get_event_loop().run_until_complete(client.run_async())
-        asyncio.get_event_loop().run_forever()
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        await client.run()
+    finally:
+        logger.info("Cleaning up GPIO...")
         gpio.cleanup()
-        raise
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
