@@ -343,8 +343,7 @@ private handleMessage(data: any) {
 
   // Handle ping requests (respond with targeted pong)
   else if (data.type === 'ping') {
-    // Use replyTo() helper from TODO #24
-    this.replyTo(data, {
+    this.sendTo({ channel_id: data.channel_id }, {
       type: 'pong',
       timestamp: data.timestamp
     });
@@ -467,7 +466,7 @@ Add host's own latency to the overlay:
 - [ ] Update `setClientConnection()` to capture channel_id from messages
 - [ ] Add `setClientLatency()` method to `GameStateManager`
 - [ ] Implement ping interval in WebSocket client (broadcasts to all)
-- [ ] Implement pong handler using `replyTo()` from TODO #24
+- [ ] Implement pong handler using targeted messages from TODO #24
 - [ ] Calculate round-trip time from pong responses
 - [ ] Display latency in overlay component
 - [ ] Add latency threshold warnings (e.g., >100ms = yellow, >500ms = red)

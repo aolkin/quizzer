@@ -229,17 +229,6 @@ class WebSocketClient {
       recipient
     });
   }
-
-  /**
-   * Reply directly to the sender of a message
-   */
-  replyTo(originalMessage: any, response: object) {
-    if (!originalMessage.channel_id) {
-      throw new Error("Cannot reply: original message has no channel_id");
-    }
-
-    this.sendTo({ channel_id: originalMessage.channel_id }, response);
-  }
 }
 ```
 
@@ -256,13 +245,6 @@ ws.sendTo({ client_id: "osc-lighting" }, { type: "set_brightness", value: 80 });
 
 // Send to all clients of a type
 ws.sendTo({ client_type: "buzzer" }, { type: "toggle_buzzers", enabled: true });
-
-// Reply to a message
-ws.on('message', (data) => {
-  if (data.type === 'ping') {
-    ws.replyTo(data, { type: 'pong', timestamp: data.timestamp });
-  }
-});
 ```
 
 ## Network Efficiency Benefits
@@ -288,7 +270,6 @@ ws.on('message', (data) => {
 
 - [ ] Add TypeScript types for recipient targeting
 - [ ] Implement `sendTo()` helper method
-- [ ] Implement `replyTo()` helper method
 - [ ] Add frontend unit tests for targeting helpers
 - [ ] Update documentation with usage examples
 
