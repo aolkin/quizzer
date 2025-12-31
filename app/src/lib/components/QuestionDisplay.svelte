@@ -30,6 +30,7 @@
     if (!visible && container.parentElement) {
       const originRect = container.parentElement.getBoundingClientRect();
 
+      // Initial position matching the original box
       container.style.zIndex = '-1';
       container.style.top = `${originRect.top}px`;
       container.style.left = `${originRect.left}px`;
@@ -37,6 +38,7 @@
       container.style.height = `${originRect.height}px`;
       container.style.transform = 'initial';
     } else {
+      // Trigger animation to full screen
       container.style.top = '0';
       container.style.left = '0';
       container.style.width = '100vw';
