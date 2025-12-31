@@ -5,7 +5,6 @@
 websocket:
   host: "localhost:8000"      # Quizzer backend host and port
   game_id: 1                  # Game ID to connect to
-  client_type: "osc"          # Client type (always "osc" for this bridge)
   client_id: "osc-main"       # Unique identifier for this bridge instance
 
 # OSC server settings

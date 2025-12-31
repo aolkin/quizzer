@@ -43,7 +43,13 @@ class OSCBridgeClient(HardwareWebSocketClient):
         self.osc_server: Optional[AsyncIOOSCUDPServer] = None
         
     def _get_osc_client(self, host: str, port: int) -> udp_client.SimpleUDPClient:
-        """Get or create an OSC client for a destination."""
+        """
+        Get or create an OSC client for a destination.
+        
+        Note: Clients are cached for the lifetime of the bridge. This is
+        acceptable since destinations are defined in static configuration
+        and typically number only a handful of endpoints.
+        """
         key = f"{host}:{port}"
         if key not in self.osc_clients:
             self.osc_clients[key] = udp_client.SimpleUDPClient(host, port)
@@ -96,7 +102,7 @@ class OSCBridgeClient(HardwareWebSocketClient):
             except Exception as e:
                 logger.error(
                     f"Failed to send OSC message to {dest.get('host')}:"
-                    f"{dest.get('port')}: {e}"
+                    f" {dest.get('port')}: {e}"
                 )
     
     def _convert_websocket_to_osc(self, value: Any, target_type: str) -> Any:
