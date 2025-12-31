@@ -21,10 +21,9 @@
 ### What's Remaining
 
 ⏳ **Phase 3: Latency Monitoring** - Requires:
-- Backend changes to inject `sender_id` and handle ping/pong messages
-- Frontend ping interval and pong response handler
+- **TODO #24** (Generic Message Targeting) - Must be implemented first
+- Frontend ping interval and pong response handler using targeted messages
 - Display latency values in overlay
-- This should be implemented after TODO #24 (Hardware WebSocket Client Library)
 
 ## Problem
 
@@ -253,139 +252,55 @@ Add the overlay component to the host view:
 
 Add ping/pong mechanism to measure WebSocket round-trip time from host to all clients.
 
+**Prerequisites:**
+- **TODO #24** (Generic Message Targeting) must be implemented first
+- Requires `sender_id` injection and targeted message delivery
+
 **Architecture:**
 1. **Host broadcasts ping** - Sent to server, relayed to all clients
-2. **All clients respond with pong** - Including the host itself
+2. **All clients respond with targeted pong** - Using recipient.sender_id to target the host
 3. **Host receives all pongs** - Calculates round-trip latency to each client
-4. **Server adds sender_id** - Automatic identifier for message routing (separate from custom `client_id`)
-5. **Targeted pong responses** - Clients address pong to specific sender to reduce network noise
 
 **Message Flow:**
 ```
-Host → Server: {type: "ping", timestamp: 123, sender_id: "auto-xyz"}
-Server → All Clients: (broadcast with sender_id preserved)
+Host → Server: {type: "ping", timestamp: 123}
+Server → All Clients: (broadcast with sender_id injected by TODO #24)
 
-Client A → Server: {type: "pong", timestamp: 123, target_sender_id: "auto-xyz"}
-Server → Host only: (targeted delivery)
+Client A → Server: {type: "pong", timestamp: 123, recipient: {sender_id: "host-channel"}}
+Server → Host only: (targeted delivery via TODO #24)
 
-Client B → Server: {type: "pong", timestamp: 123, target_sender_id: "auto-xyz"}
-Server → Host only: (targeted delivery)
+Client B → Server: {type: "pong", timestamp: 123, recipient: {sender_id: "host-channel"}}
+Server → Host only: (targeted delivery via TODO #24)
 
-Host → Server: {type: "pong", timestamp: 123, target_sender_id: "auto-xyz"}
+Host → Server: {type: "pong", timestamp: 123, recipient: {sender_id: "host-channel"}}
 Server → Host only: (host measures its own latency to server)
 ```
 
 **Benefits:**
 - Single ping broadcast measures latency to all clients
 - Host can measure its own backend latency
-- Reduced network noise via targeted pong delivery
-- Leverages existing relay/broadcast architecture
-
-### Backend Changes Required
-
-#### 1. Add sender_id to All Messages
-
-**Update**: `/home/user/quizzer/service/game/consumers.py`
-
-Add `sender_id` to connection state and inject into all messages:
-```python
-class GameConsumer(AsyncJsonWebsocketConsumer):
-    async def connect(self):
-        # ... existing connection logic
-
-        # Generate unique sender_id for this WebSocket connection
-        self.sender_id = f"sender-{self.channel_name}"
-
-        await self.accept()
-        # ... rest of existing logic
-
-    async def receive_json(self, content):
-        message_type = content.get("type")
-
-        # Add sender_id to all incoming messages before relaying
-        content["sender_id"] = self.sender_id
-
-        # Handle pong with targeted delivery
-        if message_type == "pong":
-            target_sender_id = content.get("target_sender_id")
-
-            if target_sender_id:
-                # Targeted delivery: send only to specific sender
-                await self.channel_layer.send(
-                    target_sender_id.replace("sender-", ""),  # Extract channel name
-                    {
-                        "type": "relay_message",
-                        "message": content
-                    }
-                )
-            else:
-                # No target: broadcast to all (fallback)
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {"type": "relay_message", "message": content}
-                )
-            return
-
-        # All other messages: relay to group as usual
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {"type": "relay_message", "message": content}
-        )
-
-    async def relay_message(self, event):
-        """Send message to WebSocket"""
-        await self.send_json(event["message"])
-```
-
-#### 2. Channel Layer Direct Messaging
-
-The above code uses `channel_layer.send()` for targeted delivery to a specific channel (sender).
-
-**Key Insight:**
-- `sender_id = "sender-{channel_name}"` uniquely identifies each WebSocket connection
-- `channel_layer.send(channel_name, ...)` sends to specific connection
-- `channel_layer.group_send(group, ...)` broadcasts to all in group
+- Reduced network noise via targeted pong delivery (see TODO #24 for efficiency analysis)
+- Leverages generic targeting infrastructure from TODO #24
 
 ### Frontend Changes Required
 
-#### State Management
-
 **Update**: `/home/user/quizzer/app/src/lib/game-state.svelte.ts`
 
-Add sender tracking:
+Add sender tracking to ClientConnection interface (sender_id will be available via TODO #24):
 ```typescript
 interface ClientConnection {
   clientType: string;
   clientId: string | null;
-  senderId?: string;      // Add sender_id from server
+  senderId?: string;      // Sender ID from TODO #24
   connected: boolean;
   lastSeen: number;
   latency?: number;
 }
-
-setClientConnection(
-  clientType: string,
-  clientId: string | null,
-  connected: boolean,
-  senderId?: string        // Add parameter
-) {
-  const key = `${clientType}:${clientId || 'default'}`;
-  this.clientConnections.set(key, {
-    clientType,
-    clientId,
-    senderId,            // Store sender_id
-    connected,
-    lastSeen: Date.now(),
-    latency: this.clientConnections.get(key)?.latency
-  });
-}
 ```
-
-#### WebSocket Handler Updates
 
 **Update**: `/home/user/quizzer/app/src/lib/websocket.ts`
 
-Add latency monitoring:
+Add latency monitoring (using targeting from TODO #24):
 ```typescript
 private pingInterval?: ReturnType<typeof setInterval>;
 private pendingPings = new Map<number, number>();  // timestamp -> sentTime
@@ -410,7 +325,7 @@ private startLatencyMonitoring() {
 
 // Handle incoming messages
 private handleMessage(data: any) {
-  // Extract and store our own sender_id from any message we receive
+  // Extract and store our own sender_id (injected by TODO #24)
   if (data.sender_id && !this.hostSenderId) {
     this.hostSenderId = data.sender_id;
   }
@@ -421,18 +336,17 @@ private handleMessage(data: any) {
       data.client_type,
       data.client_id,
       data.connected,
-      data.sender_id  // Pass sender_id
+      data.sender_id  // Pass sender_id from TODO #24
     );
     // ... existing buzzer logic
   }
 
-  // Handle ping requests (respond with pong)
+  // Handle ping requests (respond with targeted pong)
   else if (data.type === 'ping') {
-    // Respond with pong, targeting the original sender
-    this.send({
+    // Use replyTo() helper from TODO #24
+    this.replyTo(data, {
       type: 'pong',
-      timestamp: data.timestamp,
-      target_sender_id: data.sender_id  // Target the ping sender
+      timestamp: data.timestamp
     });
   }
 
@@ -459,8 +373,7 @@ private handleMessage(data: any) {
 
       // If pong is from ourselves (host), track our own latency
       if (respondingSenderId === this.hostSenderId) {
-        // Could store in separate state or add "host" to clientConnections
-        // For now, log it or add to overlay as special entry
+        // Store host latency separately or log it
         console.log(`Host latency: ${latency}ms`);
       }
     }
@@ -502,40 +415,21 @@ Add host's own latency to the overlay:
 </ul>
 ```
 
-### Network Noise Reduction
-
-**Without targeted pong:**
-- Host pings → relayed to N clients
-- N clients pong → relayed to N clients (including host)
-- Total: 1 + N² messages
-
-**With targeted pong (target_sender_id):**
-- Host pings → relayed to N clients
-- N clients pong → each delivered only to host
-- Total: 1 + N + N = 2N + 1 messages
-
-**Example with 5 clients:**
-- Without targeting: 1 + 25 = **26 messages**
-- With targeting: 1 + 5 + 5 = **11 messages**
-- Savings: **58% reduction**
-
 ### Implementation Considerations
 
 **Pros:**
 - Single broadcast ping measures all client latencies
 - Host can measure its own server latency
-- Reduced network noise with targeted pong
+- Reduced network noise with targeted pong (see TODO #24 for efficiency analysis)
 - Works with existing relay architecture
 
 **Cons:**
-- Requires backend changes (sender_id injection, targeted delivery)
-- More complex than simple request/response
-- Latency includes server relay time (not just network)
+- Requires TODO #24 (Generic Message Targeting) to be implemented first
+- Latency includes server relay time (not just network round-trip)
 
 **Recommendation:**
-- Implement as **Phase 3** after core overlay is working
-- Start with broadcast pong (simpler), add targeting later if noise is an issue
-- Consider making ping interval configurable (default 5s, increase to 10s if too noisy)
+- Implement as **Phase 3** after TODO #24 is complete
+- Consider making ping interval configurable (default 5s)
 
 ## Implementation Steps
 
@@ -567,10 +461,14 @@ Add host's own latency to the overlay:
 
 ### Phase 3: Latency Monitoring (Optional) ⏳ PENDING
 
-- [ ] Add ping/pong message types to backend (`/home/user/quizzer/service/game/consumers.py`)
+**Prerequisite:** TODO #24 (Generic Message Targeting) must be completed first
+
+- [ ] Add `senderId` field to `ClientConnection` interface
+- [ ] Update `setClientConnection()` to capture sender_id from messages
 - [ ] Add `setClientLatency()` method to `GameStateManager`
-- [ ] Implement ping interval in WebSocket client
-- [ ] Implement pong handler to calculate round-trip time
+- [ ] Implement ping interval in WebSocket client (broadcasts to all)
+- [ ] Implement pong handler using `replyTo()` from TODO #24
+- [ ] Calculate round-trip time from pong responses
 - [ ] Display latency in overlay component
 - [ ] Add latency threshold warnings (e.g., >100ms = yellow, >500ms = red)
 
@@ -644,20 +542,18 @@ Add host's own latency to the overlay:
 
 - No new packages required
 - No backend changes required for Phase 1 & 2
-- Backend changes required only for Phase 3 (latency monitoring):
-  - Sender ID injection in backend
-  - Targeted pong delivery
-  - **TODO #24** (Hardware WebSocket Client Library) should be updated to support ping/pong
+- Phase 3 (latency monitoring) requires:
+  - **TODO #24** (Generic Message Targeting) - Must be implemented first
 
 ## Priority
 
 **Medium-High** - Improves host visibility and debugging, especially as more client types are added (OSC bridge, future integrations).
 
-Phase 1 & 2 can be implemented independently. Phase 3 (latency) should be implemented **after TODO #24** so hardware clients get ping/pong support.
+Phase 1 & 2 are complete. Phase 3 (latency) should be implemented **after TODO #24**.
 
 ## Related TODOs
 
-- **TODO #24** (Hardware WebSocket Client Library) - Should implement ping/pong handling for Phase 3
+- **TODO #24** (Generic Message Targeting) - Required for Phase 3 latency monitoring
 - **TODO #22** (WebSocket ↔ OSC Bridge) - Will benefit from multi-client tracking
 - Complements existing buzzer connection indicator in ScoreFooter
 - No dependencies on authentication TODOs (uses existing WebSocket patterns)
