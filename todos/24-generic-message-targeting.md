@@ -267,31 +267,10 @@ ws.on('message', (data) => {
 
 ## Network Efficiency Benefits
 
-### Example: Ping/Pong Latency Monitoring (5 clients)
-
-**Without targeting (broadcast):**
-- Host sends ping → 5 clients receive (5 messages)
-- 5 clients send pong → broadcast to 5 clients each (25 messages)
-- **Total: 30 messages**
-
-**With targeting:**
-- Host sends ping → 5 clients receive (5 messages)
-- 5 clients send targeted pong → only host receives (5 messages)
-- **Total: 10 messages**
-- **Reduction: 67%**
-
-### Example: 20 Clients
-
-**Without targeting:**
-- 1 ping broadcast → 20 clients
-- 20 pong broadcasts → 400 messages
-- **Total: 420 messages**
-
-**With targeting:**
-- 1 ping broadcast → 20 clients
-- 20 targeted pongs → 20 messages
-- **Total: 40 messages**
-- **Reduction: 90%**
+**Example: Ping/Pong with 20 clients**
+- Without targeting: 1 ping + (20 pongs × 20 recipients) = **421 messages**
+- With targeting: 1 ping + 20 targeted pongs = **21 messages**
+- **Reduction: 95%**
 
 ## Implementation Phases
 
@@ -320,15 +299,6 @@ ws.on('message', (data) => {
 - [ ] Add E2E tests for multi-client targeted messaging
 - [ ] Performance testing with multiple clients
 
-## Design Principles
-
-1. **Backward compatible**: Messages without `recipient` field broadcast as before
-2. **Explicit over implicit**: Recipient must be clearly specified, no ambiguity
-3. **Type-safe**: Frontend helpers enforce correct recipient format
-4. **Efficient**: Minimize network traffic by routing messages only where needed
-5. **Simple**: One clear routing rule per message (not multiple)
-6. **Extensible**: Easy to add new recipient types in the future if needed
-
 ## Dependencies
 
 - No new packages required
@@ -343,12 +313,3 @@ ws.on('message', (data) => {
 
 - **TODO #23 Phase 3** (Connection Status Overlay - Latency Monitoring) - Will use targeted pong messages
 - **TODO #22** (WebSocket ↔ OSC Bridge) - Will benefit from client_type and client_id targeting
-- **Future**: Hardware-specific commands, admin controls, client configuration
-
-## Future Enhancements (Out of Scope)
-
-- **Message acknowledgment**: Request/response pattern with message IDs
-- **Message persistence**: Store messages for clients that reconnect
-- **Rate limiting**: Per-client or per-type message throttling
-- **Message priority**: High-priority messages bypass queues
-- **Multicast groups**: Dynamic groups beyond client_type (e.g., "team-red")
