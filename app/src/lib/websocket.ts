@@ -84,8 +84,9 @@ export class GameWebSocket {
             const board = await apiGetBoard(data.board);
             // Only update if we're still on the same board (handles race conditions)
             if (gameState.currentBoard === data.board) {
+              // Extract answered question IDs from API response (answered field only used for initial load)
               const answeredQuestionIds = allQuestions(board)
-                .filter((q) => q.answered)
+                .filter((q) => (q as { answered?: boolean }).answered)
                 .map((q) => q.id);
               gameState.setBoard(board, answeredQuestionIds);
             }

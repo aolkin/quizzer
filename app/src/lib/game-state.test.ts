@@ -39,7 +39,6 @@ describe('GameStateManager', () => {
               flags: [],
               answer: 'A1',
               points: 100,
-              answered: true,
               slides: [],
             },
             {
@@ -49,7 +48,6 @@ describe('GameStateManager', () => {
               flags: [],
               answer: 'A2',
               points: 200,
-              answered: false,
               slides: [],
             },
           ],
