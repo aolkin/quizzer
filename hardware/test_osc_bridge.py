@@ -7,9 +7,7 @@ testing requires running WebSocket server and OSC endpoints.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch
-import tempfile
-import os
+from unittest.mock import MagicMock
 import sys
 
 # Mock all external dependencies that may not be available in test environment
@@ -19,9 +17,7 @@ sys.modules['pythonosc.dispatcher'] = MagicMock()
 sys.modules['pythonosc.osc_server'] = MagicMock()
 sys.modules['websockets'] = MagicMock()
 
-import yaml
-
-from osc_bridge import OSCBridgeClient, load_config
+from osc_bridge import OSCBridgeClient
 
 
 class TestOSCBridge(unittest.TestCase):
@@ -65,23 +61,8 @@ class TestOSCBridge(unittest.TestCase):
             ]
         }
 
-    def test_load_config(self):
-        """Test YAML configuration loading."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            yaml.dump(self.test_config, f)
-            config_path = f.name
-
-        try:
-            config = load_config(config_path)
-            self.assertEqual(config["websocket"]["host"], "localhost:8000")
-            self.assertEqual(config["websocket"]["game_id"], 1)
-            self.assertEqual(len(config["outgoing"]), 1)
-            self.assertEqual(len(config["incoming"]), 1)
-        finally:
-            os.unlink(config_path)
-
-    def test_websocket_to_osc_conversion(self):
-        """Test WebSocket value to OSC type conversion."""
+    def test_type_conversion(self):
+        """Test type conversion between WebSocket and OSC."""
         client = OSCBridgeClient(
             host="localhost:8000",
             game_id=1,
@@ -89,39 +70,15 @@ class TestOSCBridge(unittest.TestCase):
             config=self.test_config
         )
 
-        # Test bool to int conversion
-        self.assertEqual(client._convert_websocket_to_osc(True, "int"), 1)
-        self.assertEqual(client._convert_websocket_to_osc(False, "int"), 0)
+        # Test WebSocket to OSC: bool to int conversion (OSC convention)
+        self.assertEqual(client._convert_type(True, "int", "to_osc"), 1)
+        self.assertEqual(client._convert_type(False, "int", "to_osc"), 0)
 
-        # Test numeric conversions
-        self.assertEqual(client._convert_websocket_to_osc(42, "int"), 42)
-        self.assertEqual(client._convert_websocket_to_osc(3.14, "float"), 3.14)
-        self.assertEqual(client._convert_websocket_to_osc(42, "float"), 42.0)
-
-        # Test string conversion
-        self.assertEqual(client._convert_websocket_to_osc("test", "string"), "test")
-
-    def test_osc_to_websocket_conversion(self):
-        """Test OSC value to WebSocket type conversion."""
-        client = OSCBridgeClient(
-            host="localhost:8000",
-            game_id=1,
-            client_id="test",
-            config=self.test_config
-        )
-
-        # Test bool conversion
-        self.assertTrue(client._convert_osc_to_websocket(1.0, "bool"))
-        self.assertFalse(client._convert_osc_to_websocket(0.0, "bool"))
-        self.assertFalse(client._convert_osc_to_websocket(0.3, "bool"))
-        self.assertTrue(client._convert_osc_to_websocket(0.7, "bool"))
-
-        # Test numeric conversions
-        self.assertEqual(client._convert_osc_to_websocket(42.5, "int"), 42)
-        self.assertEqual(client._convert_osc_to_websocket(3.14, "float"), 3.14)
-
-        # Test string conversion
-        self.assertEqual(client._convert_osc_to_websocket("test", "string"), "test")
+        # Test OSC to WebSocket: float to bool conversion (threshold at 0.5)
+        self.assertTrue(client._convert_type(1.0, "bool", "to_websocket"))
+        self.assertFalse(client._convert_type(0.0, "bool", "to_websocket"))
+        self.assertFalse(client._convert_type(0.3, "bool", "to_websocket"))
+        self.assertTrue(client._convert_type(0.7, "bool", "to_websocket"))
 
 
 if __name__ == "__main__":

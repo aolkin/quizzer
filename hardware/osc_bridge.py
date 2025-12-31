@@ -88,8 +88,8 @@ class OSCBridgeClient(HardwareWebSocketClient):
                         )
                         continue
                     
-                    converted_value = self._convert_websocket_to_osc(
-                        value, arg_type
+                    converted_value = self._convert_type(
+                        value, arg_type, "to_osc"
                     )
                     osc_args.append(converted_value)
                 
@@ -105,15 +105,26 @@ class OSCBridgeClient(HardwareWebSocketClient):
                     f" {dest.get('port')}: {e}"
                 )
     
-    def _convert_websocket_to_osc(self, value: Any, target_type: str) -> Any:
-        """Convert WebSocket value to OSC type."""
+    def _convert_type(
+        self, value: Any, target_type: str, direction: str = "to_osc"
+    ) -> Any:
+        """
+        Convert value between WebSocket and OSC types.
+        
+        Args:
+            value: Value to convert
+            target_type: Target type (int, float, bool, string)
+            direction: "to_osc" or "to_websocket"
+        """
         if target_type == "int":
-            if isinstance(value, bool):
+            if direction == "to_osc" and isinstance(value, bool):
                 return 1 if value else 0
             return int(value)
         elif target_type == "float":
             return float(value)
         elif target_type == "bool":
+            if direction == "to_websocket" and isinstance(value, (int, float)):
+                return value > 0.5
             return bool(value)
         elif target_type == "string":
             return str(value)
@@ -151,7 +162,7 @@ class OSCBridgeClient(HardwareWebSocketClient):
                     continue
                 
                 value = osc_args[osc_index]
-                converted_value = self._convert_osc_to_websocket(value, arg_type)
+                converted_value = self._convert_type(value, arg_type, "to_websocket")
                 message_fields[websocket_field] = converted_value
             
             await self.send_message(websocket_type, **message_fields)
@@ -161,22 +172,6 @@ class OSCBridgeClient(HardwareWebSocketClient):
             
         except Exception as e:
             logger.error(f"Failed to send WebSocket message from OSC: {e}")
-    
-    def _convert_osc_to_websocket(self, value: Any, target_type: str) -> Any:
-        """Convert OSC value to WebSocket type."""
-        if target_type == "int":
-            return int(value)
-        elif target_type == "float":
-            return float(value)
-        elif target_type == "bool":
-            if isinstance(value, (int, float)):
-                return value > 0.5
-            return bool(value)
-        elif target_type == "string":
-            return str(value)
-        else:
-            logger.warning(f"Unknown type '{target_type}', passing value as-is")
-            return value
     
     async def setup_osc_server(self):
         """Set up OSC server to listen for incoming OSC messages."""
@@ -197,10 +192,6 @@ class OSCBridgeClient(HardwareWebSocketClient):
         logger.info(f"OSC server listening on {listen_host}:{listen_port}")
         
         return transport, protocol
-    
-    async def on_disconnect(self):
-        """Handle WebSocket disconnection."""
-        logger.warning("WebSocket disconnected")
 
 
 def load_config(config_path: str) -> Dict[str, Any]:
@@ -259,7 +250,7 @@ async def main():
     config = load_config(args.config)
     
     ws_config = config.get("websocket", {})
-    host = ws_config.get("host", "localhost:8000")
+    host = ws_config.get("host", "quasar.local")
     game_id = ws_config.get("game_id", 1)
     client_id = ws_config.get("client_id", "osc-main")
     

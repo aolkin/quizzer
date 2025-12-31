@@ -3,7 +3,7 @@
 
 # WebSocket connection settings
 websocket:
-  host: "localhost:8000"      # Quizzer backend host and port
+  host: "quasar.local"        # Quizzer backend host and port (default: quasar.local)
   game_id: 1                  # Game ID to connect to
   client_id: "osc-main"       # Unique identifier for this bridge instance
 
