@@ -1,44 +1,53 @@
 # WebSocket ↔ OSC Bridge Configuration Example
-# This file demonstrates how to configure the OSC bridge for hardware integration
 
-# WebSocket connection settings
 websocket:
-  host: "quasar.local"        # Quizzer backend host and port (default: quasar.local)
-  game_id: 1                  # Game ID to connect to
-  client_id: "osc-main"       # Unique identifier for this bridge instance
+  # Quizzer backend host (can be overridden with --server)
+  host: "quasar.local"
+  # Unique identifier for this bridge instance
+  client_id: "osc-main"
 
-# OSC server settings
+# Optional: Default OSC destination (can be overridden per rule)
+default_destination:
+  host: "192.168.1.100"
+  port: 53000
+
+# Optional: OSC server settings (only needed if 'incoming' is defined)
 osc:
-  listen_host: "0.0.0.0"      # Listen on all interfaces
-  listen_port: 7400           # UDP port for incoming OSC messages
+  listen_host: "0.0.0.0"
+  listen_port: 7400
 
 # WebSocket → OSC mappings (outgoing)
-# When the bridge receives these WebSocket messages, it sends OSC messages
 outgoing:
-  # Example: Toggle buzzers
+  # Example with conditions - send different OSC messages based on field value
   - websocket_type: "toggle_buzzers"
+    conditions:
+      enabled: true
     osc_destinations:
-      - host: "192.168.1.100"
-        port: 53000
-        address: "/quizzer/buzzers/state"
+      - address: "/quizzer/buzzers/enable"
         args:
-          - field: "enabled"      # WebSocket field name
-            type: "int"           # OSC type: int, float, string, bool
+          - field: "enabled"
 
-  # Example: Question selection triggers lighting cue
+  - websocket_type: "toggle_buzzers"
+    conditions:
+      enabled: false
+    osc_destinations:
+      - address: "/quizzer/buzzers/disable"
+
+  # Example with type passthrough and default value
   - websocket_type: "select_question"
     osc_destinations:
-      - host: "192.168.1.101"
-        port: 53001
-        address: "/qlabs/cue/fire"
+      - address: "/quizzer/question"
         args:
+          # No 'type' specified - value passed through as-is
           - field: "question"
-            type: "int"
+          # With default value if field missing
+          - field: "category"
+            default: 0
 
-  # Example: Send buzzer press to sound system
+  # Example overriding default destination
   - websocket_type: "buzzer_pressed"
     osc_destinations:
-      - host: "192.168.1.102"
+      - host: "192.168.1.101"
         port: 9000
         address: "/sound/buzzer"
         args:
@@ -46,20 +55,12 @@ outgoing:
             type: "int"
 
 # OSC → WebSocket mappings (incoming)
-# When the bridge receives these OSC messages, it sends WebSocket messages
+# If empty or omitted, OSC server will not start
 incoming:
-  # Example: OSC buzzer controller sends button presses
   - osc_address: "/buzzer/press"
     websocket_type: "buzzer_pressed"
     args:
-      - osc_index: 0              # First OSC argument
+      - osc_index: 0
         websocket_field: "buzzerId"
         type: "int"
 
-  # Example: OSC fader controls buzzer enable state
-  - osc_address: "/control/buzzers"
-    websocket_type: "toggle_buzzers"
-    args:
-      - osc_index: 0
-        websocket_field: "enabled"
-        type: "bool"

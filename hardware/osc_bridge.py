@@ -4,7 +4,7 @@ import argparse
 import asyncio
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import yaml
 from pythonosc import udp_client
@@ -67,42 +67,72 @@ class OSCBridgeClient(HardwareWebSocketClient):
     
     async def _send_osc_from_websocket(self, message: dict, rule: dict):
         """Send OSC message(s) based on WebSocket message and rule."""
+        # Check conditions if present
+        conditions = rule.get("conditions", {})
+        for field, expected_value in conditions.items():
+            if message.get(field) != expected_value:
+                logger.debug(f"Condition not met: {field}={message.get(field)} != {expected_value}")
+                return
+        
+        # Get default destination from config if available
+        default_dest = self.config.get("default_destination", {})
         destinations = rule.get("osc_destinations", [])
+        
+        # If no destinations specified, use default if available
+        if not destinations and default_dest:
+            destinations = [default_dest]
         
         for dest in destinations:
             try:
-                host = dest["host"]
-                port = dest["port"]
-                address = dest["address"]
-                args_config = dest.get("args", [])
+                # Merge with default destination
+                merged_dest = {**default_dest, **dest}
+                
+                host = merged_dest.get("host")
+                port = merged_dest.get("port")
+                address = merged_dest.get("address")
+                
+                if not host or not port or not address:
+                    logger.warning(f"Missing required destination fields in rule: {rule}")
+                    continue
+                
+                args_config = merged_dest.get("args", [])
                 
                 osc_args = []
                 for arg_spec in args_config:
                     field_name = arg_spec["field"]
-                    arg_type = arg_spec["type"]
+                    arg_type = arg_spec.get("type")  # Make type optional
+                    default_value = arg_spec.get("default")
                     
                     value = message.get(field_name)
                     if value is None:
-                        logger.warning(
-                            f"Field '{field_name}' not found in message {message}"
-                        )
-                        continue
+                        if default_value is not None:
+                            value = default_value
+                        else:
+                            # Skip this argument entirely if field not found and no default
+                            logger.debug(
+                                f"Field '{field_name}' not found in message, skipping argument"
+                            )
+                            continue
                     
-                    converted_value = self._convert_type(
-                        value, arg_type, "to_osc"
-                    )
+                    # If no type specified, pass through as-is
+                    if arg_type:
+                        converted_value = self._convert_type(value, arg_type, "to_osc")
+                    else:
+                        converted_value = value
+                    
                     osc_args.append(converted_value)
                 
-                client = self._get_osc_client(host, port)
-                client.send_message(address, osc_args)
-                logger.debug(
-                    f"Sent OSC: {address} {osc_args} to {host}:{port}"
-                )
+                # Only send if we have arguments (or if args_config is empty, send empty message)
+                if osc_args or not args_config:
+                    client = self._get_osc_client(host, port)
+                    client.send_message(address, osc_args)
+                    logger.debug(
+                        f"Sent OSC: {address} {osc_args} to {host}:{port}"
+                    )
                 
             except Exception as e:
                 logger.error(
-                    f"Failed to send OSC message to {dest.get('host')}:"
-                    f" {dest.get('port')}: {e}"
+                    f"Failed to send OSC message to {dest.get('host')}:{dest.get('port')}: {e}"
                 )
     
     def _convert_type(
@@ -175,6 +205,11 @@ class OSCBridgeClient(HardwareWebSocketClient):
     
     async def setup_osc_server(self):
         """Set up OSC server to listen for incoming OSC messages."""
+        # Skip if no incoming rules defined
+        if not self.config.get("incoming"):
+            logger.info("No incoming OSC rules defined, skipping OSC server setup")
+            return None, None
+        
         osc_config = self.config.get("osc", {})
         listen_host = osc_config.get("listen_host", "0.0.0.0")
         listen_port = osc_config.get("listen_port", 7400)
@@ -185,7 +220,7 @@ class OSCBridgeClient(HardwareWebSocketClient):
         self.osc_server = AsyncIOOSCUDPServer(
             (listen_host, listen_port),
             dispatcher,
-            asyncio.get_event_loop()
+            asyncio.get_running_loop()
         )
         
         transport, protocol = await self.osc_server.create_serve_endpoint()
@@ -228,9 +263,20 @@ def parse_args():
         description="WebSocket ↔ OSC bridge for Quizzer game system"
     )
     parser.add_argument(
+        "game_id",
+        type=int,
+        help="Game ID to connect to",
+    )
+    parser.add_argument(
         "config",
         type=str,
         help="Path to YAML configuration file",
+    )
+    parser.add_argument(
+        "--server",
+        type=str,
+        default=os.getenv("QUIZZER_SERVER", "quasar.local"),
+        help="Server URL (default: quasar.local, or QUIZZER_SERVER env var)",
     )
     parser.add_argument(
         "--log-level",
@@ -250,19 +296,20 @@ async def main():
     config = load_config(args.config)
     
     ws_config = config.get("websocket", {})
-    host = ws_config.get("host", "quasar.local")
-    game_id = ws_config.get("game_id", 1)
+    host = ws_config.get("host", args.server)
     client_id = ws_config.get("client_id", "osc-main")
     
-    client = OSCBridgeClient(host, game_id, client_id, config)
+    client = OSCBridgeClient(host, args.game_id, client_id, config)
     
-    await client.setup_osc_server()
+    transport, protocol = await client.setup_osc_server()
     
     try:
         await client.run()
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:
+        if transport is not None:
+            transport.close()
         if client.osc_server:
             client.osc_server.close()
 
