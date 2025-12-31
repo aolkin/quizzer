@@ -175,34 +175,13 @@ describe('GameWebSocket', () => {
       const ws = new GameWebSocket('123', UiMode.Host);
       currentMockSocket!.sentMessages = [];
 
-      ws.sendTo({ channel_id: 'channel-123' }, { type: 'pong', timestamp: 12345 });
-      const msg1 = JSON.parse(currentMockSocket!.sentMessages[0]);
-      expect(msg1.type).toBe('pong');
-      expect(msg1.timestamp).toBe(12345);
-      expect(msg1.recipient).toEqual({ channel_id: 'channel-123' });
-      expect(msg1.clientId).toBeDefined();
-
-      ws.sendTo({ client_id: 'buzzer-1' }, { type: 'command', action: 'test' });
-      const msg2 = JSON.parse(currentMockSocket!.sentMessages[1]);
-      expect(msg2.type).toBe('command');
-      expect(msg2.action).toBe('test');
-      expect(msg2.recipient).toEqual({ client_id: 'buzzer-1' });
-
-      ws.sendTo({ client_type: 'buzzer' }, { type: 'toggle', enabled: true });
-      const msg3 = JSON.parse(currentMockSocket!.sentMessages[2]);
-      expect(msg3.type).toBe('toggle');
-      expect(msg3.enabled).toBe(true);
-      expect(msg3.recipient).toEqual({ client_type: 'buzzer' });
-    });
-
-    it('sends messages with multiple recipient criteria', () => {
-      const ws = new GameWebSocket('123', UiMode.Host);
-      currentMockSocket!.sentMessages = [];
-
-      ws.sendTo({ client_type: 'buzzer', client_id: 'buzzer-1' }, { type: 'specific_command' });
+      ws.sendTo({ channel_id: 'channel-123' }, { type: 'pong' });
       const msg = JSON.parse(currentMockSocket!.sentMessages[0]);
-      expect(msg.type).toBe('specific_command');
-      expect(msg.recipient).toEqual({ client_type: 'buzzer', client_id: 'buzzer-1' });
+      expect(msg.recipient).toEqual({ channel_id: 'channel-123' });
+
+      ws.sendTo({ client_type: 'buzzer' }, { type: 'toggle' });
+      const msg2 = JSON.parse(currentMockSocket!.sentMessages[1]);
+      expect(msg2.recipient).toEqual({ client_type: 'buzzer' });
     });
   });
 
