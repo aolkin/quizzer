@@ -57,16 +57,6 @@ class GameStateManager {
     this.currentSlideIndex = index;
   }
 
-  nextSlide() {
-    this.currentSlideIndex++;
-  }
-
-  previousSlide() {
-    if (this.currentSlideIndex > 0) {
-      this.currentSlideIndex--;
-    }
-  }
-
   markQuestionAnswered(questionId: number, answered: boolean) {
     if (answered) {
       this.answeredQuestions.add(questionId);

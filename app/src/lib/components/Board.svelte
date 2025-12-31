@@ -47,11 +47,17 @@
   }
 
   function nextSlide() {
-    gameState.websocket?.nextSlide();
+    const newIndex = gameState.currentSlideIndex + 1;
+    if (newIndex < totalSlides) {
+      gameState.websocket?.setSlide(newIndex);
+    }
   }
 
   function previousSlide() {
-    gameState.websocket?.previousSlide();
+    const newIndex = gameState.currentSlideIndex - 1;
+    if (newIndex >= 0) {
+      gameState.websocket?.setSlide(newIndex);
+    }
   }
 </script>
 
