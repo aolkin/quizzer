@@ -35,7 +35,7 @@
 </script>
 
 <div class="min-h-screen bg-surface-900 text-surface-50">
-  {#if mode === 'host'}
+  {#if mode === UiMode.Host}
     <BoardSelector {game} />
     <ConnectionStatusOverlay {gameState} />
   {/if}
