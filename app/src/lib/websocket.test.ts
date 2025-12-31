@@ -142,7 +142,6 @@ describe('GameWebSocket', () => {
       });
 
       expect(gameState.clientConnections.get('buzzer:buzzer-1')?.connected).toBe(true);
-      expect(gameState.buzzerConnected).toBe(true);
 
       currentMockSocket!.simulateMessage({
         type: 'client_connection_status',

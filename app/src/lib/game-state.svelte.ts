@@ -98,16 +98,6 @@ class GameStateManager {
     }
   }
 
-  // Keep backwards-compatible getter for buzzer
-  get buzzerConnected(): boolean {
-    for (const client of this.clientConnections.values()) {
-      if (client.clientType === 'buzzer' && client.connected) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   reset() {
     this.visibleCategories.clear();
     this.answeredQuestions.clear();

@@ -96,16 +96,6 @@ describe('GameStateManager', () => {
     expect(gameState.clientConnections.get('osc:osc-lighting')?.connected).toBe(true);
   });
 
-  it('provides backwards-compatible buzzerConnected getter', () => {
-    expect(gameState.buzzerConnected).toBe(false);
-
-    gameState.setClientConnection('buzzer', 'buzzer-1', true);
-    expect(gameState.buzzerConnected).toBe(true);
-
-    gameState.setClientConnection('buzzer', 'buzzer-1', false);
-    expect(gameState.buzzerConnected).toBe(false);
-  });
-
   it('handles client latency updates', () => {
     gameState.setClientConnection('buzzer', 'buzzer-1', true);
     gameState.setClientLatency('buzzer', 'buzzer-1', 50);

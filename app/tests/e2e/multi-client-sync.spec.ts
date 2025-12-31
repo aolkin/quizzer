@@ -27,6 +27,16 @@ test.describe('Multi-Client Synchronization', () => {
     await expect(hostPage.locator('[data-testid="score-footer"]')).toBeVisible();
     await expect(presenterPage.locator('[data-testid="score-footer"]')).toBeVisible();
 
+    // Verify connection status overlay is visible on host view
+    await expect(
+      hostPage.locator('[role="status"][aria-label="Client connection status"]'),
+    ).toBeVisible();
+
+    // Verify overlay is NOT visible on presenter view
+    await expect(
+      presenterPage.locator('[role="status"][aria-label="Client connection status"]'),
+    ).not.toBeVisible();
+
     // Host selects a board
     const boardSelector = hostPage.locator('[data-testid^="board-selector-"]').first();
     await boardSelector.click();
