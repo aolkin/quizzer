@@ -22,7 +22,7 @@
 
 ⏳ **Phase 3: Latency Monitoring** - Requires:
 - **TODO #24** (Generic Message Targeting) - Must be implemented first
-- Frontend ping interval and pong response handler using targeted messages
+- Frontend ping interval and pong response handler using targeted messages (via `channel_id`)
 - Display latency values in overlay
 
 ## Problem
@@ -254,25 +254,25 @@ Add ping/pong mechanism to measure WebSocket round-trip time from host to all cl
 
 **Prerequisites:**
 - **TODO #24** (Generic Message Targeting) must be implemented first
-- Requires `sender_id` injection and targeted message delivery
+- Requires `channel_id` injection and targeted message delivery
 
 **Architecture:**
 1. **Host broadcasts ping** - Sent to server, relayed to all clients
-2. **All clients respond with targeted pong** - Using recipient.sender_id to target the host
+2. **All clients respond with targeted pong** - Using recipient.channel_id to target the host
 3. **Host receives all pongs** - Calculates round-trip latency to each client
 
 **Message Flow:**
 ```
 Host → Server: {type: "ping", timestamp: 123}
-Server → All Clients: (broadcast with sender_id injected by TODO #24)
+Server → All Clients: (broadcast with channel_id injected by TODO #24)
 
-Client A → Server: {type: "pong", timestamp: 123, recipient: {sender_id: "host-channel"}}
+Client A → Server: {type: "pong", timestamp: 123, recipient: {channel_id: "host-channel-xyz"}}
 Server → Host only: (targeted delivery via TODO #24)
 
-Client B → Server: {type: "pong", timestamp: 123, recipient: {sender_id: "host-channel"}}
+Client B → Server: {type: "pong", timestamp: 123, recipient: {channel_id: "host-channel-xyz"}}
 Server → Host only: (targeted delivery via TODO #24)
 
-Host → Server: {type: "pong", timestamp: 123, recipient: {sender_id: "host-channel"}}
+Host → Server: {type: "pong", timestamp: 123, recipient: {channel_id: "host-channel-xyz"}}
 Server → Host only: (host measures its own latency to server)
 ```
 
@@ -286,12 +286,12 @@ Server → Host only: (host measures its own latency to server)
 
 **Update**: `/home/user/quizzer/app/src/lib/game-state.svelte.ts`
 
-Add sender tracking to ClientConnection interface (sender_id will be available via TODO #24):
+Add channel tracking to ClientConnection interface (channel_id will be available via TODO #24):
 ```typescript
 interface ClientConnection {
   clientType: string;
   clientId: string | null;
-  senderId?: string;      // Sender ID from TODO #24
+  channelId?: string;     // Backend channel ID from TODO #24
   connected: boolean;
   lastSeen: number;
   latency?: number;
@@ -304,7 +304,7 @@ Add latency monitoring (using targeting from TODO #24):
 ```typescript
 private pingInterval?: ReturnType<typeof setInterval>;
 private pendingPings = new Map<number, number>();  // timestamp -> sentTime
-private hostSenderId?: string;  // Store our own sender_id
+private hostChannelId?: string;  // Store our own channel_id
 
 // Start pinging all connected clients every 5 seconds
 private startLatencyMonitoring() {
@@ -325,18 +325,18 @@ private startLatencyMonitoring() {
 
 // Handle incoming messages
 private handleMessage(data: any) {
-  // Extract and store our own sender_id (injected by TODO #24)
-  if (data.sender_id && !this.hostSenderId) {
-    this.hostSenderId = data.sender_id;
+  // Extract and store our own channel_id (injected by TODO #24)
+  if (data.channel_id && !this.hostChannelId) {
+    this.hostChannelId = data.channel_id;
   }
 
-  // Track sender_id for connection status
+  // Track channel_id for connection status
   if (data.type === 'client_connection_status') {
     this.gameState.setClientConnection(
       data.client_type,
       data.client_id,
       data.connected,
-      data.sender_id  // Pass sender_id from TODO #24
+      data.channel_id  // Pass channel_id from TODO #24
     );
     // ... existing buzzer logic
   }
@@ -357,11 +357,11 @@ private handleMessage(data: any) {
 
     if (sentTime) {
       const latency = Date.now() - sentTime;
-      const respondingSenderId = data.sender_id;
+      const respondingChannelId = data.channel_id;
 
-      // Find which client this pong is from by sender_id
+      // Find which client this pong is from by channel_id
       for (const [key, client] of this.gameState.clientConnections) {
-        if (client.senderId === respondingSenderId) {
+        if (client.channelId === respondingChannelId) {
           this.gameState.setClientLatency(
             client.clientType,
             client.clientId,
@@ -372,7 +372,7 @@ private handleMessage(data: any) {
       }
 
       // If pong is from ourselves (host), track our own latency
-      if (respondingSenderId === this.hostSenderId) {
+      if (respondingChannelId === this.hostChannelId) {
         // Store host latency separately or log it
         console.log(`Host latency: ${latency}ms`);
       }
@@ -463,8 +463,8 @@ Add host's own latency to the overlay:
 
 **Prerequisite:** TODO #24 (Generic Message Targeting) must be completed first
 
-- [ ] Add `senderId` field to `ClientConnection` interface
-- [ ] Update `setClientConnection()` to capture sender_id from messages
+- [ ] Add `channelId` field to `ClientConnection` interface
+- [ ] Update `setClientConnection()` to capture channel_id from messages
 - [ ] Add `setClientLatency()` method to `GameStateManager`
 - [ ] Implement ping interval in WebSocket client (broadcasts to all)
 - [ ] Implement pong handler using `replyTo()` from TODO #24

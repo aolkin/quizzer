@@ -38,9 +38,22 @@ async def receive_json(self, content):
 ## Proposed Solution
 
 Implement a **generic message targeting system** that allows routing messages by:
-1. **`sender_id`** (channel-level address) - Target a specific WebSocket connection
-2. **`client_id`** - Target a specific client instance (e.g., "osc-lighting")
-3. **`client_type`** - Target all clients of a type (e.g., all "osc" clients)
+1. **`channel_id`** (backend-assigned channel address) - Target a specific WebSocket connection
+2. **`client_id`** (client-provided identifier) - Target a specific client instance (e.g., "osc-lighting")
+3. **`client_type`** (client-provided type) - Target all clients of a type (e.g., all "osc" clients)
+
+### Naming Considerations
+
+**`channel_id` vs `sender_id`:**
+- Use **`channel_id`** to make it clear this is a backend-assigned identifier
+- Maps directly to Django Channels' `channel_name` (the unique identifier for each WebSocket connection)
+- Distinguishes it from client-provided identifiers (`client_id`, `client_type`)
+- Makes it clear this is an infrastructure-level address, not a user-facing identifier
+
+**Three types of identifiers:**
+1. **`channel_id`** - Backend-assigned, unique per WebSocket connection (e.g., `"specific-channel-12345"`)
+2. **`client_id`** - Client-provided, identifies a specific client instance (e.g., `"osc-lighting"`)
+3. **`client_type`** - Client-provided, identifies the type of client (e.g., `"buzzer"`, `"osc"`)
 
 ### Message Format
 
@@ -51,7 +64,7 @@ Add optional `recipient` field to messages:
   type: "pong",
   timestamp: 123456789,
   recipient: {
-    sender_id: "specific-channel-name"  // Route to specific connection
+    channel_id: "specific-channel-12345"  // Route to specific backend connection
   }
 }
 
@@ -87,27 +100,27 @@ Add optional `recipient` field to messages:
 
 **Rules:**
 - `recipient` is optional - messages without it are broadcast to all (backward compatible)
-- `recipient` must be a dict with exactly ONE of: `sender_id`, `client_id`, or `client_type`
+- `recipient` must be a dict with exactly ONE of: `channel_id`, `client_id`, or `client_type`
 - Multiple targeting keys in one message is invalid (ambiguous intent)
 
 ### Backend Changes
 
 **Update**: `/home/user/quizzer/service/game/consumers.py`
 
-1. **Add sender_id to all outgoing messages:**
+1. **Add channel_id to all outgoing messages:**
 
 ```python
 async def game_message(self, event):
     """
     Send message to WebSocket client.
 
-    Injects sender_id into all messages before sending.
+    Injects channel_id into all messages before sending.
     """
     message = event["message"]
 
-    # Inject sender_id so clients know who sent the message
-    # Use channel_name as unique sender identifier
-    message["sender_id"] = self.channel_name
+    # Inject channel_id so clients know the backend channel address
+    # Use channel_name as the unique channel identifier
+    message["channel_id"] = self.channel_name
 
     await self.send_json(message)
 ```
@@ -120,7 +133,7 @@ async def receive_json(self, content):
     Relay messages with optional recipient targeting.
 
     - No recipient: Broadcast to all clients in room
-    - recipient.sender_id: Send to specific channel
+    - recipient.channel_id: Send to specific channel
     - recipient.client_id: Send to all connections with matching client_id
     - recipient.client_type: Send to all connections with matching client_type
     """
@@ -144,9 +157,9 @@ async def receive_json(self, content):
         return
 
     # Route based on recipient type
-    if "sender_id" in recipient:
+    if "channel_id" in recipient:
         # Direct channel send to specific connection
-        target_channel = recipient["sender_id"]
+        target_channel = recipient["channel_id"]
         await self.channel_layer.send(
             target_channel,
             {"type": "game_message", "message": content}
@@ -217,11 +230,11 @@ class WebSocketClient {
   /**
    * Send a message to a specific recipient
    */
-  sendTo(recipient: { sender_id?: string; client_id?: string; client_type?: string }, message: object) {
+  sendTo(recipient: { channel_id?: string; client_id?: string; client_type?: string }, message: object) {
     // Validate: exactly one recipient field
     const keys = Object.keys(recipient);
     if (keys.length !== 1) {
-      throw new Error("recipient must have exactly one field: sender_id, client_id, or client_type");
+      throw new Error("recipient must have exactly one field: channel_id, client_id, or client_type");
     }
 
     this.send({
@@ -234,11 +247,11 @@ class WebSocketClient {
    * Reply directly to the sender of a message
    */
   replyTo(originalMessage: any, response: object) {
-    if (!originalMessage.sender_id) {
-      throw new Error("Cannot reply: original message has no sender_id");
+    if (!originalMessage.channel_id) {
+      throw new Error("Cannot reply: original message has no channel_id");
     }
 
-    this.sendTo({ sender_id: originalMessage.sender_id }, response);
+    this.sendTo({ channel_id: originalMessage.channel_id }, response);
   }
 }
 ```
@@ -248,8 +261,8 @@ Usage example:
 // Broadcast (existing behavior)
 ws.send({ type: "select_question", question_id: 42 });
 
-// Send to specific sender
-ws.sendTo({ sender_id: "channel-xyz" }, { type: "pong", timestamp: 123 });
+// Send to specific channel (backend connection)
+ws.sendTo({ channel_id: "channel-xyz-12345" }, { type: "pong", timestamp: 123 });
 
 // Send to specific client_id
 ws.sendTo({ client_id: "osc-lighting" }, { type: "set_brightness", value: 80 });
@@ -297,9 +310,9 @@ ws.on('message', (data) => {
 
 ### Phase 1: Backend Infrastructure ⏳ PENDING
 
-- [ ] Add `sender_id` injection in `game_message()` handler
+- [ ] Add `channel_id` injection in `game_message()` handler
 - [ ] Implement recipient validation in `receive_json()`
-- [ ] Implement `sender_id` direct routing using `channel_layer.send()`
+- [ ] Implement `channel_id` direct routing using `channel_layer.send()`
 - [ ] Implement `client_id` filtered broadcast
 - [ ] Implement `client_type` filtered broadcast
 - [ ] Add backend tests for all routing modes
