@@ -130,6 +130,29 @@ describe('GameWebSocket', () => {
       currentMockSocket!.simulateMessage({ type: 'buzzer_pressed', buzzerId: 3 });
       expect(gameState.activeBuzzerId).toBe(3);
     });
+
+    it('handles client_connection_status for all client types', () => {
+      new GameWebSocket('123', UiMode.Host);
+
+      currentMockSocket!.simulateMessage({
+        type: 'client_connection_status',
+        client_type: 'buzzer',
+        client_id: 'buzzer-1',
+        connected: true,
+      });
+
+      expect(gameState.clientConnections.get('buzzer:buzzer-1')?.connected).toBe(true);
+      expect(gameState.buzzerConnected).toBe(true);
+
+      currentMockSocket!.simulateMessage({
+        type: 'client_connection_status',
+        client_type: 'osc',
+        client_id: 'osc-lighting',
+        connected: true,
+      });
+
+      expect(gameState.clientConnections.get('osc:osc-lighting')?.connected).toBe(true);
+    });
   });
 
   describe('sending messages', () => {

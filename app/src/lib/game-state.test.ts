@@ -75,6 +75,7 @@ describe('GameStateManager', () => {
     gameState.selectQuestion(10);
     gameState.setBuzzersEnabled(true);
     gameState.setActiveBuzzer(5);
+    gameState.setClientConnection('buzzer', 'test-buzzer', true);
 
     gameState.reset();
 
@@ -83,5 +84,33 @@ describe('GameStateManager', () => {
     expect(gameState.selectedQuestion).toBeUndefined();
     expect(gameState.buzzersEnabled).toBe(false);
     expect(gameState.activeBuzzerId).toBeUndefined();
+    expect(gameState.clientConnections.size).toBe(0);
+  });
+
+  it('tracks client connections', () => {
+    gameState.setClientConnection('buzzer', 'buzzer-1', true);
+    gameState.setClientConnection('osc', 'osc-lighting', true);
+
+    expect(gameState.clientConnections.size).toBe(2);
+    expect(gameState.clientConnections.get('buzzer:buzzer-1')?.connected).toBe(true);
+    expect(gameState.clientConnections.get('osc:osc-lighting')?.connected).toBe(true);
+  });
+
+  it('provides backwards-compatible buzzerConnected getter', () => {
+    expect(gameState.buzzerConnected).toBe(false);
+
+    gameState.setClientConnection('buzzer', 'buzzer-1', true);
+    expect(gameState.buzzerConnected).toBe(true);
+
+    gameState.setClientConnection('buzzer', 'buzzer-1', false);
+    expect(gameState.buzzerConnected).toBe(false);
+  });
+
+  it('handles client latency updates', () => {
+    gameState.setClientConnection('buzzer', 'buzzer-1', true);
+    gameState.setClientLatency('buzzer', 'buzzer-1', 50);
+
+    const client = gameState.clientConnections.get('buzzer:buzzer-1');
+    expect(client?.latency).toBe(50);
   });
 });

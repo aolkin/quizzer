@@ -2,6 +2,7 @@
   import { AudioClient } from '$lib/audio.svelte';
   import Board from '$lib/components/Board.svelte';
   import BoardSelector from '$lib/components/BoardSelector.svelte';
+  import ConnectionStatusOverlay from '$lib/components/ConnectionStatusOverlay.svelte';
   import ScoreFooter from '$lib/components/ScoreFooter.svelte';
   import { UiMode, type Player, type Team } from '$lib/state.svelte.js';
   import { gameState } from '$lib/game-state.svelte';
@@ -36,6 +37,7 @@
 <div class="min-h-screen bg-surface-900 text-surface-50">
   {#if mode === 'host'}
     <BoardSelector {game} />
+    <ConnectionStatusOverlay {gameState} />
   {/if}
   {#if gameState.board}
     <Board board={gameState.board} {mode} audio={audioClient} />

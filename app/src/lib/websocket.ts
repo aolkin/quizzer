@@ -109,13 +109,12 @@ export class GameWebSocket {
       }
       gameState.setActiveBuzzer(data.buzzerId);
     } else if (data.type === 'client_connection_status') {
-      // Handle generic client connection status
-      if (data.client_type === 'buzzer') {
-        gameState.setBuzzerConnected(data.connected);
-        // When buzzer client connects, send current buzzer state
-        if (data.connected && this.mode === UiMode.Host) {
-          this.toggleBuzzers(gameState.buzzersEnabled);
-        }
+      // Track all client types, not just buzzer
+      gameState.setClientConnection(data.client_type, data.client_id, data.connected);
+
+      // Keep existing buzzer-specific logic for backwards compatibility
+      if (data.client_type === 'buzzer' && data.connected && this.mode === UiMode.Host) {
+        this.toggleBuzzers(gameState.buzzersEnabled);
       }
     } else if (data.type === 'update_score') {
       if (shouldUpdatePlayer(data.player_id, data.version)) {
