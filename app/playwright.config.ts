@@ -38,7 +38,7 @@ export default defineConfig({
   ...(useWebServer && {
     webServer: [
       {
-        command: 'cd ../service && python manage.py runserver 8000',
+        command: 'cd ../service && uv run python manage.py runserver 8000',
         url: 'http://localhost:8000/api/health/',
         reuseExistingServer: !process.env.CI,
         timeout: 30 * 1000,
