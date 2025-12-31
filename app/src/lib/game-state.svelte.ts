@@ -1,4 +1,4 @@
-import { SvelteSet } from 'svelte/reactivity';
+import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 import type { Board } from './state.svelte';
 import type { GameWebSocket } from './websocket';
 
@@ -22,7 +22,7 @@ class GameStateManager {
   buzzersEnabled = $state(false);
   activeBuzzerId = $state<number | undefined>(undefined);
   // Map of client connections: `${client_type}:${client_id}` -> ClientConnection
-  clientConnections = $state(new Map<string, ClientConnection>());
+  clientConnections = new SvelteMap<string, ClientConnection>();
 
   // Methods to update state (separation of concerns)
   setWebsocket(websocket: GameWebSocket) {

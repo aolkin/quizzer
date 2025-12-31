@@ -53,7 +53,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
         # Broadcast disconnection status for clients with a type
-        if self.client_type and self.client_id:
+        if self.client_type:
             await self.broadcast_client_status(connected=False)
 
     async def receive_json(self, content):

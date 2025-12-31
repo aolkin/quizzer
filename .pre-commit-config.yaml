@@ -29,6 +29,7 @@ repos:
     hooks:
       - id: flake8
         files: ^service/
+        args: ['--config=service/.flake8']
 
   # Frontend formatting (delegated to package.json scripts)
   - repo: local

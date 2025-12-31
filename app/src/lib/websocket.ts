@@ -26,7 +26,9 @@ export class GameWebSocket {
   }
 
   private createSocket(): WebSocket {
-    const socket = new WebSocket(`ws://${ENDPOINT}/ws/game/${this.gameId}/`);
+    const socket = new WebSocket(
+      `ws://${ENDPOINT}/ws/game/${this.gameId}/?client_type=${this.mode}`,
+    );
     socket.onmessage = (event) => this.handleMessage(event);
 
     socket.onclose = () => {
