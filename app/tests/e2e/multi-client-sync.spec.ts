@@ -171,6 +171,11 @@ test.describe('Multi-Client Synchronization', () => {
     });
 
     const question = hostPage.locator('[data-testid^="question-"]').first();
+    
+    // Verify points are visible before marking answered
+    const questionText = question.locator('div').filter({ hasText: /^\d+$/ }).first();
+    await expect(questionText).toBeVisible({ timeout: 5000 });
+    
     await question.click();
 
     // Wait for question details to appear
@@ -178,8 +183,8 @@ test.describe('Multi-Client Synchronization', () => {
     await expect(markAnsweredButton).toBeVisible({ timeout: 5000 });
     await markAnsweredButton.click();
 
-    // Check that the question is marked as answered (opacity-75 class)
-    await expect(question).toHaveClass(/opacity-75/, { timeout: 10000 });
+    // Check that the question is marked as answered (points disappear)
+    await expect(questionText).not.toBeVisible({ timeout: 10000 });
 
     await hostContext.close();
     await presenterContext.close();
