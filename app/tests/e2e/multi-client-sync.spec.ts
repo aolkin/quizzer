@@ -183,7 +183,9 @@ test.describe('Multi-Client Synchronization', () => {
     await expect(markAnsweredButton).toBeVisible({ timeout: 5000 });
     await markAnsweredButton.click();
 
-    // Check that the question is marked as answered (points disappear)
+    // Check that the question is marked as answered
+    // The button gets opacity-75 class and points text disappears
+    await expect(question).toHaveClass(/opacity-75/, { timeout: 10000 });
     await expect(questionText).not.toBeVisible({ timeout: 10000 });
 
     await hostContext.close();
