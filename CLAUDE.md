@@ -9,8 +9,8 @@
 **Linting & Formatting:**
 ```bash
 cd service
-black --check .
-flake8 .
+uv run black --check .
+uv run flake8 .
 ```
 
 **Note:** Configuration is in `service/pyproject.toml` (Black) and `service/.flake8` (Flake8).
@@ -18,14 +18,13 @@ flake8 .
 **Testing:**
 ```bash
 cd service
-python manage.py test
+uv run python manage.py test
 ```
 
 **Install dependencies if needed:**
 ```bash
 cd service
-pip install -r requirements.txt
-pip install black flake8
+uv sync --all-extras
 ```
 
 ### 2. Frontend (TypeScript/Svelte) - `/app`
@@ -81,7 +80,7 @@ All checks in one place:
 
 ```bash
 # Backend
-cd service && black --check . && flake8 . && python manage.py test && cd ..
+cd service && uv run black --check . && uv run flake8 . && uv run python manage.py test && cd ..
 
 # Frontend (unit tests + build)
 cd app && bun run lint && bun run check && bun run test && bun run build && cd ..
@@ -94,7 +93,7 @@ cd app && npm run test:e2e && cd ..
 
 Install pre-commit hooks to automatically run checks:
 ```bash
-pip install pre-commit
+uv tool install pre-commit
 pre-commit install
 ```
 

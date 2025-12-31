@@ -2,11 +2,13 @@
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["game*", "quizzer*"]
+
 [project]
 name = "quizzer-service"
 version = "0.1.0"
 description = "Django backend for Quizzer interactive Jeopardy game"
-readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "Django>=5.1,<5.2",

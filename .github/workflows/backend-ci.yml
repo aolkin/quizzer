@@ -16,25 +16,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
-          cache-dependency-path: 'service/requirements.lock'
+          python-version-file: 'service/.python-version'
 
       - name: Install dependencies
         run: |
           cd service
-          pip install -r requirements.lock
-          pip install coverage
+          uv sync --all-extras
 
       - name: Run tests with coverage
         run: |
           cd service
-          coverage run --source='.' manage.py test
-          coverage report --fail-under=80
-          coverage xml
+          uv run coverage run --source='.' manage.py test
+          uv run coverage report --fail-under=80
+          uv run coverage xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -49,22 +49,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
-          cache-dependency-path: 'service/requirements.lock'
+          python-version-file: 'service/.python-version'
 
-      - name: Install linters
-        run: pip install black flake8
+      - name: Install dependencies
+        run: |
+          cd service
+          uv sync --all-extras
 
       - name: Run black
         run: |
           cd service
-          black --check .
+          uv run black --check .
 
       - name: Run flake8
         run: |
           cd service
-          flake8 .
+          uv run flake8 .

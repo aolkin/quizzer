@@ -107,10 +107,10 @@ See `app/tests/e2e/README.md` for detailed documentation.
 
 ### Backend
 ```bash
-python manage.py test                    # Run all tests
-python manage.py test game.tests         # Run specific app tests
-coverage run --source='.' manage.py test # Run with coverage
-coverage report                          # Show coverage report
+uv run python manage.py test                    # Run all tests
+uv run python manage.py test game.tests         # Run specific app tests
+uv run coverage run --source='.' manage.py test # Run with coverage
+uv run coverage report                          # Show coverage report
 ```
 
 ## E2E Testing with Playwright

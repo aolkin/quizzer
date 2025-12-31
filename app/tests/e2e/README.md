@@ -11,7 +11,7 @@ Start the Django backend and Vite dev server before running tests:
 ```bash
 # Terminal 1: Start backend
 cd service
-python manage.py runserver 8000
+uv run python manage.py runserver 8000
 
 # Terminal 2: Start frontend
 cd app

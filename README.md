@@ -109,28 +109,24 @@ This hybrid approach combines the simplicity of broadcast relay with the robustn
 
 ### Prerequisites
 - Node.js 18+ and Bun (for frontend)
-- Python 3.9+ (for backend)
+- Python 3.12+ and uv (for backend)
 - Raspberry Pi with GPIO (for hardware buzzers, optional)
 
 ### Backend Setup
 ```bash
 cd service
 
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies from lock file
-pip install -r requirements.lock
+# Install dependencies and create virtual environment
+uv sync --all-extras
 
 # Run migrations
-python manage.py migrate
+uv run python manage.py migrate
 
 # Create admin user
-python manage.py createsuperuser
+uv run python manage.py createsuperuser
 
 # Start server
-python manage.py runserver
+uv run python manage.py runserver
 ```
 
 ### Frontend Setup
@@ -143,22 +139,22 @@ bun run dev
 ### Hardware Buzzers (Optional)
 ```bash
 cd hardware
-# Install dependencies directly (embedded device - no venv needed)
-pip install -r requirements.lock
+# Install dependencies
+uv sync --all-extras
 
 # On Raspberry Pi:
-python buzzers.py <game_id>
+uv run python buzzers.py <game_id>
 
 # With custom server:
-python buzzers.py <game_id> --server myserver.local:8000
+uv run python buzzers.py <game_id> --server myserver.local:8000
 
 # With custom log level:
-python buzzers.py <game_id> --log-level DEBUG
+uv run python buzzers.py <game_id> --log-level DEBUG
 
 # Using environment variables:
 export QUIZZER_SERVER=myserver.local:8000
 export QUIZZER_LOG_LEVEL=DEBUG
-python buzzers.py <game_id>
+uv run python buzzers.py <game_id>
 ```
 
 ## Game Setup
@@ -235,7 +231,7 @@ For the best development experience, install pre-commit hooks to automatically c
 
 ```bash
 # Install pre-commit
-pip install pre-commit
+uv tool install pre-commit
 
 # Install the git hooks
 pre-commit install
@@ -264,33 +260,36 @@ bun run test         # Run tests
 ### Backend Development
 ```bash
 cd service
-python manage.py runserver    # Start dev server
-python manage.py shell        # Django shell
-python manage.py test         # Run tests
-black .                       # Format code
-flake8 .                      # Lint code
+uv run python manage.py runserver    # Start dev server
+uv run python manage.py shell        # Django shell
+uv run python manage.py test         # Run tests
+uv run black .                       # Format code
+uv run flake8 .                      # Lint code
 ```
 
 ### Dependency Management
 
-Python dependencies are managed with **pyproject.toml** and lock files for reproducibility.
+Python dependencies are managed with **pyproject.toml** and **uv.lock** for reproducibility.
 
 **Adding a dependency:**
 ```bash
 cd service  # or hardware
-# 1. Add package to pyproject.toml [project.dependencies]
-# 2. Regenerate lock file:
-pip install uv
-uv pip compile pyproject.toml -o requirements.lock
-# 3. Install:
-pip install -r requirements.lock
+uv add package-name              # Add to [project.dependencies]
+uv add --dev package-name        # Add to [project.optional-dependencies.dev]
 ```
 
 **Updating dependencies:**
 ```bash
 cd service  # or hardware
-uv pip compile pyproject.toml -o requirements.lock --upgrade
-pip install -r requirements.lock
+uv sync --upgrade                # Upgrade all dependencies
+uv sync --upgrade package-name   # Upgrade specific package
+```
+
+**Manual dependency management:**
+```bash
+# 1. Edit pyproject.toml [project.dependencies] manually
+# 2. Sync dependencies:
+uv sync --all-extras
 ```
 
 ### Running Quality Checks Locally
@@ -300,9 +299,9 @@ Before submitting a PR, ensure all checks pass:
 ```bash
 # Backend checks
 cd service
-black --check .
-flake8 .
-python manage.py test
+uv run black --check .
+uv run flake8 .
+uv run python manage.py test
 
 # Frontend checks
 cd app
