@@ -100,8 +100,9 @@ Add optional `recipient` field to messages:
 
 **Rules:**
 - `recipient` is optional - messages without it are broadcast to all (backward compatible)
-- `recipient` must be a dict with exactly ONE of: `channel_id`, `client_id`, or `client_type`
-- Multiple targeting keys in one message is invalid (ambiguous intent)
+- `recipient` can contain any combination of: `channel_id`, `client_id`, or `client_type`
+- If multiple fields are provided, all criteria must match (AND logic)
+- In practice, typically only one field is needed, but multiple are allowed for flexibility
 
 ### Backend Changes
 
@@ -156,13 +157,12 @@ async def receive_json(self, content):
         return
 
     # Validate recipient format
-    if not isinstance(recipient, dict) or len(recipient) != 1:
-        # Invalid recipient format - reject message
+    if not isinstance(recipient, dict):
         return
 
     # Route based on recipient type
-    if "channel_id" in recipient:
-        # Direct channel send to specific connection
+    if "channel_id" in recipient and len(recipient) == 1:
+        # Optimization: direct channel send when only channel_id is specified
         target_channel = recipient["channel_id"]
         await self.channel_layer.send(
             target_channel,
@@ -170,7 +170,7 @@ async def receive_json(self, content):
         )
 
     else:
-        # Filtered broadcast (client_id or client_type)
+        # Filtered broadcast (client_id, client_type, or multiple criteria)
         # Pass recipient dict for generic filtering
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -187,18 +187,22 @@ async def game_message(self, event):
     Send message to WebSocket client with optional recipient filtering.
 
     Filters messages based on recipient criteria if present.
+    All criteria must match (AND logic).
     """
     message = event["message"]
     recipient = event.get("recipient")
 
     # Apply recipient filter if present
     if recipient:
-        # Generic filter: check if this connection matches the recipient criteria
+        # Generic filter: ALL criteria must match
+        if "channel_id" in recipient and self.channel_name != recipient["channel_id"]:
+            return
+
         if "client_id" in recipient and self.client_id != recipient["client_id"]:
-            return  # Don't send - client_id doesn't match
+            return
 
         if "client_type" in recipient and self.client_type != recipient["client_type"]:
-            return  # Don't send - client_type doesn't match
+            return
 
     # Inject channel_id
     message["channel_id"] = self.channel_name
@@ -220,12 +224,6 @@ class WebSocketClient {
    * Send a message to a specific recipient
    */
   sendTo(recipient: { channel_id?: string; client_id?: string; client_type?: string }, message: object) {
-    // Validate: exactly one recipient field
-    const keys = Object.keys(recipient);
-    if (keys.length !== 1) {
-      throw new Error("recipient must have exactly one field: channel_id, client_id, or client_type");
-    }
-
     this.send({
       ...message,
       recipient
