@@ -59,7 +59,7 @@ export function allQuestions(board?: Board): Question[] {
 export const ENDPOINT =
   typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_ENDPOINT
     ? import.meta.env.VITE_API_ENDPOINT
-    : 'quasar.local:8000';
+    : 'localhost:8000';
 
 export enum UiMode {
   Host = 'host',
