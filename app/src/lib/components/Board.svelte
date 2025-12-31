@@ -73,7 +73,6 @@
             {#each category.questions as question, questionIndex}
               <button
                 class="flex aspect-video items-center justify-center rounded-md bg-primary-800 text-8xl font-bold transition-colors hover:bg-primary-700"
-                class:opacity-75={gameState.answeredQuestions.has(question.id)}
                 onclick={() => handleQuestionClick(question)}
                 onmouseenter={() => mode === 'host' && (hoveredQuestion = question)}
                 onmouseleave={() => mode === 'host' && (hoveredQuestion = undefined)}
