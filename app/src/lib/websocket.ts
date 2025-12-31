@@ -95,9 +95,7 @@ export class GameWebSocket {
         })();
       }
     } else if (data.type === 'select_question') {
-      gameState.selectQuestion(data.question);
-    } else if (data.type === 'set_slide') {
-      gameState.setCurrentSlide(data.slideIndex);
+      gameState.selectQuestion(data.question, data.slideIndex);
     } else if (data.type === 'toggle_question') {
       if (shouldUpdateQuestion(data.question_id, data.version)) {
         gameState.markQuestionAnswered(data.question_id, data.answered);
@@ -139,16 +137,10 @@ export class GameWebSocket {
     });
   }
 
-  selectQuestion(question: number | undefined) {
+  selectQuestion(question: number | undefined, slideIndex: number = 0) {
     this.send({
       type: 'select_question',
       question,
-    });
-  }
-
-  setSlide(slideIndex: number) {
-    this.send({
-      type: 'set_slide',
       slideIndex,
     });
   }

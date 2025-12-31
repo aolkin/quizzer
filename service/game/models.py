@@ -13,33 +13,31 @@ def validate_slides(value):
         if not isinstance(slide, dict):
             raise ValidationError(f"Slide {i} must be a dictionary")
 
-        allowed_fields = {"text", "media_type", "media_url", "answer"}
-        for key in slide.keys():
-            if key not in allowed_fields:
-                raise ValidationError(
-                    f"Slide {i} has invalid field '{key}'. "
-                    f"Allowed fields: {', '.join(allowed_fields)}"
-                )
+        content_fields = {"text", "media_type", "answer"}
+        if not (content_fields & set(slide.keys())):
+            raise ValidationError(
+                f"Slide {i} must contain at least one of: "
+                f"{', '.join(sorted(content_fields))}"
+            )
+
+        valid_media_types = {"image", "video", "audio"}
+        string_fields = {"text", "media_url", "answer", "media_type"}
+
+        for field in string_fields:
+            if field in slide and not isinstance(slide[field], str):
+                raise ValidationError(f"Slide {i} {field} must be a string")
 
         if "media_type" in slide:
-            valid_media_types = {"image", "video", "audio"}
             if slide["media_type"] not in valid_media_types:
                 raise ValidationError(
                     f"Slide {i} has invalid media_type '{slide['media_type']}'. "
                     f"Must be one of: {', '.join(valid_media_types)}"
                 )
-
             if "media_url" not in slide:
                 raise ValidationError(f"Slide {i} has media_type but no media_url")
 
-        if "media_url" in slide and not isinstance(slide["media_url"], str):
-            raise ValidationError(f"Slide {i} media_url must be a string")
-
-        if "text" in slide and not isinstance(slide["text"], str):
-            raise ValidationError(f"Slide {i} text must be a string")
-
-        if "answer" in slide and not isinstance(slide["answer"], str):
-            raise ValidationError(f"Slide {i} answer must be a string")
+        if "media_url" in slide and "media_type" not in slide:
+            raise ValidationError(f"Slide {i} has media_url but no media_type")
 
 
 def get_score_annotation():
@@ -112,15 +110,7 @@ class Question(models.Model):
         return f"{self.category.name} - {self.points}"
 
     def save(self, *args, **kwargs):
-        errors = {}
-        try:
-            validate_slides(self.slides)
-        except ValidationError as e:
-            errors["slides"] = e.messages
-
-        if errors:
-            raise ValidationError(errors)
-
+        validate_slides(self.slides)
         super().save(*args, **kwargs)
 
     @property

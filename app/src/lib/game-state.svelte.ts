@@ -48,13 +48,9 @@ class GameStateManager {
     answeredQuestionIds.forEach((id) => this.answeredQuestions.add(id));
   }
 
-  selectQuestion(questionId?: number) {
+  selectQuestion(questionId?: number, slideIndex: number = 0) {
     this.selectedQuestion = questionId;
-    this.currentSlideIndex = 0;
-  }
-
-  setCurrentSlide(index: number) {
-    this.currentSlideIndex = index;
+    this.currentSlideIndex = slideIndex;
   }
 
   markQuestionAnswered(questionId: number, answered: boolean) {

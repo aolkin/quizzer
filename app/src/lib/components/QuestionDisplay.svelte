@@ -14,8 +14,12 @@
 
   const hasDinoFlag = $derived(question.flags.includes('dino'));
 
+  const isSlideIndexValid = $derived(
+    question.type !== 'slides' || (slideIndex >= 0 && slideIndex < question.slides.length),
+  );
+
   const currentSlide = $derived<Slide | null>(
-    question.type === 'slides' && question.slides[slideIndex] ? question.slides[slideIndex] : null,
+    question.type === 'slides' && isSlideIndexValid ? question.slides[slideIndex] : null,
   );
 
   const displayText = $derived(

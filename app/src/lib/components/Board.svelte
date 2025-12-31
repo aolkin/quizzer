@@ -2,7 +2,7 @@
   import Icon from '@iconify/svelte';
   import { fly } from 'svelte/transition';
   import { toggleQuestion } from '$lib/api';
-  import { allQuestions, type Board, type Question, UiMode, type Slide } from '$lib/state.svelte';
+  import { allQuestions, type Board, type Question, UiMode } from '$lib/state.svelte';
   import type { AudioClient } from '../audio.svelte';
   import { gameState } from '../game-state.svelte';
   import { formatInlineMarkdown } from '../markdown';
@@ -16,12 +16,6 @@
     hoveredQuestion ||
       selectedQuestion ||
       allQuestions(board).find((q) => q.id === gameState.selectedQuestion),
-  );
-
-  const currentSlide = $derived<Slide | null>(
-    sidebarQuestion?.type === 'slides' && sidebarQuestion.slides[gameState.currentSlideIndex]
-      ? sidebarQuestion.slides[gameState.currentSlideIndex]
-      : null,
   );
 
   const totalSlides = $derived(sidebarQuestion?.slides?.length || 0);
@@ -46,17 +40,9 @@
     gameState.websocket?.selectQuestion(question.id);
   }
 
-  function nextSlide() {
-    const newIndex = gameState.currentSlideIndex + 1;
-    if (newIndex < totalSlides) {
-      gameState.websocket?.setSlide(newIndex);
-    }
-  }
-
-  function previousSlide() {
-    const newIndex = gameState.currentSlideIndex - 1;
-    if (newIndex >= 0) {
-      gameState.websocket?.setSlide(newIndex);
+  function selectSlide(index: number) {
+    if (sidebarQuestion && index >= 0 && index < totalSlides) {
+      gameState.websocket?.selectQuestion(sidebarQuestion.id, index);
     }
   }
 </script>
@@ -130,34 +116,43 @@
           </p>
         {:else if sidebarQuestion.type === 'slides'}
           <div class="mb-4">
-            <p class="mb-2 text-sm text-primary-300">
-              Slide {gameState.currentSlideIndex + 1} of {totalSlides}
-            </p>
-            {#if currentSlide}
-              {#if currentSlide.text}
-                <p class="mb-2 text-primary-200">{currentSlide.text}</p>
-              {/if}
-              {#if currentSlide.media_type && currentSlide.media_url}
-                {#if currentSlide.media_type === 'image'}
-                  <img
-                    src={currentSlide.media_url}
-                    alt="Slide preview"
-                    class="mb-2 max-h-40 rounded"
-                  />
-                {:else}
-                  <p class="mb-2 text-sm italic text-primary-400">
-                    {currentSlide.media_type}: {currentSlide.media_url}
-                  </p>
-                {/if}
-              {/if}
-              {#if currentSlide.answer}
-                <p class="text-primary-400" data-testid="slide-answer">
-                  Answer: {currentSlide.answer}
-                </p>
-              {/if}
-            {/if}
-            <p class="mt-2 text-primary-400" data-testid="question-answer">
-              Overall: {sidebarQuestion.answer}
+            <p class="mb-2 text-sm font-semibold text-primary-300">Slides:</p>
+            <div class="space-y-2">
+              {#each sidebarQuestion.slides as slide, index}
+                <button
+                  type="button"
+                  class="w-full rounded border p-2 text-left transition-colors {index ===
+                  gameState.currentSlideIndex
+                    ? 'border-primary-400 bg-primary-800'
+                    : 'border-surface-600 bg-surface-700 hover:bg-surface-600'}"
+                  onclick={() => selectSlide(index)}
+                  data-testid="slide-{index}"
+                >
+                  <p class="mb-1 text-xs text-primary-300">Slide {index + 1}</p>
+                  {#if slide.text}
+                    <p class="mb-1 text-sm text-primary-200">{slide.text}</p>
+                  {/if}
+                  {#if slide.media_type && slide.media_url}
+                    {#if slide.media_type === 'image'}
+                      <img
+                        src={slide.media_url}
+                        alt="Slide {index + 1}"
+                        class="mb-1 max-h-20 rounded"
+                      />
+                    {:else}
+                      <p class="mb-1 text-xs italic text-primary-400">
+                        {slide.media_type}: {slide.media_url.substring(0, 50)}...
+                      </p>
+                    {/if}
+                  {/if}
+                  {#if slide.answer}
+                    <p class="text-xs text-primary-400">Answer: {slide.answer}</p>
+                  {/if}
+                </button>
+              {/each}
+            </div>
+            <p class="mt-2 text-sm text-primary-400" data-testid="question-answer">
+              Overall Answer: {sidebarQuestion.answer}
             </p>
           </div>
         {/if}
@@ -171,27 +166,6 @@
           >
             Present
           </button>
-
-          {#if sidebarQuestion.type === 'slides' && totalSlides > 1}
-            <button
-              type="button"
-              class="btn-variant-filled btn"
-              onclick={() => previousSlide()}
-              disabled={gameState.currentSlideIndex === 0}
-              data-testid="previous-slide"
-            >
-              ← Previous
-            </button>
-            <button
-              type="button"
-              class="btn-variant-filled btn"
-              onclick={() => nextSlide()}
-              disabled={gameState.currentSlideIndex >= totalSlides - 1}
-              data-testid="next-slide"
-            >
-              Next →
-            </button>
-          {/if}
 
           <button
             type="button"
