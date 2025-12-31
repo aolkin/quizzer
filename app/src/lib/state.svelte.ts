@@ -14,7 +14,6 @@ export interface Question {
   slides: Slide[];
   order?: number;
   points: number;
-  answered: boolean;
 }
 
 export interface Board {
