@@ -7,9 +7,6 @@
 
   let { gameState }: Props = $props();
 
-  // Auto-fade on hover
-  let isHovered = $state(false);
-
   // Sort clients: connected first, then by type
   const sortedClients = $derived(
     Array.from(gameState.clientConnections.values()).sort((a, b) => {
@@ -22,11 +19,7 @@
 <div
   role="status"
   aria-label="Client connection status"
-  class="pointer-events-none fixed right-4 top-4 z-50 transition-opacity duration-300"
-  class:opacity-30={isHovered}
-  class:opacity-70={!isHovered}
-  onmouseenter={() => (isHovered = true)}
-  onmouseleave={() => (isHovered = false)}
+  class="pointer-events-none fixed right-4 top-4 z-50 opacity-70 transition-opacity duration-300 hover:opacity-30"
 >
   <div class="min-w-[200px] rounded-lg bg-surface-800 p-3 shadow-lg">
     <h3 class="mb-2 text-xs font-semibold text-surface-300">Clients</h3>
