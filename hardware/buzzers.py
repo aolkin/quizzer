@@ -113,11 +113,9 @@ class BuzzerClient(HardwareWebSocketClient):
 
     async def run(self):
         """Start the buzzer client."""
-        self.loop = asyncio.get_running_loop()
         self.buzzers.callback = self.schedule_buzzer_press
         self.buzzers.start()
-        await self.connect()
-        asyncio.create_task(self.listen_for_messages())
+        await super().run()
 
     async def on_disconnect(self):
         """Disable buzzers when connection is lost."""
