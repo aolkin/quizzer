@@ -171,11 +171,11 @@ test.describe('Multi-Client Synchronization', () => {
     });
 
     const question = hostPage.locator('[data-testid^="question-"]').first();
-    
+
     // Verify points are visible before marking answered
     const questionText = question.locator('div').filter({ hasText: /^\d+$/ }).first();
     await expect(questionText).toBeVisible({ timeout: 5000 });
-    
+
     await question.click();
 
     // Wait for question details to appear
