@@ -93,7 +93,7 @@ class Category(models.Model):
 
 class Question(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="questions")
-    flags = models.JSONField(default=list)
+    flags = models.JSONField(default=list, blank=True)
     text = models.TextField()
     answer = models.TextField()
     points = models.IntegerField(validators=[MinValueValidator(0)])

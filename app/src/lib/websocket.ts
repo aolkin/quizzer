@@ -9,7 +9,19 @@ import {
 import { gameState } from './game-state.svelte';
 import { getBoard as apiGetBoard } from './api';
 
-const CLIENT_ID = Math.random().toString(36);
+function getOrCreateClientId(): string {
+  const storageKey = 'quizzer_client_id';
+  let clientId = localStorage.getItem(storageKey);
+
+  if (!clientId) {
+    clientId = Math.random().toString(36).substring(2, 10);
+    localStorage.setItem(storageKey, clientId);
+  }
+
+  return clientId;
+}
+
+export const CLIENT_ID = getOrCreateClientId();
 
 export class GameWebSocket {
   private socket: WebSocket;
@@ -27,7 +39,7 @@ export class GameWebSocket {
 
   private createSocket(): WebSocket {
     const socket = new WebSocket(
-      `ws://${ENDPOINT}/ws/game/${this.gameId}/?client_type=${this.mode}`,
+      `ws://${ENDPOINT}/ws/game/${this.gameId}/?client_type=${this.mode}&client_id=${CLIENT_ID}`,
     );
     socket.onmessage = (event) => this.handleMessage(event);
 
