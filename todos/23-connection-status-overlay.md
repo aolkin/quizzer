@@ -1,5 +1,31 @@
 # Connection Status Overlay for Host View
 
+## Status
+
+**Phase 1 (Multi-Client Connection Tracking): ✅ COMPLETED**
+**Phase 2 (Auto-Fade & Click-Through): ✅ COMPLETED**
+**Phase 3 (Latency Monitoring): ⏳ PENDING**
+
+### What's Implemented
+
+✅ Multi-client connection tracking with `clientConnections` Map
+✅ `ClientConnection` interface with metadata (type, id, connected, lastSeen, latency placeholder)
+✅ `ConnectionStatusOverlay.svelte` component with all visual features
+✅ Integration into host view (host-only visibility)
+✅ Color-coded status indicators (🟢 connected / 🔴 disconnected)
+✅ Auto-fade on hover (CSS-based)
+✅ Click-through overlay (`pointer-events: none`)
+✅ ScoreFooter updated to use `clientConnections` directly
+✅ Unit and E2E tests
+
+### What's Remaining
+
+⏳ **Phase 3: Latency Monitoring** - Requires:
+- Backend changes to inject `sender_id` and handle ping/pong messages
+- Frontend ping interval and pong response handler
+- Display latency values in overlay
+- This should be implemented after TODO #24 (Hardware WebSocket Client Library)
+
 ## Problem
 
 Currently, the host view has minimal visibility into client connection status:
@@ -513,34 +539,33 @@ Add host's own latency to the overlay:
 
 ## Implementation Steps
 
-### Phase 1: Multi-Client Connection Tracking (Core Feature)
+### Phase 1: Multi-Client Connection Tracking (Core Feature) ✅ COMPLETED
 
-- [ ] Update `GameStateManager` in `/home/user/quizzer/app/src/lib/game-state.svelte.ts`:
-  - [ ] Replace `buzzerConnected` boolean with `clientConnections` Map
-  - [ ] Add `ClientConnection` interface
-  - [ ] Add `setClientConnection()` method
-  - [ ] Add backwards-compatible `buzzerConnected` getter
-- [ ] Update WebSocket handler in `/home/user/quizzer/app/src/lib/websocket.ts`:
-  - [ ] Track all `client_connection_status` messages, not just buzzer
-  - [ ] Call `gameState.setClientConnection()` for all client types
-- [ ] Create `ConnectionStatusOverlay.svelte` component:
-  - [ ] Fixed positioning in top-right corner
-  - [ ] Semi-transparent background
-  - [ ] List all connected clients with status indicators
-  - [ ] Green/red color coding for connected/disconnected
-  - [ ] Display `client_type` and `client_id`
-- [ ] Integrate overlay into host view (`/home/user/quizzer/app/src/routes/[game]/[[mode]]/+page.svelte`)
-- [ ] Update `ScoreFooter.svelte` to use new `buzzerConnected` getter (should work without changes)
+- [x] Update `GameStateManager` in `/home/user/quizzer/app/src/lib/game-state.svelte.ts`:
+  - [x] Replace `buzzerConnected` boolean with `clientConnections` Map
+  - [x] Add `ClientConnection` interface
+  - [x] Add `setClientConnection()` method
+  - [x] ~~Add backwards-compatible `buzzerConnected` getter~~ (removed - ScoreFooter updated to use `clientConnections` directly)
+- [x] Update WebSocket handler in `/home/user/quizzer/app/src/lib/websocket.ts`:
+  - [x] Track all `client_connection_status` messages, not just buzzer
+  - [x] Call `gameState.setClientConnection()` for all client types
+- [x] Create `ConnectionStatusOverlay.svelte` component:
+  - [x] Fixed positioning in top-right corner
+  - [x] Semi-transparent background
+  - [x] List all connected clients with status indicators
+  - [x] Green/red color coding for connected/disconnected
+  - [x] Display `client_type` and `client_id`
+- [x] Integrate overlay into host view (`/home/user/quizzer/app/src/routes/[game]/[[mode]]/+page.svelte`)
+- [x] Update `ScoreFooter.svelte` to use `clientConnections` directly with derived value
 
-### Phase 2: Auto-Fade & Click-Through (UX Enhancement)
+### Phase 2: Auto-Fade & Click-Through (UX Enhancement) ✅ COMPLETED
 
-- [ ] Add hover detection to overlay component
-- [ ] Implement opacity transition on hover (fade to more transparent)
-- [ ] Add `pointer-events: none` to overlay container
-- [ ] Add `pointer-events: auto` to any interactive elements (if needed)
-- [ ] Test that game UI beneath is still clickable
+- [x] Add hover detection to overlay component (CSS-based)
+- [x] Implement opacity transition on hover (fade to more transparent)
+- [x] Add `pointer-events: none` to overlay container
+- [x] Test that game UI beneath is still clickable
 
-### Phase 3: Latency Monitoring (Optional)
+### Phase 3: Latency Monitoring (Optional) ⏳ PENDING
 
 - [ ] Add ping/pong message types to backend (`/home/user/quizzer/service/game/consumers.py`)
 - [ ] Add `setClientLatency()` method to `GameStateManager`
@@ -551,16 +576,17 @@ Add host's own latency to the overlay:
 
 ### Testing
 
-- [ ] Manual testing with multiple client types:
-  - [ ] Web UI (implicit client)
-  - [ ] Buzzer hardware client
-  - [ ] OSC bridge client (once implemented)
-- [ ] Test connection/disconnection events
-- [ ] Test overlay positioning and z-index with other UI elements
-- [ ] Test auto-fade behavior
-- [ ] Test click-through functionality
-- [ ] Test backwards compatibility with existing buzzer indicator in footer
-- [ ] (If latency added) Test latency measurement accuracy
+- [x] Manual testing with multiple client types:
+  - [x] Web UI (implicit client)
+  - [x] Buzzer hardware client
+  - [ ] OSC bridge client (once implemented - see TODO #22)
+- [x] Test connection/disconnection events
+- [x] Test overlay positioning and z-index with other UI elements
+- [x] Test auto-fade behavior
+- [x] Test click-through functionality
+- [x] Test ScoreFooter buzzer indicator with new clientConnections structure
+- [x] Added E2E test validation for overlay visibility
+- [ ] (Phase 3) Test latency measurement accuracy
 
 ### Documentation
 
@@ -569,14 +595,14 @@ Add host's own latency to the overlay:
 - [ ] Add screenshot of overlay to README or docs
 - [ ] Document how to interpret connection status
 
-## Design Principles
+## Design Principles (Implemented)
 
-1. **Non-intrusive**: Small, semi-transparent, click-through overlay
-2. **Informative**: Shows all client types, not just buzzer
-3. **Real-time**: Updates immediately on connection changes
-4. **Backwards compatible**: Existing `buzzerConnected` state still works
-5. **Host-only**: Connection status only visible to host (not presentation/viewers)
-6. **Extensible**: Easy to add new client types without code changes
+1. **Non-intrusive**: Small, semi-transparent, click-through overlay ✅
+2. **Informative**: Shows all client types, not just buzzer ✅
+3. **Real-time**: Updates immediately on connection changes ✅
+4. **Direct access**: ScoreFooter uses `clientConnections` directly with derived value ✅
+5. **Host-only**: Connection status only visible to host (not presentation/viewers) ✅
+6. **Extensible**: Easy to add new client types without code changes ✅
 
 ## UI/UX Considerations
 

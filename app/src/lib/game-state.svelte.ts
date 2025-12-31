@@ -2,6 +2,14 @@ import { SvelteSet } from 'svelte/reactivity';
 import type { Board } from './state.svelte';
 import type { GameWebSocket } from './websocket';
 
+export interface ClientConnection {
+  clientType: string;
+  clientId: string | null;
+  connected: boolean;
+  lastSeen: number; // timestamp
+  latency?: number; // milliseconds (optional)
+}
+
 class GameStateManager {
   websocket = $state<GameWebSocket | undefined>(undefined);
   currentBoard = $state<number | undefined>(undefined);
@@ -13,7 +21,8 @@ class GameStateManager {
   currentSlideIndex = $state(0);
   buzzersEnabled = $state(false);
   activeBuzzerId = $state<number | undefined>(undefined);
-  buzzerConnected = $state(false);
+  // Map of client connections: `${client_type}:${client_id}` -> ClientConnection
+  clientConnections = $state(new Map<string, ClientConnection>());
 
   // Methods to update state (separation of concerns)
   setWebsocket(websocket: GameWebSocket) {
@@ -69,8 +78,24 @@ class GameStateManager {
     this.activeBuzzerId = buzzerId;
   }
 
-  setBuzzerConnected(connected: boolean) {
-    this.buzzerConnected = connected;
+  setClientConnection(clientType: string, clientId: string | null, connected: boolean) {
+    const key = `${clientType}:${clientId || 'default'}`;
+    this.clientConnections.set(key, {
+      clientType,
+      clientId,
+      connected,
+      lastSeen: Date.now(),
+      latency: this.clientConnections.get(key)?.latency,
+    });
+  }
+
+  setClientLatency(clientType: string, clientId: string | null, latency: number) {
+    const key = `${clientType}:${clientId || 'default'}`;
+    const existing = this.clientConnections.get(key);
+    if (existing) {
+      existing.latency = latency;
+      this.clientConnections.set(key, existing);
+    }
   }
 
   reset() {
@@ -80,9 +105,10 @@ class GameStateManager {
     this.currentSlideIndex = 0;
     this.buzzersEnabled = false;
     this.activeBuzzerId = undefined;
-    this.buzzerConnected = false;
+    this.clientConnections.clear();
   }
 }
 
 // Create a singleton instance
 export const gameState = new GameStateManager();
+export type { GameStateManager };

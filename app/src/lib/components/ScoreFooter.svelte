@@ -42,6 +42,13 @@
     }
     return gameState.scores[entity.id] ?? 0;
   }
+
+  // Check if any buzzer client is connected
+  const buzzerConnected = $derived(
+    Array.from(gameState.clientConnections.values()).some(
+      (client) => client.clientType === 'buzzer' && client.connected,
+    ),
+  );
 </script>
 
 <div class="fixed bottom-0 left-0 right-0 bg-surface-800 p-4">
@@ -58,11 +65,11 @@
       </div>
       <div class="flex items-center gap-2">
         <button
-          class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full {gameState.buzzerConnected
+          class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full {buzzerConnected
             ? 'bg-green-600'
             : 'bg-red-600'}"
           onclick={toggleBuzzerLogLevel}
-          title="Buzzer {gameState.buzzerConnected
+          title="Buzzer {buzzerConnected
             ? 'connected'
             : 'disconnected'} - Click to toggle log level ({buzzerLogLevel})"
         >
