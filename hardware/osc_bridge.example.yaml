@@ -1,0 +1,66 @@
+# WebSocket ↔ OSC Bridge Configuration Example
+
+websocket:
+  # Quizzer backend host (can be overridden with --server)
+  host: "quasar.local"
+  # Unique identifier for this bridge instance
+  client_id: "osc-main"
+
+# Optional: Default OSC destination (can be overridden per rule)
+default_destination:
+  host: "192.168.1.100"
+  port: 53000
+
+# Optional: OSC server settings (only needed if 'incoming' is defined)
+osc:
+  listen_host: "0.0.0.0"
+  listen_port: 7400
+
+# WebSocket → OSC mappings (outgoing)
+outgoing:
+  # Example with conditions - send different OSC messages based on field value
+  - websocket_type: "toggle_buzzers"
+    conditions:
+      enabled: true
+    osc_destinations:
+      - address: "/quizzer/buzzers/enable"
+        args:
+          - field: "enabled"
+
+  - websocket_type: "toggle_buzzers"
+    conditions:
+      enabled: false
+    osc_destinations:
+      - address: "/quizzer/buzzers/disable"
+
+  # Example with type passthrough and default value
+  - websocket_type: "select_question"
+    osc_destinations:
+      - address: "/quizzer/question"
+        args:
+          # No 'type' specified - value passed through as-is
+          - field: "question"
+          # With default value if field missing
+          - field: "category"
+            default: 0
+
+  # Example overriding default destination
+  - websocket_type: "buzzer_pressed"
+    osc_destinations:
+      - host: "192.168.1.101"
+        port: 9000
+        address: "/sound/buzzer"
+        args:
+          - field: "buzzerId"
+            type: "int"
+
+# OSC → WebSocket mappings (incoming)
+# If empty or omitted, OSC server will not start
+incoming:
+  - osc_address: "/buzzer/press"
+    websocket_type: "buzzer_pressed"
+    args:
+      - osc_index: 0
+        websocket_field: "buzzerId"
+        type: "int"
+
