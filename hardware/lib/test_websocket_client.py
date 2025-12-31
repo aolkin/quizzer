@@ -58,7 +58,7 @@ class TestHardwareWebSocketClient(unittest.TestCase):
         self.assertEqual(sent_data["key"], "value")
 
         mock_ws.reset_mock()
-        await client._handle_ping({"type": "ping", "timestamp": 12345, "sender_id": "server"})
+        await client._handle_ping({"type": "ping", "timestamp": 12345, "channel_id": "server"})
         pong_data = json.loads(mock_ws.send.call_args[0][0])
         self.assertEqual(pong_data["type"], "pong")
         self.assertEqual(pong_data["recipient"], "server")
