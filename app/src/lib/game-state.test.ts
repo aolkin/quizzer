@@ -40,6 +40,7 @@ describe('GameStateManager', () => {
               answer: 'A1',
               points: 100,
               answered: true,
+              slides: [],
             },
             {
               id: 2,
@@ -49,6 +50,7 @@ describe('GameStateManager', () => {
               answer: 'A2',
               points: 200,
               answered: false,
+              slides: [],
             },
           ],
         },

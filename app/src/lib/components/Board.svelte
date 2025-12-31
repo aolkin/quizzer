@@ -18,6 +18,8 @@
       allQuestions(board).find((q) => q.id === gameState.selectedQuestion),
   );
 
+  const totalSlides = $derived(sidebarQuestion?.slides?.length || 0);
+
   function isColumnVisible(categoryId: number): boolean {
     return gameState.visibleCategories.has(categoryId);
   }
@@ -36,6 +38,12 @@
   function presentQuestion(question: Question) {
     gameState.websocket?.toggleBuzzers(true);
     gameState.websocket?.selectQuestion(question.id);
+  }
+
+  function selectSlide(index: number) {
+    if (sidebarQuestion && index >= 0 && index < totalSlides) {
+      gameState.websocket?.selectQuestion(sidebarQuestion.id, index);
+    }
   }
 </script>
 
@@ -75,6 +83,7 @@
                   {question}
                   {audio}
                   visible={gameState.selectedQuestion === question.id && mode === 'presentation'}
+                  slideIndex={gameState.currentSlideIndex}
                 />
                 {#if (mode === UiMode.Host || isColumnVisible(category.id)) && !gameState.answeredQuestions.has(question.id)}
                   <div transition:fly={{ x: 100 }}>{question.points}</div>
@@ -96,11 +105,61 @@
           {#if sidebarQuestion.flags.includes('dino')}
             <Icon icon="mdi:star" class="inline text-warning-400" />
           {/if}
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -- HTML is escaped in formatInlineMarkdown -->
-          {sidebarQuestion.points} - {@html formatInlineMarkdown(sidebarQuestion.text)}
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html formatInlineMarkdown(sidebarQuestion.text)}
+          <span class="text-sm text-primary-300">{sidebarQuestion.points} points</span>
         </h3>
-        <p class="mb-4 text-primary-400" data-testid="question-answer">{sidebarQuestion.answer}</p>
-        <div class="flex gap-2">
+
+        {#if sidebarQuestion.type === 'text'}
+          <p class="mb-4 text-primary-400" data-testid="question-answer">
+            {sidebarQuestion.answer}
+          </p>
+        {:else if sidebarQuestion.type === 'slides'}
+          <div class="mb-4">
+            <p class="mb-2 text-sm font-semibold text-primary-300">Slides:</p>
+            <div class="space-y-2">
+              {#each sidebarQuestion.slides as slide, index}
+                <button
+                  type="button"
+                  class="w-full rounded border p-2 text-left transition-colors {index ===
+                  gameState.currentSlideIndex
+                    ? 'border-primary-400 bg-primary-800'
+                    : 'border-surface-600 bg-surface-700 hover:bg-surface-600'}"
+                  onclick={() => selectSlide(index)}
+                  data-testid="slide-{index}"
+                >
+                  <p class="mb-1 text-xs text-primary-300">Slide {index + 1}</p>
+                  {#if slide.text}
+                    <p class="mb-1 text-sm text-primary-200">{slide.text}</p>
+                  {/if}
+                  {#if slide.media_type && slide.media_url}
+                    {#if slide.media_type === 'image'}
+                      <img
+                        src={slide.media_url}
+                        alt="Slide {index + 1}"
+                        class="mb-1 max-h-20 rounded"
+                      />
+                    {:else}
+                      <p class="mb-1 text-xs italic text-primary-400">
+                        {slide.media_type}: {slide.media_url.length > 50
+                          ? slide.media_url.substring(0, 50) + '...'
+                          : slide.media_url}
+                      </p>
+                    {/if}
+                  {/if}
+                  {#if slide.answer}
+                    <p class="text-xs text-primary-400">Answer: {slide.answer}</p>
+                  {/if}
+                </button>
+              {/each}
+            </div>
+            <p class="mt-2 text-sm text-primary-400" data-testid="question-answer">
+              Overall Answer: {sidebarQuestion.answer}
+            </p>
+          </div>
+        {/if}
+
+        <div class="flex flex-wrap gap-2">
           <button
             type="button"
             class="btn-variant-filled btn"
@@ -109,6 +168,7 @@
           >
             Present
           </button>
+
           <button
             type="button"
             class="btn-variant-filled btn"

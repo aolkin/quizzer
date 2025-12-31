@@ -95,7 +95,7 @@ export class GameWebSocket {
         })();
       }
     } else if (data.type === 'select_question') {
-      gameState.selectQuestion(data.question);
+      gameState.selectQuestion(data.question, data.slideIndex);
     } else if (data.type === 'toggle_question') {
       if (shouldUpdateQuestion(data.question_id, data.version)) {
         gameState.markQuestionAnswered(data.question_id, data.answered);
@@ -137,14 +137,11 @@ export class GameWebSocket {
     });
   }
 
-  /**
-   * Broadcast question selection to all connected clients.
-   * @param question - Question ID to display, or undefined to close the current question
-   */
-  selectQuestion(question: number | undefined) {
+  selectQuestion(question: number | undefined, slideIndex: number = 0) {
     this.send({
       type: 'select_question',
       question,
+      slideIndex,
     });
   }
 

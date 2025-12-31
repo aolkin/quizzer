@@ -18,7 +18,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             "points",
             "flags",
             "order",
-            "media_url",
+            "slides",
             "answered",
         ]
 
@@ -101,7 +101,7 @@ class QuestionExportSerializer(serializers.Serializer):
     answer = serializers.CharField()
     points = serializers.IntegerField()
     type = serializers.CharField(required=False)
-    media_url = serializers.URLField(required=False)
+    slides = serializers.ListField(required=False)
     flags = serializers.ListField(child=serializers.CharField(), required=False)
     answered = serializers.BooleanField(required=False)
 
@@ -113,8 +113,8 @@ class QuestionExportSerializer(serializers.Serializer):
         }
         if instance.type and instance.type != "text":
             data["type"] = instance.type
-        if instance.media_url:
-            data["media_url"] = instance.media_url
+        if instance.slides:
+            data["slides"] = instance.slides
         if instance.flags:
             data["flags"] = instance.flags
 
@@ -224,8 +224,7 @@ class QuestionImportSerializer(serializers.Serializer):
     text = serializers.CharField()
     answer = serializers.CharField()
     points = serializers.IntegerField()
-    type = serializers.CharField(default="text", required=False)
-    media_url = serializers.URLField(required=False, allow_null=True, default=None)
+    slides = serializers.ListField(default=list, required=False)
     flags = serializers.ListField(child=serializers.CharField(), default=list, required=False)
     answered = serializers.BooleanField(default=False, required=False)
 
@@ -326,8 +325,7 @@ class GameImportSerializer(serializers.Serializer):
                         text=question_data["text"],
                         answer=question_data["answer"],
                         points=question_data["points"],
-                        type=question_data.get("type", "text"),
-                        media_url=question_data.get("media_url") or None,
+                        slides=question_data.get("slides", []),
                         flags=question_data.get("flags", []),
                         answered=question_data.get("answered", False),
                         order=question_order,

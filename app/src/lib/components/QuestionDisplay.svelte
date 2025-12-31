@@ -1,17 +1,30 @@
 <script lang="ts">
   import { type AudioClient, Sound } from '../audio.svelte';
   import { formatInlineMarkdown } from '../markdown';
-  import type { Question } from '../state.svelte';
+  import type { Question, Slide } from '../state.svelte';
 
   const {
     question,
     visible,
     audio,
-  }: { question: Question; visible: boolean; audio?: AudioClient } = $props();
+    slideIndex = 0,
+  }: { question: Question; visible: boolean; audio?: AudioClient; slideIndex?: number } = $props();
 
   let container: HTMLDivElement;
 
   const hasDinoFlag = $derived(question.flags.includes('dino'));
+
+  const isSlideIndexValid = $derived(
+    question.type !== 'slides' || (slideIndex >= 0 && slideIndex < question.slides.length),
+  );
+
+  const currentSlide = $derived<Slide | null>(
+    question.type === 'slides' && isSlideIndexValid ? question.slides[slideIndex] : null,
+  );
+
+  const displayText = $derived(
+    question.type === 'slides' && currentSlide?.text ? currentSlide.text : question.text,
+  );
 
   $effect(() => {
     if (!visible && container.parentElement) {
@@ -49,27 +62,27 @@
 >
   <div class="mx-auto max-w-[60%] text-center">
     <div>
-      {#if question.type === 'text'}
+      {#if question.type === 'text' || !currentSlide?.media_type}
         <h2
           class="font-bold"
           style="font-size: 3cqw; line-height: 3.5cqw;"
           data-testid="question-text"
         >
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -- HTML is escaped in formatInlineMarkdown -->
-          {@html formatInlineMarkdown(question.text)}
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html formatInlineMarkdown(displayText)}
         </h2>
-      {:else if question.type === 'image'}
+      {:else if currentSlide.media_type === 'image'}
         <img
-          src={question.media_url}
+          src={currentSlide.media_url}
           alt="Question media"
           class="mx-auto max-w-full rounded-lg shadow-lg"
         />
-      {:else if question.type === 'video'}
+      {:else if currentSlide.media_type === 'video'}
         <!-- svelte-ignore a11y_media_has_caption -->
-        <video src={question.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg"
+        <video src={currentSlide.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg"
         ></video>
-      {:else if question.type === 'audio'}
-        <audio src={question.media_url} controls class="w-full"></audio>
+      {:else if currentSlide.media_type === 'audio'}
+        <audio src={currentSlide.media_url} controls class="w-full"></audio>
       {/if}
     </div>
   </div>

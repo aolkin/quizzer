@@ -37,6 +37,7 @@ describe('Version tracking', () => {
               answer: 'A1',
               points: 100,
               answered: false,
+              slides: [],
             },
             {
               id: 2,
@@ -46,6 +47,7 @@ describe('Version tracking', () => {
               answer: 'A2',
               points: 200,
               answered: false,
+              slides: [],
             },
           ],
         },

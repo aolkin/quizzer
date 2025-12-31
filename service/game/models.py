@@ -1,16 +1,46 @@
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum, Case, When, Value, IntegerField
 from colorfield.fields import ColorField
 
 
-def get_score_annotation():
-    """
-    Returns the annotation expression for computing player scores on a Player queryset.
+def validate_slides(value):
+    if not isinstance(value, list):
+        raise ValidationError("Slides must be a list")
 
-    This can be used in Player querysets to annotate scores efficiently.
-    For each answer, uses answer.points if not null, otherwise question.points.
-    """
+    for i, slide in enumerate(value):
+        if not isinstance(slide, dict):
+            raise ValidationError(f"Slide {i} must be a dictionary")
+
+        content_fields = {"text", "answer"}
+        has_media = "media_type" in slide or "media_url" in slide
+        if not (content_fields & set(slide.keys())) and not has_media:
+            raise ValidationError(
+                f"Slide {i} must contain at least one of: text, answer, or media (media_type + media_url)"
+            )
+
+        valid_media_types = {"image", "video", "audio"}
+        string_fields = {"text", "media_url", "answer", "media_type"}
+
+        for field in string_fields:
+            if field in slide and not isinstance(slide[field], str):
+                raise ValidationError(f"Slide {i} {field} must be a string")
+
+        if "media_type" in slide:
+            if slide["media_type"] not in valid_media_types:
+                raise ValidationError(
+                    f"Slide {i} has invalid media_type '{slide['media_type']}'. "
+                    f"Must be one of: {', '.join(valid_media_types)}"
+                )
+            if "media_url" not in slide:
+                raise ValidationError(f"Slide {i} has media_type but no media_url")
+
+        if "media_url" in slide and "media_type" not in slide:
+            raise ValidationError(f"Slide {i} has media_url but no media_type")
+
+
+def get_score_annotation():
     return Sum(
         Case(
             When(answers__points__isnull=False, then="answers__points"),
@@ -62,22 +92,14 @@ class Category(models.Model):
 
 
 class Question(models.Model):
-    QUESTION_TYPES = [
-        ("text", "Text Only"),
-        ("image", "Image"),
-        ("video", "Video"),
-        ("audio", "Audio"),
-    ]
-
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="questions")
     flags = models.JSONField(default=list)
-    type = models.CharField(max_length=5, choices=QUESTION_TYPES, default="text")
     text = models.TextField()
     answer = models.TextField()
     points = models.IntegerField(validators=[MinValueValidator(0)])
     answered = models.BooleanField(default=False)
     order = models.PositiveIntegerField(blank=True, null=True)
-    media_url = models.URLField(blank=True, null=True)
+    slides = models.JSONField(default=list, blank=True, validators=[validate_slides])
     state_version = models.IntegerField(default=0)
 
     class Meta:
@@ -86,6 +108,14 @@ class Question(models.Model):
 
     def __str__(self):
         return f"{self.category.name} - {self.points}"
+
+    def save(self, *args, **kwargs):
+        validate_slides(self.slides)
+        super().save(*args, **kwargs)
+
+    @property
+    def type(self):
+        return "slides" if self.slides else "text"
 
 
 class Team(models.Model):
