@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import logging
 import os
+from enum import Enum
 from typing import Any, Dict, Optional
 
 import yaml
@@ -14,6 +15,20 @@ from pythonosc.osc_server import AsyncIOOSCUDPServer
 from lib.websocket_client import HardwareWebSocketClient
 
 logger = logging.getLogger(__name__)
+
+
+class ConversionDirection(Enum):
+    """Direction of type conversion."""
+    TO_OSC = "to_osc"
+    TO_WEBSOCKET = "to_websocket"
+
+
+class OSCType(Enum):
+    """OSC data types."""
+    INT = "int"
+    FLOAT = "float"
+    BOOL = "bool"
+    STRING = "string"
 
 
 class OSCBridgeClient(HardwareWebSocketClient):
@@ -100,7 +115,7 @@ class OSCBridgeClient(HardwareWebSocketClient):
                 osc_args = []
                 for arg_spec in args_config:
                     field_name = arg_spec["field"]
-                    arg_type = arg_spec.get("type")  # Make type optional
+                    arg_type = arg_spec.get("type")
                     default_value = arg_spec.get("default")
                     
                     value = message.get(field_name)
@@ -108,22 +123,15 @@ class OSCBridgeClient(HardwareWebSocketClient):
                         if default_value is not None:
                             value = default_value
                         else:
-                            # Skip this argument entirely if field not found and no default
                             logger.debug(
-                                f"Field '{field_name}' not found in message, skipping argument"
+                                f"Required field '{field_name}' not found in message, skipping OSC message"
                             )
-                            continue
+                            break
                     
-                    # If no type specified, pass through as-is
-                    if arg_type:
-                        converted_value = self._convert_type(value, arg_type, "to_osc")
-                    else:
-                        converted_value = value
-                    
+                    converted_value = self._convert_type(value, arg_type, "to_osc")
                     osc_args.append(converted_value)
-                
-                # Only send if we have arguments (or if args_config is empty, send empty message)
-                if osc_args or not args_config:
+                else:
+                    # Only send if all required arguments were successfully mapped
                     client = self._get_osc_client(host, port)
                     client.send_message(address, osc_args)
                     logger.debug(
@@ -136,31 +144,43 @@ class OSCBridgeClient(HardwareWebSocketClient):
                 )
     
     def _convert_type(
-        self, value: Any, target_type: str, direction: str = "to_osc"
+        self,
+        value: Any,
+        target_type: Optional[str],
+        direction: str = "to_osc"
     ) -> Any:
         """
         Convert value between WebSocket and OSC types.
         
         Args:
             value: Value to convert
-            target_type: Target type (int, float, bool, string)
+            target_type: Target type (int, float, bool, string) or None for passthrough
             direction: "to_osc" or "to_websocket"
         """
-        if target_type == "int":
-            if direction == "to_osc" and isinstance(value, bool):
+        if target_type is None:
+            return value
+        
+        try:
+            conv_dir = ConversionDirection(direction)
+            osc_type = OSCType(target_type)
+        except ValueError:
+            logger.warning(f"Unknown type or direction: {target_type}, {direction}")
+            return value
+        
+        if osc_type == OSCType.INT:
+            if conv_dir == ConversionDirection.TO_OSC and isinstance(value, bool):
                 return 1 if value else 0
             return int(value)
-        elif target_type == "float":
+        elif osc_type == OSCType.FLOAT:
             return float(value)
-        elif target_type == "bool":
-            if direction == "to_websocket" and isinstance(value, (int, float)):
+        elif osc_type == OSCType.BOOL:
+            if conv_dir == ConversionDirection.TO_WEBSOCKET and isinstance(value, (int, float)):
                 return value > 0.5
             return bool(value)
-        elif target_type == "string":
+        elif osc_type == OSCType.STRING:
             return str(value)
-        else:
-            logger.warning(f"Unknown type '{target_type}', passing value as-is")
-            return value
+        
+        return value
     
     async def _handle_osc_message(self, address: str, *args):
         """Handle incoming OSC messages and translate to WebSocket."""
@@ -183,13 +203,13 @@ class OSCBridgeClient(HardwareWebSocketClient):
             for arg_spec in args_config:
                 osc_index = arg_spec["osc_index"]
                 websocket_field = arg_spec["websocket_field"]
-                arg_type = arg_spec["type"]
+                arg_type = arg_spec.get("type")
                 
                 if osc_index >= len(osc_args):
-                    logger.warning(
-                        f"OSC arg index {osc_index} out of range for args {osc_args}"
+                    logger.debug(
+                        f"OSC arg index {osc_index} out of range for args {osc_args}, skipping message"
                     )
-                    continue
+                    return
                 
                 value = osc_args[osc_index]
                 converted_value = self._convert_type(value, arg_type, "to_websocket")
@@ -205,7 +225,6 @@ class OSCBridgeClient(HardwareWebSocketClient):
     
     async def setup_osc_server(self):
         """Set up OSC server to listen for incoming OSC messages."""
-        # Skip if no incoming rules defined
         if not self.config.get("incoming"):
             logger.info("No incoming OSC rules defined, skipping OSC server setup")
             return None, None

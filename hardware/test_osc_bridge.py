@@ -176,6 +176,43 @@ class TestOSCBridgeRules(unittest.TestCase):
         # Check that OSC client was created with default host/port
         client._get_osc_client.assert_called_with("192.168.1.100", 53000)
 
+    def test_missing_required_field_skips_message(self):
+        """Test that missing required field causes message to be skipped."""
+        client = OSCBridgeClient(
+            host="localhost:8000",
+            game_id=1,
+            client_id="test",
+            config=self.test_config
+        )
+        
+        mock_osc_client = MagicMock()
+        client._get_osc_client = MagicMock(return_value=mock_osc_client)
+        
+        # Test message missing required field (value1 is required, no default)
+        message = {"type": "test_message", "value2": 3.14}
+        asyncio.run(client.handle_message(message))
+        
+        # Should NOT send OSC message because required field is missing
+        mock_osc_client.send_message.assert_not_called()
+
+    def test_malformed_osc_skips_websocket(self):
+        """Test that malformed OSC messages skip sending to WebSocket."""
+        client = OSCBridgeClient(
+            host="localhost:8000",
+            game_id=1,
+            client_id="test",
+            config=self.test_config
+        )
+        
+        # Mock the send_message method
+        client.send_message = AsyncMock()
+        
+        # Simulate receiving OSC message with insufficient arguments
+        asyncio.run(client._handle_osc_message("/buzzer/press", 5))  # Missing second arg
+        
+        # Should NOT send WebSocket message because OSC args are insufficient
+        client.send_message.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
