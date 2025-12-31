@@ -80,7 +80,7 @@ class HardwareWebSocketClient:
         await self.send_message(
             "pong",
             timestamp=message.get("timestamp"),
-            recipient=message.get("sender_id"),
+            recipient=message.get("channel_id"),
         )
 
     async def _connect(self):

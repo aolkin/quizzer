@@ -2,7 +2,7 @@
 
 ## Status
 
-⏳ **PENDING** - Not yet implemented
+⏳ **IN PROGRESS** - Refactoring sender_id to channel_id completed
 
 ## Problem
 
