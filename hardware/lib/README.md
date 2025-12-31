@@ -15,14 +15,11 @@ class MyHardwareClient(HardwareWebSocketClient):
         if message["type"] == "command":
             await self.send_message("response", status="ok")
 
-    async def run(self):
-        self.loop = asyncio.get_running_loop()
-        # Initialize your hardware here
-        await self.connect()
-        asyncio.create_task(self.listen_for_messages())
+async def main():
+    client = MyHardwareClient("localhost:8000", 1)
+    await client.run()
 
-asyncio.get_event_loop().run_until_complete(MyHardwareClient("localhost:8000", 1).run())
-asyncio.get_event_loop().run_forever()
+asyncio.run(main())
 ```
 
 ## Key Features

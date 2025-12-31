@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
 import os
-import signal
 import argparse
 import logging
 import threading
@@ -102,31 +100,19 @@ class BuzzerClient(HardwareWebSocketClient):
 
     def schedule_buzzer_press(self, buzzer_id: int):
         """Schedule buzzer press message from hardware thread."""
-        if self.loop:
+        try:
+            loop = asyncio.get_running_loop()
             asyncio.run_coroutine_threadsafe(
-                self.handle_buzzer_press(buzzer_id), self.loop
+                self.handle_buzzer_press(buzzer_id), loop
             )
-        else:
+        except RuntimeError:
             logger.warning(
-                f"Buzzer {buzzer_id} pressed but WebSocket not connected yet"
+                f"Buzzer {buzzer_id} pressed but event loop not running"
             )
-
-    async def run(self):
-        """Start the buzzer client."""
-        self.buzzers.callback = self.schedule_buzzer_press
-        self.buzzers.start()
-        await super().run()
 
     async def on_disconnect(self):
         """Disable buzzers when connection is lost."""
         self.buzzers.enabled = False
-
-
-def cleanup_gpio(signum=None, frame=None):
-    """Cleanup GPIO pins on shutdown"""
-    logger.info("Cleaning up GPIO...")
-    gpio.cleanup()
-    sys.exit(0)
 
 
 def setup_logging(log_level: str):
@@ -134,7 +120,7 @@ def setup_logging(log_level: str):
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f'Invalid log level: {log_level}')
-    
+
     logging.basicConfig(
         level=numeric_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -155,8 +141,8 @@ def parse_args():
     parser.add_argument(
         '--server',
         type=str,
-        default=os.getenv('QUIZZER_SERVER', 'quasar.local:8000'),
-        help='Server URL (default: quasar.local:8000, or QUIZZER_SERVER env var)'
+        default=os.getenv('QUIZZER_SERVER', 'quasar.local'),
+        help='Server URL (default: quasar.local, or QUIZZER_SERVER env var)'
     )
     parser.add_argument(
         '--log-level',
@@ -168,20 +154,23 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+async def main():
+    """Main async entry point."""
     args = parse_args()
     setup_logging(args.log_level)
 
-    # Set up signal handlers for graceful shutdown
-    signal.signal(signal.SIGTERM, cleanup_gpio)
-    signal.signal(signal.SIGINT, cleanup_gpio)
-
     thread = BuzzerThread()
     client = BuzzerClient(args.game_id, thread, args.server)
+
+    thread.callback = client.schedule_buzzer_press
+    thread.start()
+
     try:
-        asyncio.get_event_loop().run_until_complete(client.run())
-        asyncio.get_event_loop().run_forever()
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        await client.run()
+    finally:
+        logger.info("Cleaning up GPIO...")
         gpio.cleanup()
-        raise
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

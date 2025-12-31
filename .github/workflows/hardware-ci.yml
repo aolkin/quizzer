@@ -27,5 +27,5 @@ jobs:
 
       - name: Run hardware library tests
         run: |
-          cd hardware/lib
-          python3 -m unittest test_websocket_client.py -v
+          cd hardware
+          python3 -m unittest lib.test_websocket_client -v

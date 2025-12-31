@@ -9,8 +9,8 @@ a running WebSocket server.
 import asyncio
 import json
 import unittest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from websocket_client import HardwareWebSocketClient
+from unittest.mock import AsyncMock
+from .websocket_client import HardwareWebSocketClient
 
 
 class TestHardwareClient(HardwareWebSocketClient):
@@ -62,6 +62,7 @@ class TestHardwareWebSocketClient(unittest.TestCase):
         pong_data = json.loads(mock_ws.send.call_args[0][0])
         self.assertEqual(pong_data["type"], "pong")
         self.assertEqual(pong_data["recipient"], "server")
+        self.assertEqual(pong_data["timestamp"], 12345)
 
     def test_messaging(self):
         """Wrapper for async messaging test."""

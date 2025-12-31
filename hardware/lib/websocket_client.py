@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from typing import Optional
+from urllib.parse import urlencode
 
 import websockets
 
@@ -48,14 +49,13 @@ class HardwareWebSocketClient:
             f"hardware.{client_type}.{client_id or 'default'}"
         )
         self.websocket = None
-        self.loop = None
 
     def _build_uri(self) -> str:
-        """Build WebSocket URI with query parameters."""
-        params = f"client_type={self.client_type}"
+        params = {"client_type": self.client_type}
         if self.client_id:
-            params += f"&client_id={self.client_id}"
-        return f"ws://{self.host}/ws/game/{self.game_id}/?{params}"
+            params["client_id"] = self.client_id
+        query_string = urlencode(params)
+        return f"ws://{self.host}/ws/game/{self.game_id}/?{query_string}"
 
     async def send_message(self, message_type: str, **kwargs):
         """
@@ -83,17 +83,23 @@ class HardwareWebSocketClient:
             recipient=message.get("sender_id"),
         )
 
-    async def connect(self):
-        """Connect to WebSocket server."""
+    async def _connect(self):
         uri = self._build_uri()
         self.websocket = await websockets.connect(
             uri, ping_interval=15, ping_timeout=5
         )
         self.logger.info(f"Connected to {uri}")
 
-    async def listen_for_messages(self):
-        """Listen for messages with auto-reconnect."""
+    async def _listen_for_messages(self):
         while True:
+            if not self.websocket:
+                await asyncio.sleep(1)
+                try:
+                    await self._connect()
+                except Exception as e:
+                    self.logger.error(f"Reconnection failed: {e}")
+                continue
+
             try:
                 message = await self.websocket.recv()
                 try:
@@ -106,21 +112,21 @@ class HardwareWebSocketClient:
                     await self._handle_ping(data)
                     continue
 
-                await self.handle_message(data)
+                try:
+                    await self.handle_message(data)
+                except Exception as handler_error:
+                    self.logger.exception(
+                        f"Error while handling message {data}: {handler_error}"
+                    )
 
             except websockets.ConnectionClosed:
                 self.logger.warning("Connection closed, attempting to reconnect...")
+                self.websocket = None
                 await self.on_disconnect()
-                await asyncio.sleep(1)
-                await self.connect()
             except (OSError, websockets.WebSocketException) as e:
                 self.logger.error(f"Network error: {e}")
+                self.websocket = None
                 await self.on_disconnect()
-                await asyncio.sleep(1)
-                try:
-                    await self.connect()
-                except Exception as reconnect_error:
-                    self.logger.error(f"Reconnection failed: {reconnect_error}")
 
     async def on_disconnect(self):
         """Override to handle disconnection events."""
@@ -128,9 +134,8 @@ class HardwareWebSocketClient:
 
     async def run(self):
         """Main entry point: connect and listen for messages."""
-        self.loop = asyncio.get_running_loop()
-        await self.connect()
-        asyncio.create_task(self.listen_for_messages())
+        await self._connect()
+        await self._listen_for_messages()
 
     async def handle_message(self, message: dict):
         """
@@ -142,4 +147,3 @@ class HardwareWebSocketClient:
         self.logger.warning(
             f"Unhandled message type '{message.get('type')}': {message}"
         )
-
