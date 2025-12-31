@@ -141,7 +141,9 @@
                       />
                     {:else}
                       <p class="mb-1 text-xs italic text-primary-400">
-                        {slide.media_type}: {slide.media_url.substring(0, 50)}...
+                        {slide.media_type}: {slide.media_url.length > 50
+                          ? slide.media_url.substring(0, 50) + '...'
+                          : slide.media_url}
                       </p>
                     {/if}
                   {/if}

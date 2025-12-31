@@ -13,11 +13,11 @@ def validate_slides(value):
         if not isinstance(slide, dict):
             raise ValidationError(f"Slide {i} must be a dictionary")
 
-        content_fields = {"text", "media_type", "answer"}
-        if not (content_fields & set(slide.keys())):
+        content_fields = {"text", "answer"}
+        has_media = "media_type" in slide or "media_url" in slide
+        if not (content_fields & set(slide.keys())) and not has_media:
             raise ValidationError(
-                f"Slide {i} must contain at least one of: "
-                f"{', '.join(sorted(content_fields))}"
+                f"Slide {i} must contain at least one of: text, answer, or media (media_type + media_url)"
             )
 
         valid_media_types = {"image", "video", "audio"}
