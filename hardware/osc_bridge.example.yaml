@@ -1,0 +1,66 @@
+# WebSocket ↔ OSC Bridge Configuration Example
+# This file demonstrates how to configure the OSC bridge for hardware integration
+
+# WebSocket connection settings
+websocket:
+  host: "localhost:8000"      # Quizzer backend host and port
+  game_id: 1                  # Game ID to connect to
+  client_type: "osc"          # Client type (always "osc" for this bridge)
+  client_id: "osc-main"       # Unique identifier for this bridge instance
+
+# OSC server settings
+osc:
+  listen_host: "0.0.0.0"      # Listen on all interfaces
+  listen_port: 7400           # UDP port for incoming OSC messages
+
+# WebSocket → OSC mappings (outgoing)
+# When the bridge receives these WebSocket messages, it sends OSC messages
+outgoing:
+  # Example: Toggle buzzers
+  - websocket_type: "toggle_buzzers"
+    osc_destinations:
+      - host: "192.168.1.100"
+        port: 53000
+        address: "/quizzer/buzzers/state"
+        args:
+          - field: "enabled"      # WebSocket field name
+            type: "int"           # OSC type: int, float, string, bool
+
+  # Example: Question selection triggers lighting cue
+  - websocket_type: "select_question"
+    osc_destinations:
+      - host: "192.168.1.101"
+        port: 53001
+        address: "/qlabs/cue/fire"
+        args:
+          - field: "question"
+            type: "int"
+
+  # Example: Send buzzer press to sound system
+  - websocket_type: "buzzer_pressed"
+    osc_destinations:
+      - host: "192.168.1.102"
+        port: 9000
+        address: "/sound/buzzer"
+        args:
+          - field: "buzzerId"
+            type: "int"
+
+# OSC → WebSocket mappings (incoming)
+# When the bridge receives these OSC messages, it sends WebSocket messages
+incoming:
+  # Example: OSC buzzer controller sends button presses
+  - osc_address: "/buzzer/press"
+    websocket_type: "buzzer_pressed"
+    args:
+      - osc_index: 0              # First OSC argument
+        websocket_field: "buzzerId"
+        type: "int"
+
+  # Example: OSC fader controls buzzer enable state
+  - osc_address: "/control/buzzers"
+    websocket_type: "toggle_buzzers"
+    args:
+      - osc_index: 0
+        websocket_field: "enabled"
+        type: "bool"
