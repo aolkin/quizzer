@@ -2,7 +2,13 @@
   import Icon from '@iconify/svelte';
   import { fly } from 'svelte/transition';
   import { toggleQuestion } from '$lib/api';
-  import { allQuestions, type Board, type Question, UiMode } from '$lib/state.svelte';
+  import {
+    allQuestions,
+    type Board,
+    type Category,
+    type Question,
+    UiMode,
+  } from '$lib/state.svelte';
   import type { AudioClient } from '../audio.svelte';
   import { gameState } from '../game-state.svelte';
   import { formatInlineMarkdown } from '../markdown';
@@ -12,6 +18,7 @@
 
   let hoveredQuestion = $state<Question | undefined>(undefined);
   let selectedQuestion = $state<Question | undefined>(undefined);
+  let hoveredCategory = $state<Category | undefined>(undefined);
   let sidebarQuestion = $derived(
     hoveredQuestion ||
       selectedQuestion ||
@@ -62,6 +69,9 @@
           <button
             class="h-24 rounded-md bg-primary-700 p-2 text-center text-2xl font-bold uppercase transition-colors hover:bg-primary-600"
             onclick={() => mode === 'host' && gameState.websocket?.revealCategory(category.id)}
+            onmouseenter={() =>
+              mode === 'host' && category.description && (hoveredCategory = category)}
+            onmouseleave={() => mode === 'host' && (hoveredCategory = undefined)}
             data-testid="category-{category.id}"
           >
             {#if mode === UiMode.Host || isColumnVisible(category.id)}
@@ -93,6 +103,13 @@
         </div>
       {/each}
     </div>
+
+    {#if mode === 'host' && hoveredCategory && hoveredCategory.description}
+      <div class="rounded-lg bg-surface-800 p-4 transition-all" transition:fly={{ x: 100 }}>
+        <h3 class="mb-2 text-xl font-bold">{hoveredCategory.name}</h3>
+        <p class="whitespace-pre-wrap text-primary-200">{hoveredCategory.description}</p>
+      </div>
+    {/if}
 
     {#if mode === 'host' && sidebarQuestion}
       <div

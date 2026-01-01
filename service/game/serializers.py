@@ -28,7 +28,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ["id", "name", "order", "questions"]
+        fields = ["id", "name", "description", "order", "questions"]
 
 
 class BoardSerializer(serializers.ModelSerializer):
@@ -127,10 +127,13 @@ class QuestionExportSerializer(serializers.Serializer):
 
 class CategoryExportSerializer(serializers.Serializer):
     name = serializers.CharField()
+    description = serializers.CharField(required=False)
     questions = QuestionExportSerializer(many=True)
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
+        data = {"name": instance.name}
+        if instance.description:
+            data["description"] = instance.description
         export_mode = self.context.get("export_mode", "template")
         data["questions"] = QuestionExportSerializer(
             instance.questions.all(), many=True, context={"export_mode": export_mode}
@@ -231,6 +234,7 @@ class QuestionImportSerializer(serializers.Serializer):
 
 class CategoryImportSerializer(serializers.Serializer):
     name = serializers.CharField()
+    description = serializers.CharField(default="", required=False)
     questions = QuestionImportSerializer(many=True)
 
 
@@ -315,7 +319,10 @@ class GameImportSerializer(serializers.Serializer):
 
             for category_order, category_data in enumerate(board_data["categories"]):
                 category = Category.objects.create(
-                    board=board, name=category_data["name"], order=category_order
+                    board=board,
+                    name=category_data["name"],
+                    description=category_data.get("description", ""),
+                    order=category_order,
                 )
                 categories_created += 1
 

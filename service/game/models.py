@@ -80,6 +80,7 @@ class Board(models.Model):
 class Category(models.Model):
     board = models.ForeignKey(Board, on_delete=models.PROTECT, related_name="categories")
     name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
     order = models.SmallIntegerField()
 
     class Meta:

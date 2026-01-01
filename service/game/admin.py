@@ -13,6 +13,7 @@ class CategoryInline(admin.TabularInline):
     model = Category
     extra = 6
     max_num = 6
+    fields = ("name", "description", "order")
 
 
 class QuestionInline(admin.TabularInline):
@@ -47,7 +48,8 @@ class BoardAdmin(admin.ModelAdmin):
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("name", "board", "order")
     list_filter = ("board__game", "board")
-    search_fields = ("name",)
+    search_fields = ("name", "description")
+    fields = ("board", "name", "description", "order")
     inlines = [QuestionInline]
 
 

@@ -16,16 +16,19 @@ export interface Question {
   points: number;
 }
 
+export interface Category {
+  name: string;
+  description?: string;
+  order: number;
+  id: number;
+  questions: Array<Question>;
+}
+
 export interface Board {
   name: string;
   id: number;
   order: number;
-  categories: Array<{
-    name: string;
-    order: number;
-    id: number;
-    questions: Array<Question>;
-  }>;
+  categories: Array<Category>;
 }
 
 export interface Player {
