@@ -19,6 +19,8 @@ from .serializers import (
     GameExportSerializer,
     GameImportSerializer,
     MediaFileSerializer,
+    QuestionSerializer,
+    QuestionUpdateSerializer,
 )
 from . import services
 
@@ -255,3 +257,26 @@ class MediaFileViewSet(viewsets.ModelViewSet):
     serializer_class = MediaFileSerializer
     parser_classes = (MultiPartParser, FormParser)
     http_method_names = ["get", "post"]
+
+
+class QuestionViewSet(viewsets.ModelViewSet):
+    queryset = Question.objects.select_related("category__board__game")
+    serializer_class = QuestionSerializer
+    http_method_names = ["get", "patch"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if category_id := self.request.GET.get("category"):
+            queryset = queryset.filter(category_id=category_id)
+        if board_id := self.request.GET.get("board"):
+            queryset = queryset.filter(category__board_id=board_id)
+        if game_id := self.request.GET.get("game"):
+            queryset = queryset.filter(category__board__game_id=game_id)
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action in ["update", "partial_update"]:
+            return QuestionUpdateSerializer
+        return QuestionSerializer

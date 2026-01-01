@@ -30,6 +30,7 @@ from game.views import (
     import_game,
     set_buzzer_state,
     MediaFileViewSet,
+    QuestionViewSet,
 )
 
 urlpatterns = [
@@ -42,6 +43,11 @@ urlpatterns = [
     path("api/board/<int:board_id>/answers/", record_answer),
     path("api/question/<int:question_id>/", toggle_question),
     path("api/media/", MediaFileViewSet.as_view({"get": "list", "post": "create"})),
+    path("api/questions/", QuestionViewSet.as_view({"get": "list"})),
+    path(
+        "api/questions/<int:pk>/",
+        QuestionViewSet.as_view({"get": "retrieve", "patch": "partial_update"}),
+    ),
     path("admin/", admin.site.urls),
 ]
 

@@ -23,6 +23,23 @@ class QuestionSerializer(serializers.ModelSerializer):
         ]
 
 
+class QuestionUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = [
+            "id",
+            "text",
+            "answer",
+            "points",
+            "flags",
+            "slides",
+            "order",
+            "answered",
+            "category",
+        ]
+        read_only_fields = ["id", "category", "answered"]
+
+
 class CategorySerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True)
 

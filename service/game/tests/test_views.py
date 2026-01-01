@@ -490,3 +490,58 @@ class ImportGameViewTestCase(BaseGameTestCase):
         orig_questions = Question.objects.filter(category__board__game=original_game).count()
         imported_questions = Question.objects.filter(category__board__game=imported_game).count()
         self.assertEqual(imported_questions, orig_questions)
+
+
+class QuestionAPITestCase(BaseGameTestCase):
+    """Tests for the Question REST API endpoints (LIST, GET, PATCH)."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+        self.category2 = Category.objects.create(board=self.board, name="Category 2", order=2)
+
+    def test_list_questions_with_category_filter(self):
+        """Test filtering questions by category."""
+        response = self.client.get(f"/api/questions/?category={self.category.id}")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+
+    def test_get_question(self):
+        """Test retrieving a single question."""
+        response = self.client.get(f"/api/questions/{self.q1.id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["text"], "Question 1")
+        self.assertEqual(response.data["points"], 100)
+
+    def test_patch_question(self):
+        """Test updating question fields."""
+        response = self.client.patch(
+            f"/api/questions/{self.q1.id}/",
+            {"text": "Updated", "points": 250, "flags": ["daily_double"]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.q1.refresh_from_db()
+        self.assertEqual(self.q1.text, "Updated")
+        self.assertEqual(self.q1.points, 250)
+        self.assertEqual(self.q1.flags, ["daily_double"])
+
+    def test_patch_readonly_fields(self):
+        """Test that category and answered cannot be changed via PATCH."""
+        original_category = self.q1.category_id
+        original_answered = self.q1.answered
+
+        response = self.client.patch(
+            f"/api/questions/{self.q1.id}/",
+            {"category": self.category2.id, "answered": True, "text": "Changed"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.q1.refresh_from_db()
+        self.assertEqual(self.q1.category_id, original_category)
+        self.assertEqual(self.q1.answered, original_answered)
+        self.assertEqual(self.q1.text, "Changed")
