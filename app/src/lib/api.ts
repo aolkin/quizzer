@@ -1,4 +1,4 @@
-import { ENDPOINT, type Board } from './state.svelte';
+import { ENDPOINT, type Board, type Question } from './state.svelte';
 
 async function apiRequest<T>(
   url: string,
@@ -54,4 +54,39 @@ export async function toggleQuestion(
 
 export async function getBoard(boardId: number): Promise<Board> {
   return apiRequest(`/api/board/${boardId}/`, 'GET', undefined, 'Failed to fetch board');
+}
+
+export interface MediaFile {
+  id: number;
+  url: string;
+  original_filename: string;
+  file_size: number;
+  uploaded_at: string;
+}
+
+export async function listMedia(): Promise<MediaFile[]> {
+  return apiRequest('/api/media/', 'GET', undefined, 'Failed to list media files');
+}
+
+export interface QuestionUpdateRequest {
+  text?: string;
+  answer?: string;
+  points?: number;
+  slides?: Array<{
+    text?: string;
+    media_type?: 'image' | 'video' | 'audio';
+    media_url?: string;
+    answer?: string;
+  }>;
+}
+
+export async function getQuestion(questionId: number): Promise<Question> {
+  return apiRequest(`/api/questions/${questionId}/`, 'GET', undefined, 'Failed to fetch question');
+}
+
+export async function updateQuestion(
+  questionId: number,
+  updates: QuestionUpdateRequest,
+): Promise<Question> {
+  return apiRequest(`/api/questions/${questionId}/`, 'PATCH', updates, 'Failed to update question');
 }

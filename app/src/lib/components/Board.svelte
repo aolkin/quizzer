@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/stores';
   import Icon from '@iconify/svelte';
   import { fly } from 'svelte/transition';
   import { toggleQuestion } from '$lib/api';
@@ -15,6 +16,8 @@
   import QuestionDisplay from './QuestionDisplay.svelte';
 
   let { mode, board, audio }: { board: Board; mode: UiMode; audio?: AudioClient } = $props();
+
+  const gameId = $derived($page.params.game);
 
   let hoveredQuestion = $state<Question | undefined>(undefined);
   let selectedQuestion = $state<Question | undefined>(undefined);
@@ -176,6 +179,14 @@
         {/if}
 
         <div class="flex flex-wrap gap-2">
+          <a
+            href="/{gameId}/question/{sidebarQuestion.id}/edit"
+            class="btn-variant-ringed btn"
+            data-testid="edit-question"
+          >
+            Edit
+          </a>
+
           <button
             type="button"
             class="btn-variant-filled btn"
