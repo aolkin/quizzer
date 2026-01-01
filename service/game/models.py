@@ -185,3 +185,19 @@ class PlayerAnswer(models.Model):
     def __str__(self):
         status = "Correct" if self.is_correct else "Incorrect"
         return f"{self.player.name} - {self.question} - {status}"
+
+
+class MediaFile(models.Model):
+    file = models.FileField(upload_to="uploads/%Y/%m/")
+    original_filename = models.CharField(max_length=255)
+    file_size = models.PositiveIntegerField()
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+
+    def __str__(self):
+        return self.original_filename
+
+    def get_absolute_url(self):
+        return self.file.url if self.file else None

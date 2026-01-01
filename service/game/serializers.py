@@ -2,7 +2,7 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
-from .models import Game, Board, Category, Player, Question, Team, PlayerAnswer
+from .models import Game, Board, Category, Player, Question, Team, PlayerAnswer, MediaFile
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,41 @@ class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = ["id", "name", "mode", "points_term", "boards", "teams"]
+
+
+class MediaFileSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MediaFile
+        fields = ["id", "file", "url", "original_filename", "file_size", "uploaded_at"]
+        read_only_fields = ["url", "original_filename", "file_size", "uploaded_at"]
+
+    def get_url(self, obj):
+        request = self.context.get("request")
+        if obj.file and hasattr(obj.file, "url"):
+            if request is not None:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+    def validate_file(self, value):
+        if not value:
+            raise serializers.ValidationError("File is required")
+        max_size = 100 * 1024 * 1024
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                f"File size exceeds maximum allowed size of {max_size / (1024 * 1024):.0f}MB"
+            )
+        return value
+
+    def create(self, validated_data):
+        file = validated_data["file"]
+        return MediaFile.objects.create(
+            file=file,
+            original_filename=file.name,
+            file_size=file.size,
+        )
 
 
 # API request serializers for mutations

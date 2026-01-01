@@ -126,6 +126,15 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Media files (user uploads)
+# https://docs.djangoproject.com/en/5.1/topics/files/
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# File upload settings
+DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100MB max upload size
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

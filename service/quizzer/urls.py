@@ -15,6 +15,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 
@@ -27,6 +29,7 @@ from game.views import (
     export_game,
     import_game,
     set_buzzer_state,
+    MediaFileViewSet,
 )
 
 urlpatterns = [
@@ -38,5 +41,10 @@ urlpatterns = [
     path("api/board/<int:board_id>/", get_board),
     path("api/board/<int:board_id>/answers/", record_answer),
     path("api/question/<int:question_id>/", toggle_question),
+    path("api/media/", MediaFileViewSet.as_view({"get": "list", "post": "create"})),
     path("admin/", admin.site.urls),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

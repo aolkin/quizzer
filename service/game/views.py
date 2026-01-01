@@ -3,12 +3,13 @@ from django.db import models
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
 from .channels import broadcast_to_game
-from .models import Game, Board, Player, Question
+from .models import Game, Board, Player, Question, MediaFile
 from .serializers import (
     BoardSerializer,
     GameSerializer,
@@ -17,6 +18,7 @@ from .serializers import (
     BuzzerStateSerializer,
     GameExportSerializer,
     GameImportSerializer,
+    MediaFileSerializer,
 )
 from . import services
 
@@ -246,3 +248,10 @@ def set_buzzer_state(request, game_id):
         {"game_id": game_id, "enabled": enabled, "broadcast": True},
         status=status.HTTP_200_OK,
     )
+
+
+class MediaFileViewSet(viewsets.ModelViewSet):
+    queryset = MediaFile.objects.all()
+    serializer_class = MediaFileSerializer
+    parser_classes = (MultiPartParser, FormParser)
+    http_method_names = ["get", "post"]
