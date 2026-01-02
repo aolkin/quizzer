@@ -60,3 +60,36 @@ class GameConsumerTestCase(BaseGameTestCase):
         self.assertTrue(result)
 
         await communicator.disconnect()
+
+    async def test_message_targeting(self):
+        """Test targeted message delivery and channel_id injection."""
+        comm1 = WebsocketCommunicator(
+            GameConsumer.as_asgi(),
+            f"/ws/game/{self.game.id}/?client_type=buzzer&client_id=test-1",
+        )
+        comm2 = WebsocketCommunicator(
+            GameConsumer.as_asgi(),
+            f"/ws/game/{self.game.id}/?client_type=osc&client_id=test-2",
+        )
+        comm1.scope["url_route"] = {"kwargs": {"game_id": self.game.id}}
+        comm2.scope["url_route"] = {"kwargs": {"game_id": self.game.id}}
+
+        await comm1.connect()
+        await comm2.connect()
+
+        await comm1.receive_json_from()
+        await comm1.receive_json_from()
+        await comm2.receive_json_from()
+
+        await comm1.send_json_to({"type": "ping"})
+        msg = await comm1.receive_json_from()
+        await comm2.receive_json_from()
+        self.assertIn("channel_id", msg)
+
+        await comm1.send_json_to({"type": "cmd", "recipient": {"channel_id": msg["channel_id"]}})
+        resp = await comm1.receive_json_from()
+        self.assertEqual(resp["type"], "cmd")
+        self.assertTrue(await comm2.receive_nothing(timeout=0.1))
+
+        await comm1.disconnect()
+        await comm2.disconnect()
