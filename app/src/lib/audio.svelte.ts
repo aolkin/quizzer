@@ -3,6 +3,7 @@ import { assets } from '$app/paths';
 export enum Sound {
   Buzzer = 'buzzer',
   Dino = 'dino',
+  Shiny = 'shiny',
   DailyDouble = 'dailydouble',
   Timesup = 'timesup',
   RightAnswer = 'rightanswer',
@@ -22,6 +23,7 @@ export class AudioClient {
     const soundFiles: Record<Sound, string> = {
       buzzer: `${assets}/sounds/rightanswer.mp3`,
       dino: `${assets}/sounds/dinosaurgrowl.mp3`,
+      shiny: `${assets}/sounds/ShinySparkle.webm`,
       dailydouble: `${assets}/sounds/dailydouble.mp3`,
       timesup: `${assets}/sounds/timesup.mp3`,
       rightanswer: `${assets}/sounds/rightanswer.mp3`,

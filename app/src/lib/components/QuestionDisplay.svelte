@@ -13,6 +13,7 @@
   let container: HTMLDivElement;
 
   const hasDinoFlag = $derived(question.flags.includes('dino'));
+  const hasShinyFlag = $derived(question.flags.includes('shiny'));
 
   const isSlideIndexValid = $derived(
     question.type !== 'slides' || (slideIndex >= 0 && slideIndex < question.slides.length),
@@ -47,6 +48,9 @@
       if (hasDinoFlag) {
         container.style.transform = 'rotate3d(1, 0, 0, 720deg)';
         audio?.play(Sound.Dino);
+      } else if (hasShinyFlag) {
+        container.style.transform = 'rotate(720deg)';
+        audio?.play(Sound.Shiny);
       }
     }
   });
@@ -56,11 +60,17 @@
   bind:this={container}
   class="flex items-center justify-center overflow-hidden transition-all {hasDinoFlag
     ? 'bg-warning-800 duration-[2000ms]'
-    : 'bg-primary-900 duration-500'} fixed"
+    : hasShinyFlag
+      ? 'bg-warning-700 duration-[2000ms]'
+      : 'bg-primary-900 duration-500'} fixed"
   style="container-type: inline-size"
   data-testid="question-display"
 >
-  <div class="mx-auto max-w-[60%] text-center">
+  <div
+    class="mx-auto text-center {question.type === 'text' || !currentSlide?.media_type
+      ? 'max-w-[60%]'
+      : 'max-w-[95%]'}"
+  >
     <div>
       {#if question.type === 'text' || !currentSlide?.media_type}
         <h2
@@ -75,12 +85,11 @@
         <img
           src={currentSlide.media_url}
           alt="Question media"
-          class="mx-auto max-w-full rounded-lg shadow-lg"
+          class="h-[95vh] w-full object-contain"
         />
       {:else if currentSlide.media_type === 'video'}
         <!-- svelte-ignore a11y_media_has_caption -->
-        <video src={currentSlide.media_url} controls class="mx-auto max-w-full rounded-lg shadow-lg"
-        ></video>
+        <video src={currentSlide.media_url} controls class="h-[95vh] w-full"></video>
       {:else if currentSlide.media_type === 'audio'}
         <audio src={currentSlide.media_url} controls class="w-full"></audio>
       {/if}

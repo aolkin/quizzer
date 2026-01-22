@@ -116,12 +116,12 @@
 
     {#if mode === 'host' && sidebarQuestion}
       <div
-        class="rounded-lg border-primary-500 bg-surface-800 p-4 {gameState.selectedQuestion ===
+        class="flex max-h-[calc(100vh-16rem)] flex-col rounded-lg border-primary-500 bg-surface-800 p-4 {gameState.selectedQuestion ===
           sidebarQuestion.id && 'border-2'} transition-all"
         transition:fly={{ x: 100 }}
       >
         <h3 class="mb-4 text-xl">
-          {#if sidebarQuestion.flags.includes('dino')}
+          {#if sidebarQuestion.flags.includes('dino') || sidebarQuestion.flags.includes('shiny')}
             <Icon icon="mdi:star" class="inline text-warning-400" />
           {/if}
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -134,9 +134,9 @@
             {sidebarQuestion.answer}
           </p>
         {:else if sidebarQuestion.type === 'slides'}
-          <div class="mb-4">
+          <div class="mb-4 flex min-h-0 flex-col">
             <p class="mb-2 text-sm font-semibold text-primary-300">Slides:</p>
-            <div class="space-y-2">
+            <div class="min-h-0 flex-1 space-y-2 overflow-y-auto">
               {#each sidebarQuestion.slides as slide, index}
                 <button
                   type="button"
@@ -175,6 +175,29 @@
             <p class="mt-2 text-sm text-primary-400" data-testid="question-answer">
               Overall Answer: {sidebarQuestion.answer}
             </p>
+          </div>
+        {/if}
+
+        {#if sidebarQuestion.type === 'slides' && totalSlides > 0}
+          <div class="mb-4 flex gap-2">
+            <button
+              type="button"
+              class="btn-variant-filled btn flex-1"
+              onclick={() => selectSlide(gameState.currentSlideIndex - 1)}
+              disabled={gameState.currentSlideIndex <= 0}
+              data-testid="previous-slide"
+            >
+              <Icon icon="mdi:chevron-left" class="inline" /> Previous Slide
+            </button>
+            <button
+              type="button"
+              class="btn-variant-filled btn flex-1"
+              onclick={() => selectSlide(gameState.currentSlideIndex + 1)}
+              disabled={gameState.currentSlideIndex >= totalSlides - 1}
+              data-testid="next-slide"
+            >
+              Next Slide <Icon icon="mdi:chevron-right" class="inline" />
+            </button>
           </div>
         {/if}
 
