@@ -55,9 +55,23 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ("category", "points", "order", "text", "flags_display", "has_slides")
-    list_filter = ("category__board__game", "category__board", "category")
+    list_display = (
+        "category",
+        "points",
+        "order",
+        "text",
+        "answered",
+        "flags_display",
+        "has_slides",
+    )
+    list_filter = ("category__board__game", "category__board", "category", "answered")
     search_fields = ("text", "answer")
+    actions = ["mark_unanswered"]
+
+    @admin.action(description="Mark selected questions as unanswered")
+    def mark_unanswered(self, request, queryset):
+        updated = queryset.update(answered=False)
+        self.message_user(request, f"Marked {updated} question(s) as unanswered.")
 
     def flags_display(self, obj):
         return ", ".join(obj.flags) if obj.flags else ""
