@@ -4,7 +4,7 @@
 
 **Phase 1 (Multi-Client Connection Tracking): ✅ COMPLETED**
 **Phase 2 (Auto-Fade & Click-Through): ✅ COMPLETED**
-**Phase 3 (Latency Monitoring): ⏳ PENDING**
+**Phase 3 (Latency Monitoring): ✅ READY TO IMPLEMENT** (TODO #24 is now complete)
 
 ### What's Implemented
 
@@ -20,8 +20,8 @@
 
 ### What's Remaining
 
-⏳ **Phase 3: Latency Monitoring** - Requires:
-- **TODO #24** (Generic Message Targeting) - Must be implemented first
+✅ **TODO #24 (Generic Message Targeting) - COMPLETED**
+⏳ **Phase 3: Latency Monitoring** - Can now be implemented:
 - Frontend ping interval and pong response handler using targeted messages (via `channel_id`)
 - Display latency values in overlay
 
@@ -458,9 +458,9 @@ Add host's own latency to the overlay:
 - [x] Add `pointer-events: none` to overlay container
 - [x] Test that game UI beneath is still clickable
 
-### Phase 3: Latency Monitoring (Optional) ⏳ PENDING
+### Phase 3: Latency Monitoring (Optional) ⏳ READY TO IMPLEMENT
 
-**Prerequisite:** TODO #24 (Generic Message Targeting) must be completed first
+**Prerequisite:** ✅ TODO #24 (Generic Message Targeting) is now complete
 
 - [ ] Add `channelId` field to `ClientConnection` interface
 - [ ] Update `setClientConnection()` to capture channel_id from messages
@@ -541,8 +541,8 @@ Add host's own latency to the overlay:
 
 - No new packages required
 - No backend changes required for Phase 1 & 2
-- Phase 3 (latency monitoring) requires:
-  - **TODO #24** (Generic Message Targeting) - Must be implemented first
+- Phase 3 (latency monitoring):
+  - ✅ **TODO #24** (Generic Message Targeting) - NOW COMPLETE
 
 ## Priority
 
@@ -552,7 +552,7 @@ Phase 1 & 2 are complete. Phase 3 (latency) should be implemented **after TODO #
 
 ## Related TODOs
 
-- **TODO #24** (Generic Message Targeting) - Required for Phase 3 latency monitoring
+- ✅ **TODO #24** (Generic Message Targeting) - COMPLETE - Required for Phase 3 latency monitoring
 - **TODO #22** (WebSocket ↔ OSC Bridge) - Will benefit from multi-client tracking
 - Complements existing buzzer connection indicator in ScoreFooter
 - No dependencies on authentication TODOs (uses existing WebSocket patterns)

@@ -58,28 +58,61 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content):
         """
-        Relay coordination messages to all clients.
+        Relay messages with optional recipient targeting.
 
-        Database mutations (record_answer, toggle_question) are handled by REST API.
-        This only handles ephemeral coordination messages.
+        - No recipient: Broadcast to all clients in room
+        - recipient.channel_id: Send to specific channel
+        - recipient.client_id: Send to all connections with matching client_id
+        - recipient.client_type: Send to all connections with matching client_type
         """
-        # Basic validation - reject obviously malformed messages
-        if not isinstance(content, dict):
+        if not isinstance(content, dict) or "type" not in content:
             return
 
-        if "type" not in content or not isinstance(content["type"], str):
+        recipient = content.get("recipient")
+
+        if not recipient:
+            await self.channel_layer.group_send(
+                self.room_group_name, {"type": "game_message", "message": content}
+            )
             return
 
-        # Simple broadcast relay - no special handling
-        await self.channel_layer.group_send(
-            self.room_group_name, {"type": "game_message", "message": content}
-        )
+        if not isinstance(recipient, dict):
+            return
+
+        if "channel_id" in recipient and len(recipient) == 1:
+            target_channel = recipient["channel_id"]
+            await self.channel_layer.send(
+                target_channel, {"type": "game_message", "message": content}
+            )
+        else:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "game_message",
+                    "message": content,
+                    "recipient": recipient,
+                },
+            )
 
     async def game_message(self, event):
         """
-        Send message to WebSocket client.
+        Send message to WebSocket client with optional recipient filtering.
 
-        Called when a message is broadcast to the group (from REST API or other clients).
+        Filters messages based on recipient criteria if present.
+        All criteria must match (AND logic).
         """
         message = event["message"]
+        recipient = event.get("recipient")
+
+        if recipient:
+            if "channel_id" in recipient and self.channel_name != recipient["channel_id"]:
+                return
+
+            if "client_id" in recipient and self.client_id != recipient["client_id"]:
+                return
+
+            if "client_type" in recipient and self.client_type != recipient["client_type"]:
+                return
+
+        message["channel_id"] = self.channel_name
         await self.send_json(message)

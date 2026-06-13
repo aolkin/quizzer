@@ -170,6 +170,19 @@ describe('GameWebSocket', () => {
       expect(msg2.type).toBe('select_question');
       expect(msg2.question).toBe(42);
     });
+
+    it('sends targeted messages with recipient field', () => {
+      const ws = new GameWebSocket('123', UiMode.Host);
+      currentMockSocket!.sentMessages = [];
+
+      ws.sendTo({ channel_id: 'channel-123' }, { type: 'pong' });
+      const msg = JSON.parse(currentMockSocket!.sentMessages[0]);
+      expect(msg.recipient).toEqual({ channel_id: 'channel-123' });
+
+      ws.sendTo({ client_type: 'buzzer' }, { type: 'toggle' });
+      const msg2 = JSON.parse(currentMockSocket!.sentMessages[1]);
+      expect(msg2.recipient).toEqual({ client_type: 'buzzer' });
+    });
   });
 
   describe('reconnection', () => {
